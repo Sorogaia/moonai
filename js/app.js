@@ -534,7 +534,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
   const dev     = pump?.dev ? pump.dev.substring(0,4)+'…'+pump.dev.slice(-4) : '—';
   const age     = dex?.created ? timeAgo(dex.created) : '—';
   const price   = fmtPrice(dex?.price);
-  const supply  = pump ? '1B' : fmtSupply(dex?.fdv);
+  const supply  = '1B'; // pump.fun tokens always have 1B fixed supply
   const holders = pump?.holders ? pump.holders.toLocaleString() : '—';
   const ch24    = fmtChange(dex?.priceChange24h);
   const ch1     = fmtChange(dex?.priceChange1h);
@@ -794,7 +794,10 @@ function renderTrencher(ca, dex, pump, solPrice) {
       ${statCard('BONDED', bondPct ? `${bonded} (${bondPct})` : bonded, pump?.bonded ? 'c-green' : pump?.bonded === false ? 'c-amber' : '')}
       ${statCard('DEV WALLET', dev, 'c-amber')}
       ${statCard('AGE', age, '')}
-      ${statCard('HOLDERS', holders !== '—' ? holders : 'Helius V2', holders !== '—' ? '' : 'c-amber')}
+      <div class="metric-card">
+        <div class="metric-lbl">HOLDERS</div>
+        <div class="metric-val c-amber" id="holdersStatVal" style="font-size:13px;">${holders !== '—' ? holders : 'Loading…'}</div>
+      </div>
     </div>
 
     <!-- ── SOCIALS / KOLS / TOP X ── -->
@@ -1372,25 +1375,49 @@ async function fetchTopHolders(ca, devWallet) {
       return;
     }
 
+    const top10pct = data.holders.reduce((s, h) => s + h.pct, 0);
+    const maxPct   = data.holders[0]?.pct || 1;
+
     const rows = data.holders.map((h, i) => {
-      const short  = h.owner.slice(0, 4) + '…' + h.owner.slice(-4);
-      const isDev  = devWallet && h.owner.toLowerCase() === devWallet.toLowerCase();
-      const pct    = h.pct.toFixed(2);
-      const badge  = isDev ? `<span style="background:rgba(255,59,48,.15);color:#ff3b30;border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">DEV</span>` : '';
-      const pctCol = h.pct >= 10 ? '#ff3b30' : h.pct >= 5 ? '#ff9f0a' : 'var(--text-muted)';
-      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border1);">
-        <div style="display:flex;align-items:center;gap:6px;">
-          <span style="color:var(--text-faint);min-width:18px;">${i + 1}.</span>
-          <a href="https://solscan.io/account/${h.owner}" target="_blank" rel="noopener"
-             style="color:var(--cyan);text-decoration:none;font-family:monospace;">${short}</a>${badge}
+      const short   = h.owner.slice(0, 4) + '…' + h.owner.slice(-4);
+      const isDev   = devWallet && h.owner.toLowerCase() === devWallet.toLowerCase();
+      const pct     = h.pct.toFixed(2);
+      const pctCol  = h.pct >= 10 ? '#ff3b30' : h.pct >= 5 ? '#ff9f0a' : 'var(--accent)';
+      const barW    = Math.max(2, (h.pct / maxPct) * 100).toFixed(1);
+      const devBadge = isDev
+        ? `<span style="background:rgba(255,59,48,.15);color:#ff3b30;border:1px solid rgba(255,59,48,.35);border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;margin-left:5px;">DEV</span>`
+        : '';
+      const whaleBadge = !isDev && h.pct >= 10
+        ? `<span style="background:rgba(0,212,255,.1);color:var(--cyan);border:1px solid rgba(0,212,255,.25);border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;margin-left:5px;">🐋 WHALE</span>`
+        : '';
+      return `
+      <div style="padding:6px 0;border-bottom:1px solid var(--border2);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="color:var(--text-faint);font-size:11px;min-width:18px;">${i + 1}.</span>
+            <a href="https://solscan.io/account/${h.owner}" target="_blank" rel="noopener"
+               style="color:var(--cyan);text-decoration:none;font-size:12px;font-weight:600;">${short}</a>
+            ${devBadge}${whaleBadge}
+          </div>
+          <span style="color:${pctCol};font-weight:700;font-size:13px;">${pct}%</span>
         </div>
-        <span style="color:${pctCol};font-weight:700;">${pct}%</span>
+        <div style="height:3px;border-radius:2px;background:var(--border2);">
+          <div style="height:3px;border-radius:2px;background:${pctCol};width:${barW}%;transition:width .4s ease;"></div>
+        </div>
       </div>`;
     }).join('');
 
-    const top10 = data.holders.reduce((s, h) => s + h.pct, 0).toFixed(1);
-    bodyEl.innerHTML = rows + `<div style="margin-top:8px;color:var(--text-faint);font-size:11px;">Top 10 hold <b style="color:var(--text)">${top10}%</b> of supply</div>`;
+    // whale concentration warning
+    const whaleWarn = top10pct >= 40
+      ? `<div style="margin-top:10px;padding:8px 12px;background:rgba(255,59,48,.07);border:1px solid rgba(255,59,48,.25);border-radius:var(--radius-sm);font-size:12px;color:#ff3b30;">⚠️ High concentration — top 10 hold <b>${top10pct.toFixed(1)}%</b> of supply</div>`
+      : `<div style="margin-top:8px;color:var(--text-faint);font-size:11px;">Top 10 hold <b style="color:var(--text);">${top10pct.toFixed(1)}%</b> of supply</div>`;
+
+    bodyEl.innerHTML = rows + whaleWarn;
     if (badgeEl) { badgeEl.textContent = 'LIVE'; badgeEl.className = 'card-badge badge-green'; }
+
+    // update HOLDERS stat card with real count
+    const holdersStatEl = document.getElementById('holdersStatVal');
+    if (holdersStatEl) holdersStatEl.textContent = data.holders.length + '+ tracked';
 
   } catch {
     bodyEl.textContent = 'Holder data unavailable.';
