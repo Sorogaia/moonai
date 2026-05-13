@@ -2,6 +2,20 @@
 
 ---
 
+## [1.4.0] — 2026-05-14 — Safety Score & Token Intel
+
+### Added
+- **Safety Score (0–100)** — single verdict card (SAFE / CAUTION / WARNING / DANGER)
+- Score factors: mint authority, freeze authority, dev sold, bonded status, liquidity, age, vol/MC ratio
+- Visual score circle + progress bar + full signal breakdown
+- **DEV sold tracker** — live check if dev wallet emptied tokens, shows SOLD badge or current % held
+- **Mint authority check** — is the dev able to mint unlimited tokens?
+- **Freeze authority check** — is the dev able to freeze holder wallets?
+- **Copy CA button** — one-click copy next to contract address
+- `api/token-info.js` — new Vercel endpoint for mint/freeze/dev balance checks
+
+---
+
 ## [1.3.0] — 2026-05-14 — Bundle Detection
 
 ### Added

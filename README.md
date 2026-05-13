@@ -24,6 +24,10 @@ MoonAi gives you instant, deep analysis on any Solana memecoin. Paste a contract
 - **Socials** — Twitter, Telegram, Website, Discord (colour-coded)
 - **Top X Posts** — live search links to Twitter
 - **Top Holders** — real top 10 wallets with %, progress bars, DEV/WHALE badges
+- **Safety Score** — 0–100 score (SAFE/CAUTION/WARNING/DANGER) with full signal breakdown
+- **DEV sold tracker** — live check if dev emptied their wallet, current % held
+- **Mint & freeze authority** — is the dev able to mint more or freeze wallets?
+- **Copy CA** — one-click copy of contract address
 - **Bundle Detection** — advanced on-chain launch analysis with risk scoring
 - **Trade & Explore** — Axiom, Photon, BullX, Trojan, GMGN, Solscan, GeckoTerminal, pump.fun
 - **AI Chat** — full follow-up chat with token context pre-seeded

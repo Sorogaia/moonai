@@ -29,6 +29,24 @@ Returns top 10 token holders with wallet addresses, amounts and % of supply.
 
 ---
 
+### GET /api/token-info?ca={CA}&dev={DEV_WALLET}
+Returns mint authority, freeze authority status, and dev wallet token balance.
+
+**Response:**
+```json
+{
+  "mintAuthority": null,
+  "freezeAuthority": null,
+  "mintRevoked": true,
+  "freezeRevoked": true,
+  "devBalance": 0,
+  "devPct": "0.00",
+  "devSold": true
+}
+```
+
+---
+
 ### GET /api/bundles?ca={CA}&dev={DEV_WALLET}
 Advanced bundle detection. Analyses launch transactions and returns risk scoring.
 

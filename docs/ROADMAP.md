@@ -12,6 +12,10 @@
 - [x] AI chat with topic guard
 - [x] Top Holders — real data, progress bars, DEV/WHALE badges
 - [x] Bundle Detection — advanced risk scoring
+- [x] Safety Score 0–100 — SAFE/CAUTION/WARNING/DANGER
+- [x] DEV sold tracker — live wallet balance check
+- [x] Mint & freeze authority checks
+- [x] Copy CA button
 - [x] Vercel backend — no API key required from users
 - [x] Rate limiting
 - [x] Custom domain — moonaiapp.xyz
