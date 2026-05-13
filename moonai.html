@@ -1319,12 +1319,16 @@ async function fetchDexScreener(ca) {
       pairUrl:   pair.url                || null,
       dex:       pair.dexId              || '—',
       created:   pair.pairCreatedAt      || null,
-      txns24h:   (pair.txns?.h24?.buys||0) + (pair.txns?.h24?.sells||0),
-      buys24h:   pair.txns?.h24?.buys    || 0,
-      sells24h:  pair.txns?.h24?.sells   || 0,
-      socials:   pair.info?.socials      || [],
-      websites:  pair.info?.websites     || [],
-      imageUrl:  pair.info?.imageUrl     || null,
+      txns24h:      (pair.txns?.h24?.buys||0) + (pair.txns?.h24?.sells||0),
+      buys24h:      pair.txns?.h24?.buys    || 0,
+      sells24h:     pair.txns?.h24?.sells   || 0,
+      buys1h:       pair.txns?.h1?.buys     || 0,
+      sells1h:      pair.txns?.h1?.sells    || 0,
+      priceChange1h: pair.priceChange?.h1   || null,
+      vol1h:        pair.volume?.h1         || null,
+      socials:      pair.info?.socials      || [],
+      websites:     pair.info?.websites     || [],
+      imageUrl:     pair.info?.imageUrl     || null,
     };
   } catch { return null; }
 }
@@ -1350,6 +1354,8 @@ async function fetchPumpFun(ca) {
       mc:          d.market_cap       || null,
       replies:     d.reply_count      || 0,
       kingOfHill:  d.king_of_the_hill_timestamp != null,
+      totalSupply: d.total_supply     || null,
+      holders:     d.holder_count     || null,
     };
   } catch { return null; }
 }
@@ -1362,6 +1368,35 @@ function fmtNum(n) {
   if (n >= 1_000_000)     return '$' + (n/1_000_000).toFixed(2) + 'M';
   if (n >= 1_000)         return '$' + (n/1_000).toFixed(1) + 'K';
   return '$' + n.toFixed(2);
+}
+
+function fmtPrice(p) {
+  if (p == null || p === '—') return '—';
+  p = parseFloat(p);
+  if (isNaN(p)) return '—';
+  if (p >= 1000)  return '$' + p.toLocaleString('en-US', {maximumFractionDigits:2});
+  if (p >= 1)     return '$' + p.toFixed(4);
+  if (p >= 0.01)  return '$' + p.toFixed(5);
+  if (p >= 0.0001)return '$' + p.toFixed(7);
+  // very small — use significant digits
+  return '$' + p.toPrecision(4);
+}
+
+function fmtSupply(n) {
+  if (n == null) return '—';
+  n = parseFloat(n);
+  if (isNaN(n)) return '—';
+  if (n >= 1_000_000_000) return (n/1_000_000_000).toFixed(2) + 'B';
+  if (n >= 1_000_000)     return (n/1_000_000).toFixed(2) + 'M';
+  if (n >= 1_000)         return (n/1_000).toFixed(1) + 'K';
+  return n.toFixed(0);
+}
+
+function fmtChange(val) {
+  if (val == null) return null;
+  const n = parseFloat(val);
+  if (isNaN(n)) return null;
+  return { str: (n >= 0 ? '+' : '') + n.toFixed(1) + '%', up: n >= 0 };
 }
 
 function timeAgo(ms) {
@@ -1377,19 +1412,25 @@ function timeAgo(ms) {
    TRENCHER RENDER — live data card
 ══════════════════════════════════════ */
 function renderTrencher(ca, dex, pump) {
-  const name   = pump?.name   || dex?.name   || '—';
-  const symbol = pump?.symbol || dex?.symbol || '—';
-  const mc     = fmtNum(dex?.mc   || pump?.mc);
-  const vol    = fmtNum(dex?.vol24h);
-  const liq    = fmtNum(dex?.liq);
-  const bonded = pump?.bonded ? '✅ Yes' : pump?.bonded === false ? '❌ No' : '—';
-  const bondPct= pump?.bondedPct ? pump.bondedPct + '%' : null;
-  const dev    = pump?.dev ? pump.dev.substring(0,4)+'…'+pump.dev.slice(-4) : '—';
-  const age    = dex?.created ? timeAgo(dex.created) : '—';
-  const change = dex?.priceChange24h != null
-    ? (dex.priceChange24h >= 0 ? '+' : '') + parseFloat(dex.priceChange24h).toFixed(1) + '%'
-    : '—';
-  const changeColor = dex?.priceChange24h >= 0 ? 'var(--accent)' : 'var(--danger)';
+  const name    = pump?.name   || dex?.name   || '—';
+  const symbol  = pump?.symbol || dex?.symbol || '—';
+  const mc      = fmtNum(dex?.mc   || pump?.mc);
+  const vol24   = fmtNum(dex?.vol24h);
+  const vol1    = fmtNum(dex?.vol1h);
+  const liq     = fmtNum(dex?.liq);
+  const bonded  = pump?.bonded ? '✅ Yes' : pump?.bonded === false ? '❌ No' : '—';
+  const bondPct = pump?.bondedPct ? pump.bondedPct + '%' : null;
+  const dev     = pump?.dev ? pump.dev.substring(0,4)+'…'+pump.dev.slice(-4) : '—';
+  const age     = dex?.created ? timeAgo(dex.created) : '—';
+  const price   = fmtPrice(dex?.price);
+  const supply  = fmtSupply(pump?.totalSupply);
+  const holders = pump?.holders ? pump.holders.toLocaleString() : '—';
+  const ch24    = fmtChange(dex?.priceChange24h);
+  const ch1     = fmtChange(dex?.priceChange1h);
+  const buys24  = dex?.buys24h  || 0;
+  const sells24 = dex?.sells24h || 0;
+  const buys1   = dex?.buys1h   || 0;
+  const sells1  = dex?.sells1h  || 0;
 
   // Socials — merge DexScreener + pump.fun with proper URL cleaning
   const socialLinks = [];
@@ -1481,83 +1522,120 @@ function renderTrencher(ca, dex, pump) {
   document.getElementById('resultZone').innerHTML = `
   <div class="result-area">
 
-    <!-- Token header — image left, name/CA/links right -->
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;">
+    <!-- ── TOKEN HEADER ── -->
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;">
       ${tokenImg}
       <div style="flex:1;min-width:0;">
         <div style="font-size:1.4rem;font-weight:700;letter-spacing:-0.02em;line-height:1.2;margin-bottom:3px;">
           ${escHtml(name)} <span style="color:var(--text-muted);font-size:1rem;font-weight:400;">$${escHtml(symbol)}</span>
+          ${pump?.kingOfHill ? '<span style="font-size:11px;background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b44;border-radius:20px;padding:2px 8px;margin-left:6px;vertical-align:middle;">👑 King</span>' : ''}
         </div>
-        <div style="font-size:10px;color:var(--text-faint);font-family:monospace;margin-bottom:6px;word-break:break-all;">${escHtml(ca)}</div>
-        <div style="display:flex;align-items:center;gap:10px;">${dataSource} ${pairLink}</div>
+        <div style="font-size:10px;color:var(--text-faint);font-family:monospace;margin-bottom:8px;word-break:break-all;">${escHtml(ca)}</div>
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;">
+          ${dataSource}
+          <span style="color:var(--text-faint);font-size:11px;">· #SOL</span>
+          ${age !== '—' ? `<span style="color:var(--text-faint);font-size:11px;">· 🕐 ${age}</span>` : ''}
+          ${holders !== '—' ? `<span style="color:var(--text-faint);font-size:11px;">· 👥 ${holders} holders</span>` : ''}
+          ${pairLink}
+        </div>
       </div>
     </div>
 
-    <!-- Core stats row — full width below header -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;">
-      ${statCard('MC', mc, mc === '—' ? '' : 'c-cyan')}
-      ${statCard('VOL 24H', vol, vol === '—' ? '' : 'c-cyan')}
-      ${statCard('LIQUIDITY', liq, liq === '—' ? '' : 'c-cyan')}
-      ${statCard('24H', change, dex?.priceChange24h >= 0 ? 'c-green' : dex?.priceChange24h < 0 ? 'c-red' : '')}
+    <!-- ── PRICE BAR ── -->
+    <div class="card" style="margin-bottom:8px;background:var(--bg-surface);">
+      <div class="card-body" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px 20px;">
+        <div>
+          <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;">Price</div>
+          <div style="font-size:1.1rem;font-weight:700;color:var(--text);">${price}</div>
+        </div>
+        <div style="width:1px;height:32px;background:var(--border2);flex-shrink:0;"></div>
+        <div>
+          <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;">1H</div>
+          <div style="font-size:1rem;font-weight:700;color:${ch1 ? (ch1.up ? 'var(--accent)' : 'var(--danger)') : 'var(--text-faint)'};">
+            ${ch1 ? ch1.str : '—'}
+            ${(buys1 || sells1) ? `<span style="font-size:11px;font-weight:400;color:var(--text-muted);margin-left:4px;">🟢${buys1} 🔴${sells1}</span>` : ''}
+          </div>
+        </div>
+        <div style="width:1px;height:32px;background:var(--border2);flex-shrink:0;"></div>
+        <div>
+          <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;">24H</div>
+          <div style="font-size:1rem;font-weight:700;color:${ch24 ? (ch24.up ? 'var(--accent)' : 'var(--danger)') : 'var(--text-faint)'};">
+            ${ch24 ? ch24.str : '—'}
+            ${(buys24 || sells24) ? `<span style="font-size:11px;font-weight:400;color:var(--text-muted);margin-left:4px;">🟢${buys24} 🔴${sells24}</span>` : ''}
+          </div>
+        </div>
+        ${vol1 && vol1 !== '—' ? `
+        <div style="width:1px;height:32px;background:var(--border2);flex-shrink:0;"></div>
+        <div>
+          <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;">Vol 1H</div>
+          <div style="font-size:1rem;font-weight:700;color:var(--cyan);">${vol1}</div>
+        </div>` : ''}
+      </div>
     </div>
 
-    <!-- Token details row -->
+    <!-- ── MAIN STATS ── -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;">
+      ${statCard('MC', mc, mc === '—' ? '' : 'c-cyan')}
+      ${statCard('VOL 24H', vol24, vol24 === '—' ? '' : 'c-cyan')}
+      ${statCard('LIQUIDITY', liq, liq === '—' ? '' : 'c-cyan')}
+      ${statCard('SUPPLY', supply, supply === '—' ? '' : '')}
+    </div>
+
+    <!-- ── TOKEN DETAILS ── -->
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;">
       ${statCard('BONDED', bondPct ? `${bonded} (${bondPct})` : bonded, pump?.bonded ? 'c-green' : pump?.bonded === false ? 'c-amber' : '')}
       ${statCard('DEV WALLET', dev, 'c-amber')}
       ${statCard('AGE', age, '')}
-      ${statCard('BUYS / SELLS', dex ? `${dex.buys24h} / ${dex.sells24h}` : '—', dex?.buys24h > dex?.sells24h ? 'c-green' : 'c-red')}
+      ${statCard('HOLDERS', holders !== '—' ? holders : (buys24 ? `${buys24}B / ${sells24}S` : '—'), holders !== '—' ? '' : (buys24 > sells24 ? 'c-green' : 'c-red'))}
     </div>
 
-    <!-- Socials / KOLs / Top X posts row -->
+    <!-- ── SOCIALS / KOLS / TOP X ── -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
 
-      <!-- Socials -->
       <div class="card">
         <div class="card-head"><div class="card-title"><div class="card-title-dot"></div>Socials</div></div>
-        <div class="card-body" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+        <div class="card-body" style="display:flex;flex-wrap:wrap;gap:6px;">
           ${socialsHtml}
         </div>
       </div>
 
-      <!-- KOLs — V2 -->
-      <div class="card" style="position:relative;overflow:hidden;">
+      <div class="card">
         <div class="card-head"><div class="card-title"><div class="card-title-dot" style="background:var(--cyan)"></div>KOLs</div><span class="card-badge" style="background:rgba(0,212,255,0.1);color:var(--cyan);border:1px solid rgba(0,212,255,0.25);">V2</span></div>
         <div class="card-body" style="font-size:12px;color:var(--text-faint);display:flex;align-items:center;gap:6px;">
-          <span style="font-size:1rem;">📡</span> KOL detection coming in V2
+          <span>📡</span> KOL detection in V2
         </div>
       </div>
 
-      <!-- Top X Posts — V2 -->
-      <div class="card" style="position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.4);box-shadow:0 0 24px rgba(255,255,255,0.2),0 0 8px rgba(255,255,255,0.15);animation:glowPulse 3s ease-in-out infinite;">
+      <div class="card" style="border:1px solid rgba(255,255,255,0.4);box-shadow:0 0 24px rgba(255,255,255,0.2),0 0 8px rgba(255,255,255,0.15);animation:glowPulse 3s ease-in-out infinite;">
         <div class="card-head"><div class="card-title"><div class="card-title-dot" style="background:#fff"></div>Top X Posts</div><span class="card-badge" style="background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.2);">V2</span></div>
         <div class="card-body" style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px;">
-          <span style="font-size:1rem;">𝕏</span> Top posts coming in V2
+          <span>𝕏</span> Top posts in V2
         </div>
       </div>
 
     </div>
 
-    <!-- Holders placeholder — needs Helius key -->
+    <!-- ── TOP HOLDERS ── -->
     <div class="card" style="margin-bottom:10px;">
       <div class="card-head">
         <div class="card-title"><div class="card-title-dot"></div>Top Holders</div>
         <span class="card-badge badge-amber">HELIUS NEEDED</span>
       </div>
-      <div class="card-body">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.7;">
-          Real holder data requires a free <a href="https://helius.dev" target="_blank" style="color:var(--accent);">Helius API key</a>. Add it in ⚙ settings to see top 10 holders, dev %, and bundle detection.
-        </div>
+      <div class="card-body" style="font-size:12px;color:var(--text-muted);line-height:1.7;">
+        Real holder data requires a free <a href="https://helius.dev" target="_blank" style="color:var(--accent);">Helius API key</a>. Coming in V2 — top 10 wallets, dev %, bundle detection.
       </div>
     </div>
 
-    <!-- Trade on -->
+    <!-- ── TRADE ON + EXPLORE ── -->
     <div class="card" style="margin-bottom:10px;">
       <div class="card-head">
-        <div class="card-title"><div class="card-title-dot" style="background:var(--accent)"></div>Trade On</div>
+        <div class="card-title"><div class="card-title-dot" style="background:var(--accent)"></div>Trade & Explore</div>
       </div>
-      <div class="card-body" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+      <div class="card-body" style="display:flex;flex-wrap:wrap;gap:8px;">
         ${tradeLinksHtml}
+        <a href="https://solscan.io/token/${ca}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;color:#9945ff;text-decoration:none;font-size:12px;font-weight:700;background:#9945ff18;border:1px solid #9945ff44;border-radius:20px;padding:4px 12px;white-space:nowrap;">Solscan ↗</a>
+        <a href="https://www.geckoterminal.com/solana/pools/${ca}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;color:#86efac;text-decoration:none;font-size:12px;font-weight:700;background:#86efac18;border:1px solid #86efac44;border-radius:20px;padding:4px 12px;white-space:nowrap;">GeckoTerminal ↗</a>
+        <a href="https://pump.fun/${ca}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;color:#a78bfa;text-decoration:none;font-size:12px;font-weight:700;background:#a78bfa18;border:1px solid #a78bfa44;border-radius:20px;padding:4px 12px;white-space:nowrap;">pump.fun ↗</a>
       </div>
     </div>
 
