@@ -1644,12 +1644,22 @@ function renderTrencher(ca, dex, pump, solPrice) {
       <button onclick="runNarrativeAnalysis()" style="
         flex-shrink:0;
         font-family:var(--font);font-size:11px;font-weight:700;
-        color:#14F195;background:rgba(20,241,149,0.08);
-        border:1px solid rgba(20,241,149,0.4);border-radius:var(--radius-pill);
-        padding:4px 12px;cursor:pointer;white-space:nowrap;
+        color:#14F195;
+        background:linear-gradient(180deg, rgba(20,241,149,0.18) 0%, rgba(20,241,149,0.08) 100%);
+        border:1px solid rgba(20,241,149,0.5);
+        border-bottom:2px solid rgba(20,241,149,0.7);
+        border-radius:var(--radius-pill);
+        padding:5px 14px;cursor:pointer;white-space:nowrap;
+        box-shadow:0 2px 6px rgba(20,241,149,0.15), inset 0 1px 0 rgba(255,255,255,0.06);
+        text-shadow:0 0 8px rgba(20,241,149,0.4);
         animation:narrativeBlink 2.4s ease-in-out infinite;
-      " onmouseover="this.style.animationPlayState='paused';this.style.opacity='1';" onmouseout="this.style.animationPlayState='running';">
-        🔥 Narrative
+        transform:translateY(0);transition:transform 0.1s,box-shadow 0.1s;
+      "
+      onmouseover="this.style.animationPlayState='paused';this.style.opacity='1';"
+      onmouseout="this.style.animationPlayState='running';"
+      onmousedown="this.style.transform='translateY(1px)';this.style.boxShadow='0 1px 3px rgba(20,241,149,0.1)';"
+      onmouseup="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 6px rgba(20,241,149,0.15), inset 0 1px 0 rgba(255,255,255,0.06)';">
+        ✦ Analysis
       </button>
     </div>
 
