@@ -1405,14 +1405,34 @@ async function fetchTopHolders(ca, devWallet) {
           <div style="height:3px;border-radius:2px;background:${pctCol};width:${barW}%;transition:width .4s ease;"></div>
         </div>
       </div>`;
-    }).join('');
+    });
 
     // whale concentration warning
     const whaleWarn = top10pct >= 40
       ? `<div style="margin-top:10px;padding:8px 12px;background:rgba(255,59,48,.07);border:1px solid rgba(255,59,48,.25);border-radius:var(--radius-sm);font-size:12px;color:#ff3b30;">⚠️ High concentration — top 10 hold <b>${top10pct.toFixed(1)}%</b> of supply</div>`
       : `<div style="margin-top:8px;color:var(--text-faint);font-size:11px;">Top 10 hold <b style="color:var(--text);">${top10pct.toFixed(1)}%</b> of supply</div>`;
 
-    bodyEl.innerHTML = rows + whaleWarn;
+    const top3    = rows.slice(0, 3);
+    const rest    = rows.slice(3);
+    const restHtml = rest.length ? `
+      <div id="holdersExtra" style="display:none;">${rest.join('')}</div>
+      <button onclick="
+        const el=document.getElementById('holdersExtra');
+        const btn=this;
+        if(el.style.display==='none'){el.style.display='block';btn.textContent='▲ Show less';}
+        else{el.style.display='none';btn.textContent='▼ Show ${rest.length} more holders';}
+      " style="
+        width:100%;margin-top:8px;padding:7px;
+        font-family:var(--font);font-size:12px;font-weight:600;
+        color:var(--text-muted);background:var(--bg-surface);
+        border:1px solid var(--border2);border-radius:var(--radius-sm);
+        cursor:pointer;transition:all .2s;
+      " onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';"
+         onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text-muted)';">
+        ▼ Show ${rest.length} more holders
+      </button>` : '';
+
+    bodyEl.innerHTML = top3.join('') + whaleWarn + restHtml;
     if (badgeEl) { badgeEl.textContent = 'LIVE'; badgeEl.className = 'card-badge badge-green'; }
 
     // update HOLDERS stat card with real count
