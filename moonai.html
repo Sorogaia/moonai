@@ -1496,56 +1496,68 @@ function renderTrencher(ca, dex, pump, solPrice) {
   const telegramUrl   = cleanTelegramUrl(pump?.telegram);
   const websiteUrl    = cleanWebUrl(pump?.website);
 
-  // Build X posts section HTML before main template to avoid nested backtick issues
-  // X posts section
-  const xEmbedHtml = twitterHandle ? `
-    <div style="margin-bottom:8px;font-size:11px;color:var(--text-faint);">
-      Showing latest posts from the official account — <strong style="color:var(--text-muted);">@${twitterHandle}</strong>
-    </div>
-    <div id="xEmbedWrap" style="border-radius:10px;overflow:hidden;border:1px solid var(--border2);">
-      <a class="twitter-timeline"
-         href="https://twitter.com/${twitterHandle}"
-         data-tweet-limit="5"
-         data-chrome="noheader nofooter noborders transparent"
-         data-theme="dark"
-         data-dnt="true"
-         data-lang="en"
-         style="color:var(--text-muted);font-size:12px;padding:12px;display:block;">
-        Loading posts from @${twitterHandle}…
+  // X posts section — clean search links, full tweet embed in V2
+  const symEnc = encodeURIComponent('$' + symbol);
+  const xTopUrl    = `https://twitter.com/search?q=${symEnc}%20solana&src=typed_query&f=top`;
+  const xLatestUrl = `https://twitter.com/search?q=${symEnc}%20solana&src=typed_query&f=live`;
+  const xAccUrl    = twitterHandle ? `https://twitter.com/${twitterHandle}` : null;
+
+  const xPostsHtml = `
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      <a href="${xTopUrl}" target="_blank" rel="noopener" style="
+        display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-size:12px;font-weight:700;
+        color:#fff;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.18);
+        border-radius:20px;padding:6px 14px;white-space:nowrap;">
+        𝕏 Top Posts for $${escHtml(symbol)} ↗
       </a>
-    </div>` : `
-    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px 0;text-align:center;">
-      <span style="font-size:2rem;">𝕏</span>
-      <div style="font-size:13px;color:var(--text-muted);">No official X account linked for this token.</div>
-      <div style="font-size:12px;color:var(--text-faint);">Top X posts require an official account to be linked on pump.fun.</div>
-      ${twitterUrl === null && symbol ? `<a href="https://twitter.com/search?q=%24${encodeURIComponent(symbol)}" target="_blank" rel="noopener"
-        style="display:inline-flex;align-items:center;gap:5px;color:#1d9bf0;text-decoration:none;font-size:12px;font-weight:700;
-        background:rgba(29,155,240,0.1);border:1px solid rgba(29,155,240,0.25);border-radius:20px;padding:6px 16px;margin-top:4px;">
-        Search $${escHtml(symbol)} on 𝕏 ↗
+      <a href="${xLatestUrl}" target="_blank" rel="noopener" style="
+        display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-size:12px;font-weight:700;
+        color:#fff;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.18);
+        border-radius:20px;padding:6px 14px;white-space:nowrap;">
+        𝕏 Latest Posts for $${escHtml(symbol)} ↗
+      </a>
+      ${xAccUrl ? `<a href="${xAccUrl}" target="_blank" rel="noopener" style="
+        display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-size:12px;font-weight:700;
+        color:#1d9bf0;background:rgba(29,155,240,0.1);border:1px solid rgba(29,155,240,0.3);
+        border-radius:20px;padding:6px 14px;white-space:nowrap;">
+        𝕏 @${twitterHandle} ↗
       </a>` : ''}
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--text-faint);">
+      Full tweet display with views & likes coming in V2
     </div>`;
 
-  if (twitterUrl)  socialLinks.push({ label: '𝕏 Twitter',  url: twitterUrl });
-  if (telegramUrl) socialLinks.push({ label: '✈ Telegram', url: telegramUrl });
-  if (websiteUrl)  socialLinks.push({ label: '🌐 Website',  url: websiteUrl });
+  if (twitterUrl)  socialLinks.push({ label: '𝕏 Twitter',  url: twitterUrl,  color: '#ffffff', bg: 'rgba(255,255,255,0.07)', border: 'rgba(255,255,255,0.18)' });
+  if (telegramUrl) socialLinks.push({ label: '✈ Telegram', url: telegramUrl, color: '#29b6f6', bg: 'rgba(41,182,246,0.1)',   border: 'rgba(41,182,246,0.3)'  });
+  if (websiteUrl)  socialLinks.push({ label: '🌐 Website',  url: websiteUrl,  color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', border: 'rgba(167,139,250,0.3)'  });
 
-  // Also pull from DexScreener socials/websites
+  // DexScreener socials
   dex?.socials?.forEach(s => {
-    if (s.url && !socialLinks.find(x => x.url === s.url))
-      socialLinks.push({ label: s.type || 'Link', url: s.url });
+    if (!s.url) return;
+    const type = (s.type || '').toLowerCase();
+    if (type === 'twitter' && socialLinks.find(x => x.label.includes('Twitter'))) return;
+    if (type === 'telegram' && socialLinks.find(x => x.label.includes('Telegram'))) return;
+    const cfg = type === 'twitter'  ? { label: '𝕏 Twitter',   color: '#ffffff', bg: 'rgba(255,255,255,0.07)', border: 'rgba(255,255,255,0.18)' }
+              : type === 'telegram' ? { label: '✈ Telegram',  color: '#29b6f6', bg: 'rgba(41,182,246,0.1)',   border: 'rgba(41,182,246,0.3)'  }
+              : type === 'discord'  ? { label: '💬 Discord',   color: '#7289da', bg: 'rgba(114,137,218,0.1)', border: 'rgba(114,137,218,0.3)'  }
+              :                       { label: '🔗 ' + s.type, color: 'var(--accent)', bg: 'rgba(20,241,149,0.07)', border: 'rgba(20,241,149,0.2)' };
+    socialLinks.push({ ...cfg, url: s.url });
   });
   dex?.websites?.forEach(w => {
     if (w.url && !socialLinks.find(x => x.url === w.url))
-      socialLinks.push({ label: '🌐 Website', url: w.url });
+      socialLinks.push({ label: '🌐 Website', url: w.url, color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', border: 'rgba(167,139,250,0.3)' });
   });
 
   const socialsHtml = socialLinks.length
     ? socialLinks.map(s =>
         `<a href="${escHtml(s.url)}" target="_blank" rel="noopener" style="
-          color:var(--accent);text-decoration:none;font-size:12px;font-weight:600;
-          background:rgba(20,241,149,0.08);border:1px solid rgba(20,241,149,0.2);
-          border-radius:20px;padding:4px 12px;white-space:nowrap;
-        ">${escHtml(s.label)} ↗</a>`
+          display:inline-flex;align-items:center;gap:4px;
+          color:${s.color};text-decoration:none;font-size:12px;font-weight:700;
+          background:${s.bg};border:1px solid ${s.border};
+          border-radius:20px;padding:5px 13px;white-space:nowrap;
+          transition:opacity 0.15s;
+        " onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">
+        ${escHtml(s.label)} ↗</a>`
       ).join('')
     : '<span style="color:var(--text-faint);font-size:12px;">No socials found</span>';
 
@@ -1677,7 +1689,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
         <span style="font-size:11px;color:var(--text-faint);">Powered by 𝕏</span>
       </div>
       <div class="card-body">
-        ${xEmbedHtml}
+        ${xPostsHtml}
       </div>
     </div>
 
@@ -1714,18 +1726,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
 
   </div>`;
 
-  // Activate X embed widget if present
-  if (twitterHandle) {
-    const wrap = document.getElementById('xEmbedWrap');
-    if (wrap) {
-      if (window.twttr?.widgets) {
-        window.twttr.widgets.load(wrap);
-      } else {
-        // widgets.js not ready yet — wait for it
-        window.addEventListener('twttr:load', () => window.twttr.widgets.load(wrap), { once: true });
-      }
-    }
-  }
+  // X embed widget activation removed — using search links in V1
 
   // Inject token image safely after HTML is in the DOM
   if (imgSrc) {
