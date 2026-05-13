@@ -679,6 +679,72 @@ html, body {
   .mode-toggle-wrap { padding: 4px 8px 4px 6px; }
   .mode-label { font-size: 10px; }
 }
+
+/* ══════════════════════════════════════
+   TICKER STRIP
+══════════════════════════════════════ */
+.ticker-strip {
+  width: 100%;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  position: relative;
+  cursor: default;
+  user-select: none;
+}
+.ticker-strip::before,
+.ticker-strip::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 40px;
+  z-index: 2;
+  pointer-events: none;
+}
+.ticker-strip::before { left: 0;  background: linear-gradient(to right, var(--bg-surface), transparent); }
+.ticker-strip::after  { right: 0; background: linear-gradient(to left,  var(--bg-surface), transparent); }
+
+.ticker-track {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  animation: tickerScroll 40s linear infinite;
+  gap: 0;
+}
+.ticker-strip:hover .ticker-track { animation-play-state: paused; }
+
+@keyframes tickerScroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 18px;
+  font-size: 12px;
+  font-weight: 600;
+  border-right: 1px solid var(--border);
+  height: 34px;
+  transition: background 0.15s;
+}
+.ticker-item:hover { background: var(--bg-card); }
+.ticker-logo {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.ticker-symbol { color: var(--text); }
+.ticker-price  { color: var(--text-muted); }
+.ticker-change-up   { color: #14F195; }
+.ticker-change-down { color: #FF3B30; }
+.ticker-loading { color: var(--text-faint); font-size: 11px; padding: 0 16px; }
 </style>
 </head>
 <body>
@@ -748,6 +814,13 @@ html, body {
 
       <!-- API key -->
       <button class="api-key-btn" onclick="openModal()">⚙ API Key</button>
+    </div>
+  </div>
+
+  <!-- LIVE TICKER STRIP -->
+  <div class="ticker-strip">
+    <div class="ticker-track" id="tickerTrack">
+      <span class="ticker-loading">Loading live prices…</span>
     </div>
   </div>
 
@@ -870,6 +943,97 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target === this) closeV2Modal();
   });
 });
+
+/* ══════════════════════════════════════
+   LIVE TICKER
+══════════════════════════════════════ */
+const TICKER_TOKENS = [
+  { symbol: 'SOL',      coingecko: 'solana',  ca: null,                                             logo: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png' },
+  { symbol: 'BONK',     ca: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263' },
+  { symbol: 'WIF',      ca: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm' },
+  { symbol: 'POPCAT',   ca: '7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr' },
+  { symbol: 'MEW',      ca: 'MEW1gQWJ3nEXg2qgERiKu7FAFj79PHvQVREQUzScPP5'  },
+  { symbol: 'JUP',      ca: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN'  },
+  { symbol: 'FARTCOIN', ca: '9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump' },
+  { symbol: 'SLERF',    ca: '7BgBvyjrZX1YKz4oh9mjb8ZScatkkwb8DzFx7hnZxpVH' },
+  { symbol: 'MOODENG',  ca: 'ED5nyyWEzpPPiWimP8vYm7sD7TD3LAt3Q3gRTWHzc3eu' },
+  { symbol: 'GOAT',     ca: 'CzLSujWBLFsSjncfkh59rUFqvafWcY5tzedWJSuypump' },
+];
+
+async function fetchTickerData() {
+  const results = [];
+
+  // SOL via CoinGecko
+  try {
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd&include_24hr_change=true');
+    const d = await r.json();
+    results.push({
+      symbol: 'SOL',
+      price: d.solana?.usd,
+      change: d.solana?.usd_24h_change,
+      logo: TICKER_TOKENS[0].logo,
+    });
+  } catch {}
+
+  // Memecoins via DexScreener in parallel
+  const memeFetches = TICKER_TOKENS.slice(1).map(async t => {
+    try {
+      const r = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${t.ca}`);
+      const d = await r.json();
+      const pair = d.pairs?.find(p => p.chainId === 'solana') || d.pairs?.[0];
+      if (!pair) return null;
+      return {
+        symbol: t.symbol,
+        price: parseFloat(pair.priceUsd),
+        change: pair.priceChange?.h24,
+        logo: pair.info?.imageUrl || null,
+        url: pair.url,
+      };
+    } catch { return null; }
+  });
+
+  const meme = await Promise.all(memeFetches);
+  meme.forEach(m => m && results.push(m));
+  return results;
+}
+
+function fmtTickerPrice(p) {
+  if (!p) return '—';
+  if (p >= 1)    return '$' + p.toFixed(2);
+  if (p >= 0.01) return '$' + p.toFixed(4);
+  if (p >= 0.0001) return '$' + p.toFixed(6);
+  return '$' + p.toExponential(2);
+}
+
+function buildTickerHTML(tokens) {
+  if (!tokens.length) return '<span class="ticker-loading">Unable to load prices</span>';
+  const items = tokens.map(t => {
+    const changeVal = parseFloat(t.change);
+    const changeStr = isNaN(changeVal) ? '' : (changeVal >= 0 ? '+' : '') + changeVal.toFixed(1) + '%';
+    const changeClass = isNaN(changeVal) ? '' : changeVal >= 0 ? 'ticker-change-up' : 'ticker-change-down';
+    const logo = t.logo
+      ? `<img class="ticker-logo" src="${t.logo}" alt="${t.symbol}" onerror="this.style.display='none';">`
+      : `<span style="font-size:14px;">🪙</span>`;
+    return `<div class="ticker-item">
+      ${logo}
+      <span class="ticker-symbol">${t.symbol}</span>
+      <span class="ticker-price">${fmtTickerPrice(t.price)}</span>
+      ${changeStr ? `<span class="${changeClass}">${changeStr}</span>` : ''}
+    </div>`;
+  }).join('');
+  // duplicate for seamless loop
+  return items + items;
+}
+
+async function initTicker() {
+  const track = document.getElementById('tickerTrack');
+  const tokens = await fetchTickerData();
+  track.innerHTML = buildTickerHTML(tokens);
+}
+
+// init on load, refresh every 60s
+initTicker();
+setInterval(initTicker, 60000);
 
 /* ══════════════════════════════════════
    API KEY MODAL
