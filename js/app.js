@@ -10,10 +10,13 @@
 /* ══════════════════════════════════════
    STATE
 ══════════════════════════════════════ */
-let currentCA    = '';
-let chatMessages = [];          // full conversation history
-let analysisMode = 'trencher';  // 'trencher' | 'advanced'
-let hasAnalyzed  = false;
+let currentCA      = '';
+let chatMessages   = [];
+let analysisMode   = 'trencher';
+let hasAnalyzed    = false;
+let autoRefreshTimer = null;
+let lastRefreshTime  = null;
+let sessionATH       = {}; // ca → { mc, price, time }
 
 /* ══════════════════════════════════════
    THEME TOGGLE
@@ -24,11 +27,20 @@ const labelTrencher = document.getElementById('labelTrencher');
 const labelAdvanced = document.getElementById('labelAdvanced');
 
 function toggleMode() {
-  if (analysisMode === 'trencher') {
-    openV2Modal();
-  } else {
-    analysisMode = 'trencher';
-    applyMode();
+  analysisMode = analysisMode === 'trencher' ? 'advanced' : 'trencher';
+  applyMode();
+  // clear analysis so user gets a fresh run in the new mode
+  if (hasAnalyzed) {
+    document.getElementById('resultZone').innerHTML = '';
+    document.getElementById('chatFeed').innerHTML   = '';
+    document.getElementById('feedArea').style.display   = 'none';
+    document.getElementById('welcomeView').style.display = 'block';
+    document.getElementById('suggestionsRow').style.display = 'none';
+    document.getElementById('exampleRow').style.display = 'flex';
+    hasAnalyzed  = false;
+    chatMessages = [];
+    currentCA    = '';
+    clearAutoRefresh();
   }
 }
 
@@ -422,7 +434,10 @@ async function fetchDexScreener(ca) {
       vol24h:    pair.volume?.h24        || null,
       liq:       pair.liquidity?.usd     || null,
       priceChange24h: pair.priceChange?.h24 || null,
-      athPrice:  pair.priceUsd           || null, // DexScreener doesn't expose ATH directly
+      priceChange6h:  pair.priceChange?.h6  || null,
+      priceChange5m:  pair.priceChange?.m5  || null,
+      vol6h:          pair.volume?.h6        || null,
+      athPrice:  pair.priceUsd           || null,
       pairUrl:   pair.url                || null,
       dex:       pair.dexId              || '—',
       created:   pair.pairCreatedAt      || null,
@@ -538,6 +553,41 @@ function renderTrencher(ca, dex, pump, solPrice) {
   const holders = pump?.holders ? pump.holders.toLocaleString() : '—';
   const ch24    = fmtChange(dex?.priceChange24h);
   const ch1     = fmtChange(dex?.priceChange1h);
+  const ch6     = fmtChange(dex?.priceChange6h);
+  const ch5m    = fmtChange(dex?.priceChange5m);
+
+  // Momentum score: weighted avg of m5(35%) h1(35%) h6(20%) h24(10%)
+  const momentumRaw = dex ? (
+    (parseFloat(dex.priceChange5m)  || 0) * 0.35 +
+    (parseFloat(dex.priceChange1h)  || 0) * 0.35 +
+    (parseFloat(dex.priceChange6h)  || 0) * 0.20 +
+    (parseFloat(dex.priceChange24h) || 0) * 0.10
+  ) : null;
+  const momentumScore = momentumRaw !== null ? Math.max(-100, Math.min(100, momentumRaw)) : null;
+  const momentumLabel = momentumScore === null ? '—'
+    : momentumScore >  30 ? '🔥 HOT'
+    : momentumScore >  10 ? '⬆ RISING'
+    : momentumScore >  -5 ? '➡ NEUTRAL'
+    : momentumScore > -20 ? '⬇ COOLING'
+    : '🧊 COLD';
+  const momentumCol = momentumScore === null ? 'var(--text-faint)'
+    : momentumScore >  10 ? 'var(--accent)'
+    : momentumScore >  -5 ? 'var(--text-muted)'
+    : 'var(--danger)';
+
+  // ATH tracking (session-based)
+  const mcRaw = parseFloat(dex?.mc || pump?.mc) || 0;
+  if (mcRaw > 0) {
+    const prev = sessionATH[ca];
+    if (!prev || mcRaw > prev.mc) {
+      sessionATH[ca] = { mc: mcRaw, price: dex?.price, time: Date.now() };
+    }
+  }
+  const athData    = sessionATH[ca];
+  const athMc      = athData ? fmtNum(athData.mc) : '—';
+  const athDownPct = (athData && mcRaw > 0 && athData.mc > mcRaw)
+    ? '-' + (((athData.mc - mcRaw) / athData.mc) * 100).toFixed(0) + '%'
+    : null;
   const buys24  = dex?.buys24h  || 0;
   const sells24 = dex?.sells24h || 0;
   const buys1   = dex?.buys1h   || 0;
@@ -773,15 +823,19 @@ function renderTrencher(ca, dex, pump, solPrice) {
 
     <!-- ── PRICE BAR ── -->
     <div class="card" style="margin-bottom:8px;background:var(--bg-surface);">
-      <div class="card-body" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px 20px;">
+      <div class="card-head" style="padding-bottom:0;">
+        <div style="font-size:9px;color:var(--text-faint);letter-spacing:.08em;text-transform:uppercase;">Live Prices</div>
+        <span id="refreshTimer" style="font-size:9px;color:var(--accent);font-weight:700;letter-spacing:.06em;">LIVE</span>
+      </div>
+      <div class="card-body" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px 20px;padding-top:6px;">
         <div>
           <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;">Price</div>
-          <div style="font-size:1.1rem;font-weight:700;color:var(--text);">${price}</div>
+          <div style="font-size:1.1rem;font-weight:700;color:var(--text);" id="livePrice">${price}</div>
         </div>
         <div style="width:1px;height:32px;background:var(--border2);flex-shrink:0;"></div>
         <div>
           <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;">1H</div>
-          <div style="font-size:1rem;font-weight:700;color:${ch1 ? (ch1.up ? 'var(--accent)' : 'var(--danger)') : 'var(--text-faint)'};">
+          <div id="live1h" style="font-size:1rem;font-weight:700;color:${ch1 ? (ch1.up ? 'var(--accent)' : 'var(--danger)') : 'var(--text-faint)'};">
             ${ch1 ? ch1.str : '—'}
             ${(buys1 || sells1) ? `<span style="font-size:11px;font-weight:400;color:var(--text-muted);margin-left:4px;">🟢${buys1} 🔴${sells1}</span>` : ''}
           </div>
@@ -789,7 +843,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
         <div style="width:1px;height:32px;background:var(--border2);flex-shrink:0;"></div>
         <div>
           <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;">24H</div>
-          <div style="font-size:1rem;font-weight:700;color:${ch24 ? (ch24.up ? 'var(--accent)' : 'var(--danger)') : 'var(--text-faint)'};">
+          <div id="live24h" style="font-size:1rem;font-weight:700;color:${ch24 ? (ch24.up ? 'var(--accent)' : 'var(--danger)') : 'var(--text-faint)'};">
             ${ch24 ? ch24.str : '—'}
             ${(buys24 || sells24) ? `<span style="font-size:11px;font-weight:400;color:var(--text-muted);margin-left:4px;">🟢${buys24} 🔴${sells24}</span>` : ''}
           </div>
@@ -800,15 +854,31 @@ function renderTrencher(ca, dex, pump, solPrice) {
           <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;">Vol 1H</div>
           <div style="font-size:1rem;font-weight:700;color:var(--cyan);">${vol1}</div>
         </div>` : ''}
+      ${ch5m ? `
+        <div style="width:1px;height:32px;background:var(--border2);flex-shrink:0;"></div>
+        <div>
+          <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;">5M</div>
+          <div id="live5m" style="font-size:1rem;font-weight:700;color:${ch5m.up ? 'var(--accent)' : 'var(--danger)'};">${ch5m.str}</div>
+        </div>` : ''}
+      ${momentumScore !== null ? `
+        <div style="width:1px;height:32px;background:var(--border2);flex-shrink:0;"></div>
+        <div>
+          <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;">Momentum</div>
+          <div style="font-size:0.9rem;font-weight:700;color:${momentumCol};">${momentumLabel}</div>
+        </div>` : ''}
       </div>
     </div>
 
     <!-- ── MAIN STATS ── -->
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;">
-      ${statCard('MC', mc, mc === '—' ? '' : 'c-cyan')}
-      ${statCard('VOL 24H', vol24, vol24 === '—' ? '' : 'c-cyan')}
-      ${statCard('LIQUIDITY', liq, liq === '—' ? '' : 'c-cyan')}
-      ${statCard('SUPPLY', supply, supply === '—' ? '' : '')}
+      <div class="metric-card"><div class="metric-lbl">MC</div><div class="metric-val c-cyan" style="font-size:13px;" id="liveMc">${mc}</div></div>
+      <div class="metric-card"><div class="metric-lbl">VOL 24H</div><div class="metric-val c-cyan" style="font-size:13px;" id="liveVol">${vol24}</div></div>
+      <div class="metric-card"><div class="metric-lbl">LIQUIDITY</div><div class="metric-val c-cyan" style="font-size:13px;" id="liveLiq">${liq}</div></div>
+      <div class="metric-card">
+        <div class="metric-lbl">ATH MC</div>
+        <div class="metric-val c-cyan" style="font-size:13px;" id="athMcVal">${athMc}</div>
+        ${athDownPct ? `<div style="font-size:10px;color:var(--danger);margin-top:2px;">${athDownPct} from ATH</div>` : ''}
+      </div>
     </div>
 
     <!-- ── TOKEN DETAILS ── -->
@@ -822,6 +892,10 @@ function renderTrencher(ca, dex, pump, solPrice) {
       <div class="metric-card">
         <div class="metric-lbl">HOLDERS</div>
         <div class="metric-val c-amber" id="holdersStatVal" style="font-size:13px;">${holders !== '—' ? holders : 'Loading…'}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-lbl">FRESH WALLETS</div>
+        <div style="font-size:13px;" id="freshWalletVal"><span style="color:var(--text-faint);">…</span></div>
       </div>
     </div>
 
@@ -903,11 +977,15 @@ function renderTrencher(ca, dex, pump, solPrice) {
 
   // X embed widget activation removed — using search links in V1
 
+  // Start auto-refresh for live price data (Trencher only)
+  if (analysisMode === 'trencher') startAutoRefresh(ca);
+
   // Fire async enrichment — none of these block the card render
   fetchLoreBubble(name, symbol, pump?.description || '', mc, ch24, pump?.bonded);
   fetchTopHolders(ca, pump?.dev || null);
   fetchBundleDetection(ca, pump?.dev || null);
   fetchTokenInfo(ca, pump?.dev || null, dex, pump);
+  fetchFreshWallets(ca, dex?.created || null);
 
   // Inject token image safely after HTML is in the DOM
   if (imgSrc) {
@@ -1484,6 +1562,88 @@ async function fetchTopHolders(ca, devWallet) {
     bodyEl.textContent = 'Holder data unavailable.';
     if (badgeEl) { badgeEl.textContent = 'ERROR'; badgeEl.className = 'card-badge'; }
   }
+}
+
+/* ══════════════════════════════════════
+   AUTO-REFRESH — live price updates
+══════════════════════════════════════ */
+function clearAutoRefresh() {
+  if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
+}
+
+function startAutoRefresh(ca) {
+  clearAutoRefresh();
+  lastRefreshTime = Date.now();
+  updateRefreshIndicator();
+
+  autoRefreshTimer = setInterval(async () => {
+    if (!hasAnalyzed || currentCA !== ca) { clearAutoRefresh(); return; }
+    const dex = await fetchDexScreener(ca).catch(() => null);
+    if (!dex) return;
+
+    // Update price bar values live
+    const price = fmtPrice(dex.price);
+    const ch1   = fmtChange(dex.priceChange1h);
+    const ch24  = fmtChange(dex.priceChange24h);
+    const ch5m  = fmtChange(dex.priceChange5m);
+    const mc    = fmtNum(dex.mc);
+    const vol   = fmtNum(dex.vol24h);
+    const liq   = fmtNum(dex.liq);
+
+    // ATH update
+    const mcRaw = parseFloat(dex.mc) || 0;
+    if (mcRaw > 0 && (!sessionATH[ca] || mcRaw > sessionATH[ca].mc)) {
+      sessionATH[ca] = { mc: mcRaw, price: dex.price, time: Date.now() };
+      const athEl = document.getElementById('athMcVal');
+      if (athEl) athEl.textContent = fmtNum(mcRaw);
+    }
+
+    // Patch individual elements without full re-render
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set('livePrice', price);
+    set('live1h',    ch1  ? ch1.str  : '—');
+    set('live24h',   ch24 ? ch24.str : '—');
+    set('live5m',    ch5m ? ch5m.str : '—');
+    set('liveMc',    mc);
+    set('liveVol',   vol);
+    set('liveLiq',   liq);
+
+    if (ch1)  document.getElementById('live1h')?.style  && (document.getElementById('live1h').style.color  = ch1.up  ? 'var(--accent)' : 'var(--danger)');
+    if (ch24) document.getElementById('live24h')?.style && (document.getElementById('live24h').style.color = ch24.up ? 'var(--accent)' : 'var(--danger)');
+    if (ch5m) document.getElementById('live5m')?.style  && (document.getElementById('live5m').style.color  = ch5m.up ? 'var(--accent)' : 'var(--danger)');
+
+    lastRefreshTime = Date.now();
+    updateRefreshIndicator();
+  }, 60000);
+}
+
+function updateRefreshIndicator() {
+  const el = document.getElementById('refreshTimer');
+  if (!el) return;
+  el.textContent = 'LIVE';
+  let secs = 60;
+  const tick = setInterval(() => {
+    secs--;
+    if (secs <= 0 || !document.getElementById('refreshTimer')) { clearInterval(tick); return; }
+    el.textContent = `↻ ${secs}s`;
+  }, 1000);
+}
+
+/* ══════════════════════════════════════
+   FRESH WALLETS — % of new wallets
+══════════════════════════════════════ */
+async function fetchFreshWallets(ca, tokenCreatedAt) {
+  const bodyEl = document.getElementById('freshWalletVal');
+  if (!bodyEl) return;
+  try {
+    const ageParam = tokenCreatedAt ? `&created=${tokenCreatedAt}` : '';
+    const res  = await fetch(`/api/fresh-wallets?ca=${encodeURIComponent(ca)}${ageParam}`);
+    const data = await res.json();
+    if (!res.ok || data.error) return;
+    const pct = parseFloat(data.freshPct) || 0;
+    const col = pct >= 50 ? '#ff3b30' : pct >= 25 ? '#ff9f0a' : 'var(--accent)';
+    bodyEl.innerHTML = `<span style="color:${col};font-weight:700;">${pct.toFixed(0)}%</span> <span style="color:var(--text-faint);font-size:10px;">new wallets</span>`;
+  } catch {}
 }
 
 /* ══════════════════════════════════════
