@@ -2246,9 +2246,9 @@ async function fetchLoreBubble(name, symbol, description, mc, ch24, bonded) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
-        max_tokens: 120,
-        system: `You are MoonAi — a sharp Solana memecoin analyst. Write a 2-sentence max lore/narrative snapshot of a token. Be direct, punchy and insightful. No fluff. No bullet points. Plain sentences only. Focus on: what the narrative is, whether it has legs, and one key thing to know. Never start with "This token" or "The token".`,
-        messages: [{ role: 'user', content: `Snapshot: ${context}` }],
+        max_tokens: 100,
+        system: `You are MoonAi. Write exactly 2-3 sentences about this token's narrative and lore only. What is the story or theme behind it? What cultural moment, meme, or idea does it tap into? Does the lore have energy and staying power? Ignore price, MC, and technicals completely. Plain sentences, no bullets, no headers. Be vivid and direct.`,
+        messages: [{ role: 'user', content: `Token: ${name} ($${symbol})${description ? '. Description: ' + description.slice(0, 200) : ''}` }],
       }),
     });
     const data = await res.json();
