@@ -632,29 +632,12 @@ function renderTrencher(ca, dex, pump, solPrice) {
   const xAccUrl    = twitterHandle ? `https://twitter.com/${twitterHandle}` : null;
 
   const xPostsHtml = `
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
-      <a href="${xTopUrl}" target="_blank" rel="noopener" style="
-        display:inline-flex;align-items:center;gap:4px;text-decoration:none;font-size:10px;font-weight:700;
-        color:#fff;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.18);
-        border-radius:20px;padding:4px 10px;white-space:nowrap;">
-        𝕏 Top Posts ↗
-      </a>
-      <a href="${xLatestUrl}" target="_blank" rel="noopener" style="
-        display:inline-flex;align-items:center;gap:4px;text-decoration:none;font-size:10px;font-weight:700;
-        color:#fff;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.18);
-        border-radius:20px;padding:4px 10px;white-space:nowrap;">
-        𝕏 Latest Posts ↗
-      </a>
-      ${xAccUrl ? `<a href="${xAccUrl}" target="_blank" rel="noopener" style="
-        display:inline-flex;align-items:center;gap:4px;text-decoration:none;font-size:10px;font-weight:700;
-        color:#1d9bf0;background:rgba(29,155,240,0.1);border:1px solid rgba(29,155,240,0.3);
-        border-radius:20px;padding:4px 10px;white-space:nowrap;">
-        𝕏 @${twitterHandle} ↗
-      </a>` : ''}
+    <div class="x-links-row">
+      <a href="${xTopUrl}" target="_blank" rel="noopener" class="x-link">𝕏 Top Posts ↗</a>
+      <a href="${xLatestUrl}" target="_blank" rel="noopener" class="x-link">𝕏 Latest Posts ↗</a>
+      ${xAccUrl ? `<a href="${xAccUrl}" target="_blank" rel="noopener" class="x-link x-link-account">𝕏 @${twitterHandle} ↗</a>` : ''}
     </div>
-    <div style="font-size:13px;font-weight:600;color:var(--text-muted);line-height:1.5;">
-      Full tweet display with views & likes coming in <span style="color:var(--accent);font-weight:700;">V2</span>
-    </div>`;
+    <div class="x-posts-note">Full tweet display with views &amp; likes coming in <span class="v2-accent">V2</span></div>`;
 
   if (twitterUrl)  socialLinks.push({ label: '𝕏 Twitter',  url: twitterUrl,  color: '#ffffff', bg: 'rgba(255,255,255,0.07)', border: 'rgba(255,255,255,0.18)' });
   if (telegramUrl) socialLinks.push({ label: '✈ Telegram', url: telegramUrl, color: '#29b6f6', bg: 'rgba(41,182,246,0.1)',   border: 'rgba(41,182,246,0.3)'  });
@@ -679,30 +662,23 @@ function renderTrencher(ca, dex, pump, solPrice) {
 
   const socialsHtml = socialLinks.length
     ? socialLinks.map(s =>
-        `<a href="${escHtml(s.url)}" target="_blank" rel="noopener" style="
-          display:inline-flex;align-items:center;gap:4px;
-          color:${s.color};text-decoration:none;font-size:12px;font-weight:700;
-          background:${s.bg};border:1px solid ${s.border};
-          border-radius:20px;padding:5px 13px;white-space:nowrap;
-          transition:opacity 0.15s;
-        " onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">
-        ${escHtml(s.label)} ↗</a>`
+        `<a href="${escHtml(s.url)}" target="_blank" rel="noopener" class="social-link"
+          style="color:${s.color};background:${s.bg};border:1px solid ${s.border};">
+          ${escHtml(s.label)} ↗</a>`
       ).join('')
-    : '<span style="color:var(--text-faint);font-size:12px;">No socials found</span>';
+    : '<span class="no-data">No socials found</span>';
 
   const pairLink = dex?.pairUrl
-    ? `<a href="${escHtml(dex.pairUrl)}" target="_blank" rel="noopener" style="color:var(--accent);font-size:11px;text-decoration:none;">View on DexScreener ↗</a>`
+    ? `<a href="${escHtml(dex.pairUrl)}" target="_blank" rel="noopener" class="tok-live" style="text-decoration:none;">View on DexScreener ↗</a>`
     : '';
 
   const dataSource = (dex || pump)
-    ? `<span style="color:var(--accent);font-size:10px;">● LIVE</span>`
-    : `<span style="color:var(--amber);font-size:10px;">⚠ Token not found on DexScreener/pump.fun</span>`;
+    ? `<span class="tok-live">● LIVE</span>`
+    : `<span class="tok-warn">⚠ Token not found on DexScreener/pump.fun</span>`;
 
   // Token image — DexScreener CDN first, pump.fun IPFS as fallback
   const imgSrc  = dex?.imageUrl || pump?.image || null;
-  const imgStyle = 'width:88px;height:88px;border-radius:14px;object-fit:cover;flex-shrink:0;border:1px solid var(--border2);';
-  const phStyle  = 'width:88px;height:88px;border-radius:14px;background:var(--bg-surface);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:2.2rem;flex-shrink:0;';
-  const tokenImg = `<div id="tokenImgWrap" style="${phStyle}">🪙</div>`;
+  const tokenImg = `<div id="tokenImgWrap" class="tok-img-ph">🪙</div>`;
 
   // Trading platform ref links
   const tradeLinks = [
@@ -713,99 +689,59 @@ function renderTrencher(ca, dex, pump, solPrice) {
     { name: 'GMGN',    url: `https://gmgn.ai/sol/token/${ca}`, color: '#00d4ff' },
   ];
   const tradeLinksHtml = tradeLinks.map(t =>
-    `<a href="${t.url}" target="_blank" rel="noopener" style="
-      display:inline-flex;align-items:center;gap:5px;
-      color:${t.color};text-decoration:none;font-size:12px;font-weight:700;
-      background:${t.color}18;border:1px solid ${t.color}44;
-      border-radius:20px;padding:4px 12px;white-space:nowrap;
-      transition:all 0.2s;
-    ">${t.name} ↗</a>`
+    `<a href="${t.url}" target="_blank" rel="noopener" class="trade-link"
+      style="color:${t.color};background:${t.color}18;border:1px solid ${t.color}44;">
+      ${t.name} ↗</a>`
   ).join('');
 
   document.getElementById('resultZone').innerHTML = `
   <div class="result-area">
 
     <!-- ── TOKEN HEADER ── -->
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;">
+    <div class="tok-header">
       ${tokenImg}
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:1.4rem;font-weight:700;letter-spacing:-0.02em;line-height:1.2;margin-bottom:3px;">
-          ${escHtml(name)} <span style="color:var(--text-muted);font-size:1rem;font-weight:400;">$${escHtml(symbol)}</span>
-          ${pump?.kingOfHill ? '<span style="font-size:11px;background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b44;border-radius:20px;padding:2px 8px;margin-left:6px;vertical-align:middle;">👑 King</span>' : ''}
+      <div class="tok-info">
+        <div class="tok-name">
+          ${escHtml(name)} <span class="tok-symbol">$${escHtml(symbol)}</span>
+          ${pump?.kingOfHill ? '<span class="king-badge">👑 King</span>' : ''}
         </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-          <span style="font-size:11px;color:rgba(255,255,255,0.75);font-family:'Lexend',sans-serif;font-weight:300;letter-spacing:0.03em;word-break:break-all;">${escHtml(ca)}</span>
-          <button onclick="navigator.clipboard.writeText('${escHtml(ca)}').then(()=>{this.textContent='✓ Copied';this.style.color='var(--accent)';setTimeout(()=>{this.textContent='Copy CA';this.style.color='';},1500)})" style="
-            flex-shrink:0;font-family:var(--font);font-size:10px;font-weight:700;
-            color:var(--text-faint);background:var(--bg-surface);
-            border:1px solid var(--border2);border-radius:var(--radius-pill);
-            padding:2px 8px;cursor:pointer;transition:all .15s;white-space:nowrap;
-          " onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';" onmouseout="this.style.borderColor='';this.style.color='';">Copy CA</button>
+        <div class="tok-ca-row">
+          <span class="tok-ca-txt">${escHtml(ca)}</span>
+          <button class="copy-ca-btn"
+            onclick="navigator.clipboard.writeText('${escHtml(ca)}').then(()=>{this.textContent='✓ Copied';this.style.color='var(--accent)';setTimeout(()=>{this.textContent='Copy CA';this.style.color='';},1500)})">
+            Copy CA
+          </button>
         </div>
-        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;">
+        <div class="tok-meta-row">
           ${dataSource}
-          <span style="color:var(--text-faint);font-size:11px;">· #SOL</span>
-          ${age !== '—' ? `<span style="color:var(--text-faint);font-size:11px;">· 🕐 ${age}</span>` : ''}
-          ${holders !== '—' ? `<span style="color:var(--text-faint);font-size:11px;">· 👥 ${holders} holders</span>` : ''}
+          <span class="tok-meta">· #SOL</span>
+          ${age !== '—' ? `<span class="tok-meta">· 🕐 ${age}</span>` : ''}
+          ${holders !== '—' ? `<span class="tok-meta">· 👥 ${holders} holders</span>` : ''}
           ${pairLink}
         </div>
       </div>
     </div>
 
     <!-- ── LORE BUBBLE ── -->
-    <div id="loreBubble" style="
-      margin-bottom:10px;
-      background:rgba(255,255,255,0.03);
-      border:1px solid rgba(255,255,255,0.35);
-      border-radius:var(--radius-md);
-      padding:10px 14px;
-      font-size:12.5px;
-      line-height:1.7;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      min-height:42px;
-      box-shadow:0 0 20px rgba(255,255,255,0.08), 0 0 6px rgba(255,255,255,0.05);
-      animation:glowPulse 3s ease-in-out infinite;
-    ">
-      <div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0;">
-        <span style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">📖</span>
-        <div style="min-width:0;">
-          <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:3px;">Narrative</div>
-          <span id="loreText" style="color:var(--text-faint);font-style:italic;">Analysing narrative…</span>
+    <div id="loreBubble" class="lore-bubble">
+      <div class="lore-inner">
+        <span class="lore-emoji">📖</span>
+        <div class="lore-content">
+          <div class="lore-label">Narrative</div>
+          <span id="loreText" class="lore-text">Analysing narrative…</span>
         </div>
       </div>
-      <button onclick="runNarrativeAnalysis()" style="
-        flex-shrink:0;
-        font-family:var(--font);font-size:11px;font-weight:700;
-        color:#14F195;
-        background:linear-gradient(180deg, rgba(20,241,149,0.18) 0%, rgba(20,241,149,0.08) 100%);
-        border:1px solid rgba(20,241,149,0.5);
-        border-bottom:2px solid rgba(20,241,149,0.7);
-        border-radius:var(--radius-pill);
-        padding:5px 14px;cursor:pointer;white-space:nowrap;
-        box-shadow:0 2px 6px rgba(20,241,149,0.15), inset 0 1px 0 rgba(255,255,255,0.06);
-        text-shadow:0 0 8px rgba(20,241,149,0.4);
-        animation:narrativeBlink 2.4s ease-in-out infinite;
-        transform:translateY(0);transition:transform 0.1s,box-shadow 0.1s;
-      "
-      onmouseover="this.style.animationPlayState='paused';this.style.opacity='1';"
-      onmouseout="this.style.animationPlayState='running';"
-      onmousedown="this.style.transform='translateY(1px)';this.style.boxShadow='0 1px 3px rgba(20,241,149,0.1)';"
-      onmouseup="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 6px rgba(20,241,149,0.15), inset 0 1px 0 rgba(255,255,255,0.06)';">
-        ✦ Analysis
-      </button>
+      <button onclick="runNarrativeAnalysis()" class="analysis-btn">✦ Analysis</button>
     </div>
 
     <!-- ── SAFETY SCORE ── -->
-    <div class="card" id="safetyCard" style="margin-bottom:8px;">
+    <div class="card" id="safetyCard">
       <div class="card-head">
-        <div class="card-title"><div class="card-title-dot" style="background:#14F195"></div>Safety Score</div>
-        <span class="card-badge" id="safetyBadge" style="background:rgba(255,159,10,0.1);color:#ff9f0a;border:1px solid rgba(255,159,10,0.3);">SCANNING</span>
+        <div class="card-title"><div class="card-title-dot"></div>Safety Score</div>
+        <span class="card-badge badge-amber" id="safetyBadge">SCANNING</span>
       </div>
       <div class="card-body" id="safetyBody">
-        <div style="display:flex;align-items:center;gap:8px;color:var(--text-faint);font-size:12px;">
+        <div class="card-muted">
           <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
           Running safety checks…
         </div>
@@ -813,105 +749,100 @@ function renderTrencher(ca, dex, pump, solPrice) {
     </div>
 
     <!-- ── PRICE BAR ── -->
-    <div class="card" style="margin-bottom:8px;background:var(--bg-surface);">
-      <div class="card-head" style="padding-bottom:0;">
-        <div style="font-size:9px;color:var(--text-faint);letter-spacing:.08em;text-transform:uppercase;">Live Prices</div>
-        <span id="refreshTimer" style="font-size:9px;color:var(--accent);font-weight:700;letter-spacing:.06em;">LIVE</span>
+    <div class="card price-card">
+      <div class="card-head price-bar-head">
+        <span class="price-bar-lbl">Live Prices</span>
+        <span id="refreshTimer" class="price-bar-timer">LIVE</span>
       </div>
-      <div class="card-body" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px 20px;padding-top:6px;">
-        <div>
-          <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;">Price</div>
-          <div style="font-size:1.1rem;font-weight:700;color:var(--text);" id="livePrice">${price}</div>
+      <div class="card-body price-bar-body">
+        <div class="price-item">
+          <div class="price-lbl">Price</div>
+          <div class="price-val-main" id="livePrice">${price}</div>
         </div>
-        <div style="width:1px;height:32px;background:var(--border2);flex-shrink:0;"></div>
-        <div>
-          <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;">1H</div>
-          <div id="live1h" style="font-size:1rem;font-weight:700;color:${ch1 ? (ch1.up ? 'var(--accent)' : 'var(--danger)') : 'var(--text-faint)'};">
-            ${ch1 ? ch1.str : '—'}
-            ${(buys1 || sells1) ? `<span style="font-size:11px;font-weight:400;color:var(--text-muted);margin-left:4px;">🟢${buys1} 🔴${sells1}</span>` : ''}
+        <div class="price-divider"></div>
+        <div class="price-item">
+          <div class="price-lbl">1H</div>
+          <div id="live1h" class="price-val" style="color:${ch1 ? (ch1.up ? 'var(--accent)' : 'var(--danger)') : 'var(--text-faint)'};">
+            ${ch1 ? ch1.str : '—'}${(buys1 || sells1) ? `<span class="price-txns">🟢${buys1} 🔴${sells1}</span>` : ''}
           </div>
         </div>
-        <div style="width:1px;height:32px;background:var(--border2);flex-shrink:0;"></div>
-        <div>
-          <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;">24H</div>
-          <div id="live24h" style="font-size:1rem;font-weight:700;color:${ch24 ? (ch24.up ? 'var(--accent)' : 'var(--danger)') : 'var(--text-faint)'};">
-            ${ch24 ? ch24.str : '—'}
-            ${(buys24 || sells24) ? `<span style="font-size:11px;font-weight:400;color:var(--text-muted);margin-left:4px;">🟢${buys24} 🔴${sells24}</span>` : ''}
+        <div class="price-divider"></div>
+        <div class="price-item">
+          <div class="price-lbl">24H</div>
+          <div id="live24h" class="price-val" style="color:${ch24 ? (ch24.up ? 'var(--accent)' : 'var(--danger)') : 'var(--text-faint)'};">
+            ${ch24 ? ch24.str : '—'}${(buys24 || sells24) ? `<span class="price-txns">🟢${buys24} 🔴${sells24}</span>` : ''}
           </div>
         </div>
         ${vol1 && vol1 !== '—' ? `
-        <div style="width:1px;height:32px;background:var(--border2);flex-shrink:0;"></div>
-        <div>
-          <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;">Vol 1H</div>
-          <div style="font-size:1rem;font-weight:700;color:var(--cyan);">${vol1}</div>
+        <div class="price-divider"></div>
+        <div class="price-item">
+          <div class="price-lbl">Vol 1H</div>
+          <div class="price-val c-cyan">${vol1}</div>
         </div>` : ''}
-      ${ch5m ? `
-        <div style="width:1px;height:32px;background:var(--border2);flex-shrink:0;"></div>
-        <div>
-          <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;">5M</div>
-          <div id="live5m" style="font-size:1rem;font-weight:700;color:${ch5m.up ? 'var(--accent)' : 'var(--danger)'};">${ch5m.str}</div>
+        ${ch5m ? `
+        <div class="price-divider"></div>
+        <div class="price-item">
+          <div class="price-lbl">5M</div>
+          <div id="live5m" class="price-val" style="color:${ch5m.up ? 'var(--accent)' : 'var(--danger)'};">${ch5m.str}</div>
         </div>` : ''}
-      ${momentumScore !== null ? `
-        <div style="width:1px;height:32px;background:var(--border2);flex-shrink:0;"></div>
-        <div>
-          <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;">Momentum</div>
-          <div style="font-size:0.9rem;font-weight:700;color:${momentumCol};">${momentumLabel}</div>
+        ${momentumScore !== null ? `
+        <div class="price-divider"></div>
+        <div class="price-item">
+          <div class="price-lbl">Momentum</div>
+          <div class="price-val" style="font-size:0.9rem;color:${momentumCol};">${momentumLabel}</div>
         </div>` : ''}
       </div>
     </div>
 
     <!-- ── MAIN STATS ── -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;">
-      <div class="metric-card"><div class="metric-lbl">MC</div><div class="metric-val c-cyan" style="font-size:13px;" id="liveMc">${mc}</div></div>
-      <div class="metric-card"><div class="metric-lbl">VOL 24H</div><div class="metric-val c-cyan" style="font-size:13px;" id="liveVol">${vol24}</div></div>
-      <div class="metric-card"><div class="metric-lbl">LIQUIDITY</div><div class="metric-val c-cyan" style="font-size:13px;" id="liveLiq">${liq}</div></div>
+    <div class="stats-4">
+      <div class="metric-card"><div class="metric-lbl">MC</div><div class="metric-val c-cyan" id="liveMc">${mc}</div></div>
+      <div class="metric-card"><div class="metric-lbl">VOL 24H</div><div class="metric-val c-cyan" id="liveVol">${vol24}</div></div>
+      <div class="metric-card"><div class="metric-lbl">LIQUIDITY</div><div class="metric-val c-cyan" id="liveLiq">${liq}</div></div>
       <div class="metric-card">
         <div class="metric-lbl">ATH MC</div>
-        <div class="metric-val c-cyan" style="font-size:13px;" id="athMcVal">${athMc}</div>
-        ${athDownPct ? `<div style="font-size:10px;color:var(--danger);margin-top:2px;">${athDownPct} from ATH</div>` : ''}
+        <div class="metric-val c-cyan" id="athMcVal">${athMc}</div>
+        ${athDownPct ? `<div class="ath-down">${athDownPct} from ATH</div>` : ''}
       </div>
     </div>
 
     <!-- ── TOKEN DETAILS ── -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;">
+    <div class="stats-5">
       ${statCard('BONDED', bondPct ? `${bonded} (${bondPct})` : bonded, pump?.bonded ? 'c-green' : pump?.bonded === false ? 'c-amber' : '')}
       <div class="metric-card">
         <div class="metric-lbl">DEV WALLET</div>
-        <div class="metric-val c-amber" style="font-size:13px;" id="devWalletVal">${dev}</div>
+        <div class="metric-val c-amber" id="devWalletVal">${dev}</div>
       </div>
       ${statCard('AGE', age, '')}
       <div class="metric-card">
         <div class="metric-lbl">HOLDERS</div>
-        <div class="metric-val c-amber" id="holdersStatVal" style="font-size:13px;">${holders !== '—' ? holders : 'Loading…'}</div>
+        <div class="metric-val c-amber" id="holdersStatVal">${holders !== '—' ? holders : 'Loading…'}</div>
       </div>
       <div class="metric-card">
         <div class="metric-lbl">FRESH WALLETS</div>
-        <div style="font-size:13px;" id="freshWalletVal"><span style="color:var(--text-faint);">…</span></div>
+        <div class="metric-val" id="freshWalletVal"><span class="no-data">…</span></div>
       </div>
     </div>
 
     <!-- ── SOCIALS / KOLS / TOP X ── -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+    <div class="stats-3" style="margin-bottom:10px;">
 
       <div class="card">
         <div class="card-head"><div class="card-title"><div class="card-title-dot"></div>Socials</div></div>
-        <div class="card-body" style="display:flex;flex-wrap:wrap;gap:6px;">
-          ${socialsHtml}
-        </div>
+        <div class="card-body card-flex">${socialsHtml}</div>
       </div>
 
       <div class="card">
-        <div class="card-head"><div class="card-title"><div class="card-title-dot" style="background:var(--cyan)"></div>KOLs</div><span class="card-badge" style="background:rgba(0,212,255,0.1);color:var(--cyan);border:1px solid rgba(0,212,255,0.25);">V2</span></div>
-        <div class="card-body" style="font-size:12px;color:var(--text-faint);display:flex;align-items:center;gap:6px;">
-          <span>📡</span> KOL detection coming in V2
+        <div class="card-head">
+          <div class="card-title"><div class="card-title-dot c-cyan" style="background:var(--cyan)"></div>KOLs</div>
+          <span class="card-badge badge-cyan">V2</span>
         </div>
+        <div class="card-body card-muted"><span>📡</span> KOL detection coming in V2</div>
       </div>
 
-      <div class="card" style="border:1px solid rgba(255,255,255,0.4);box-shadow:0 0 24px rgba(255,255,255,0.2),0 0 8px rgba(255,255,255,0.15);animation:glowPulse 3s ease-in-out infinite;">
-        <div class="card-head"><div class="card-title"><div class="card-title-dot" style="background:#fff"></div>Top X Posts</div></div>
-        <div class="card-body">
-          ${xPostsHtml}
-        </div>
+      <div class="card top-x-card">
+        <div class="card-head"><div class="card-title"><div class="card-title-dot"></div>Top X Posts</div></div>
+        <div class="card-body">${xPostsHtml}</div>
       </div>
 
     </div>
@@ -922,11 +853,9 @@ function renderTrencher(ca, dex, pump, solPrice) {
         <div class="card-title"><div class="card-title-dot"></div>Top Holders</div>
         <span class="card-badge badge-amber" id="holdersBadge">LOADING</span>
       </div>
-      <div class="card-body" id="holdersBody" style="font-size:12px;color:var(--text-muted);line-height:1.7;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
-          Fetching holder data…
-        </div>
+      <div class="card-body card-muted" id="holdersBody">
+        <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+        Fetching holder data…
       </div>
     </div>
 
@@ -934,34 +863,32 @@ function renderTrencher(ca, dex, pump, solPrice) {
     <div class="card" style="margin-bottom:10px;" id="bundleCard">
       <div class="card-head">
         <div class="card-title"><div class="card-title-dot" style="background:#ff9f0a"></div>Bundle Detection</div>
-        <span class="card-badge" id="bundleBadge" style="background:rgba(255,159,10,0.1);color:#ff9f0a;border:1px solid rgba(255,159,10,0.3);">SCANNING</span>
+        <span class="card-badge badge-amber" id="bundleBadge">SCANNING</span>
       </div>
-      <div class="card-body" id="bundleBody">
-        <div style="display:flex;align-items:center;gap:8px;color:var(--text-faint);font-size:12px;">
-          <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
-          Analysing launch transactions…
-        </div>
+      <div class="card-body card-muted" id="bundleBody">
+        <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+        Analysing launch transactions…
       </div>
     </div>
 
-    <!-- ── TRADE ON + EXPLORE ── -->
+    <!-- ── TRADE & EXPLORE ── -->
     <div class="card" style="margin-bottom:10px;">
       <div class="card-head">
-        <div class="card-title"><div class="card-title-dot" style="background:var(--accent)"></div>Trade & Explore</div>
+        <div class="card-title"><div class="card-title-dot"></div>Trade &amp; Explore</div>
       </div>
-      <div class="card-body" style="display:flex;flex-wrap:wrap;gap:8px;">
+      <div class="card-body card-flex" style="gap:8px;">
         ${tradeLinksHtml}
-        <a href="https://solscan.io/token/${ca}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;color:#9945ff;text-decoration:none;font-size:12px;font-weight:700;background:#9945ff18;border:1px solid #9945ff44;border-radius:20px;padding:4px 12px;white-space:nowrap;">Solscan ↗</a>
-        <a href="https://www.geckoterminal.com/solana/pools/${ca}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;color:#86efac;text-decoration:none;font-size:12px;font-weight:700;background:#86efac18;border:1px solid #86efac44;border-radius:20px;padding:4px 12px;white-space:nowrap;">GeckoTerminal ↗</a>
-        <a href="https://pump.fun/${ca}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;color:#a78bfa;text-decoration:none;font-size:12px;font-weight:700;background:#a78bfa18;border:1px solid #a78bfa44;border-radius:20px;padding:4px 12px;white-space:nowrap;">pump.fun ↗</a>
+        <a href="https://solscan.io/token/${ca}" target="_blank" rel="noopener" class="trade-link" style="color:#9945ff;background:#9945ff18;border:1px solid #9945ff44;">Solscan ↗</a>
+        <a href="https://www.geckoterminal.com/solana/pools/${ca}" target="_blank" rel="noopener" class="trade-link" style="color:#86efac;background:#86efac18;border:1px solid #86efac44;">GeckoTerminal ↗</a>
+        <a href="https://pump.fun/${ca}" target="_blank" rel="noopener" class="trade-link" style="color:#a78bfa;background:#a78bfa18;border:1px solid #a78bfa44;">pump.fun ↗</a>
       </div>
     </div>
 
-    <!-- pump.fun description if available -->
+    <!-- ── DESCRIPTION ── -->
     ${pump?.description ? `
     <div class="card" style="margin-bottom:10px;">
       <div class="card-head"><div class="card-title"><div class="card-title-dot" style="background:var(--text-muted)"></div>Description</div></div>
-      <div class="card-body" style="font-size:13px;color:var(--text-muted);line-height:1.7;">${escHtml(pump.description.slice(0,300))}${pump.description.length>300?'…':''}</div>
+      <div class="card-body card-desc">${escHtml(pump.description.slice(0,300))}${pump.description.length>300?'…':''}</div>
     </div>` : ''}
 
   </div>`;
@@ -984,14 +911,13 @@ function renderTrencher(ca, dex, pump, solPrice) {
     if (wrap) {
       const img = new Image();
       img.onload = () => {
-        wrap.style = imgStyle;
+        img.className = 'tok-img';
+        wrap.className = '';
+        wrap.style.cssText = '';
         wrap.innerHTML = '';
-        img.style.cssText = imgStyle;
         wrap.appendChild(img);
       };
-      img.onerror = () => {
-        // keep the 🪙 placeholder — nothing to do
-      };
+      img.onerror = () => { /* keep 🪙 placeholder */ };
       img.src = imgSrc;
     }
   }
@@ -1002,7 +928,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
 function statCard(label, value, colorClass) {
   return `<div class="metric-card">
     <div class="metric-lbl">${label}</div>
-    <div class="metric-val ${colorClass||''}" style="font-size:13px;">${value || '—'}</div>
+    <div class="metric-val ${colorClass||''}">${value || '—'}</div>
   </div>`;
 }
 
@@ -1495,52 +1421,39 @@ async function fetchTopHolders(ca, devWallet) {
       const pctCol  = h.pct >= 10 ? '#ff3b30' : h.pct >= 5 ? '#ff9f0a' : 'var(--accent)';
       const barW    = Math.max(2, (h.pct / maxPct) * 100).toFixed(1);
       const devBadge = isDev
-        ? `<span style="background:rgba(255,59,48,.15);color:#ff3b30;border:1px solid rgba(255,59,48,.35);border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;margin-left:5px;">DEV</span>`
+        ? `<span class="badge-dev">DEV</span>`
         : '';
       const whaleBadge = !isDev && h.pct >= 10
-        ? `<span style="background:rgba(0,212,255,.1);color:var(--cyan);border:1px solid rgba(0,212,255,.25);border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;margin-left:5px;">🐋 WHALE</span>`
+        ? `<span class="badge-whale">🐋 WHALE</span>`
         : '';
       return `
-      <div style="padding:6px 0;border-bottom:1px solid var(--border2);">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span style="color:var(--text-faint);font-size:11px;min-width:18px;">${i + 1}.</span>
-            <a href="https://solscan.io/account/${h.owner}" target="_blank" rel="noopener"
-               style="color:var(--cyan);text-decoration:none;font-size:12px;font-weight:600;">${short}</a>
+      <div class="holder-row">
+        <div class="holder-row-top">
+          <div class="holder-row-left">
+            <span class="holder-num">${i + 1}.</span>
+            <a href="https://solscan.io/account/${h.owner}" target="_blank" rel="noopener" class="holder-addr">${short}</a>
             ${devBadge}${whaleBadge}
           </div>
-          <span style="color:${pctCol};font-weight:700;font-size:13px;">${pct}%</span>
+          <span class="holder-pct" style="color:${pctCol};">${pct}%</span>
         </div>
-        <div style="height:3px;border-radius:2px;background:var(--border2);">
-          <div style="height:3px;border-radius:2px;background:${pctCol};width:${barW}%;transition:width .4s ease;"></div>
-        </div>
+        <div class="holder-bar"><div class="holder-bar-fill" style="background:${pctCol};width:${barW}%;"></div></div>
       </div>`;
     });
 
     // whale concentration warning
     const whaleWarn = top10pct >= 40
-      ? `<div style="margin-top:10px;padding:8px 12px;background:rgba(255,59,48,.07);border:1px solid rgba(255,59,48,.25);border-radius:var(--radius-sm);font-size:12px;color:#ff3b30;">⚠️ High concentration — top 10 hold <b>${top10pct.toFixed(1)}%</b> of supply</div>`
-      : `<div style="margin-top:8px;color:var(--text-faint);font-size:11px;">Top 10 hold <b style="color:var(--text);">${top10pct.toFixed(1)}%</b> of supply</div>`;
+      ? `<div class="holder-warn">⚠️ High concentration — top 10 hold <b>${top10pct.toFixed(1)}%</b> of supply</div>`
+      : `<div class="holder-supply">Top 10 hold <b style="color:var(--text);">${top10pct.toFixed(1)}%</b> of supply</div>`;
 
     const top3    = rows.slice(0, 3);
     const rest    = rows.slice(3);
     const restHtml = rest.length ? `
       <div id="holdersExtra" style="display:none;">${rest.join('')}</div>
-      <button onclick="
+      <button class="expand-btn" onclick="
         const el=document.getElementById('holdersExtra');
-        const btn=this;
-        if(el.style.display==='none'){el.style.display='block';btn.textContent='▲ Show less';}
-        else{el.style.display='none';btn.textContent='▼ Show ${rest.length} more holders';}
-      " style="
-        width:100%;margin-top:8px;padding:7px;
-        font-family:var(--font);font-size:12px;font-weight:600;
-        color:var(--text-muted);background:var(--bg-surface);
-        border:1px solid var(--border2);border-radius:var(--radius-sm);
-        cursor:pointer;transition:all .2s;
-      " onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';"
-         onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text-muted)';">
-        ▼ Show ${rest.length} more holders
-      </button>` : '';
+        if(el.style.display==='none'){el.style.display='block';this.textContent='▲ Show less';}
+        else{el.style.display='none';this.textContent='▼ Show ${rest.length} more holders';}
+      ">▼ Show ${rest.length} more holders</button>` : '';
 
     bodyEl.innerHTML = top3.join('') + whaleWarn + restHtml;
     if (badgeEl) { badgeEl.textContent = 'LIVE'; badgeEl.className = 'card-badge badge-green'; }
@@ -1760,53 +1673,36 @@ function renderSafetyScore({ score, flags, good }, info) {
   const scoreBg  = score >= 75 ? 'rgba(20,241,149,0.06)'  : score >= 55 ? 'rgba(255,159,10,0.06)'  : score >= 35 ? 'rgba(255,107,53,0.06)'  : 'rgba(255,59,48,0.06)';
   const scoreBd  = score >= 75 ? 'rgba(20,241,149,0.2)'   : score >= 55 ? 'rgba(255,159,10,0.2)'   : score >= 35 ? 'rgba(255,107,53,0.2)'   : 'rgba(255,59,48,0.2)';
 
-  const flagRows = flags.map(f => {
-    const col = f.sev === 'high' ? '#ff3b30' : f.sev === 'med' ? '#ff9f0a' : '#ff9f0a';
-    return `<div style="display:flex;align-items:flex-start;gap:6px;font-size:12px;padding:3px 0;">
-      <span style="color:${col};flex-shrink:0;">${f.sev === 'high' ? '❌' : '⚠️'}</span>
-      <span style="color:var(--text-muted);">${f.label}</span>
-    </div>`;
-  }).join('');
-
-  const goodRows = good.map(g =>
-    `<div style="display:flex;align-items:flex-start;gap:6px;font-size:12px;padding:3px 0;">
-      <span style="color:var(--accent);flex-shrink:0;">✅</span>
-      <span style="color:var(--text-muted);">${g}</span>
+  const flagRows = flags.map(f =>
+    `<div class="sig-row">
+      <span class="sig-icon" style="color:${f.sev === 'high' ? '#ff3b30' : '#ff9f0a'};">${f.sev === 'high' ? '❌' : '⚠️'}</span>
+      ${f.label}
     </div>`
   ).join('');
 
+  const goodRows = good.map(g =>
+    `<div class="sig-row"><span class="sig-icon" style="color:var(--accent);">✅</span>${g}</div>`
+  ).join('');
+
   bodyEl.innerHTML = `
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;">
-
-      <!-- Score circle -->
-      <div style="
-        width:72px;height:72px;border-radius:50%;flex-shrink:0;
-        background:${scoreBg};border:2px solid ${scoreBd};
-        display:flex;flex-direction:column;align-items:center;justify-content:center;
-      ">
-        <div style="font-size:1.4rem;font-weight:700;color:${scoreCol};line-height:1;">${score}</div>
-        <div style="font-size:9px;color:${scoreCol};font-weight:700;letter-spacing:.06em;">/100</div>
+    <div class="safety-top">
+      <div class="score-circle" style="background:${scoreBg};border-color:${scoreBd};">
+        <div class="score-circle-num" style="color:${scoreCol};">${score}</div>
+        <div class="score-circle-sub" style="color:${scoreCol};">/100</div>
       </div>
-
-      <!-- Verdict + bar -->
-      <div style="flex:1;">
-        <div style="font-size:1.1rem;font-weight:700;color:${scoreCol};margin-bottom:6px;">${verdict}</div>
-        <div style="height:6px;border-radius:3px;background:var(--border2);margin-bottom:8px;">
-          <div style="height:6px;border-radius:3px;background:${scoreCol};width:${score}%;transition:width .8s ease;"></div>
+      <div class="safety-right">
+        <div class="safety-verdict" style="color:${scoreCol};">${verdict}</div>
+        <div class="safety-bar-wrap">
+          <div class="safety-bar-fill" style="background:${scoreCol};width:${score}%;"></div>
         </div>
-        <div style="display:flex;gap:10px;font-size:11px;flex-wrap:wrap;">
-          <span style="color:var(--text-faint);">${info.mintRevoked ? '✅ Mint revoked' : '❌ Mint active'}</span>
-          <span style="color:var(--text-faint);">${info.freezeRevoked ? '✅ Freeze revoked' : '❌ Freeze active'}</span>
+        <div class="safety-checks">
+          <span>${info.mintRevoked ? '✅ Mint revoked' : '❌ Mint active'}</span>
+          <span>${info.freezeRevoked ? '✅ Freeze revoked' : '❌ Freeze active'}</span>
           ${info.devSold ? '<span style="color:#ff3b30;">❌ Dev sold</span>' : info.devPct > 0 ? `<span style="color:#ff9f0a;">⚠️ Dev holds ${info.devPct}%</span>` : ''}
         </div>
       </div>
     </div>
-
-    ${flagRows || goodRows ? `
-    <div style="border-top:1px solid var(--border2);padding-top:8px;">
-      ${flagRows}
-      ${goodRows}
-    </div>` : ''}`;
+    ${flagRows || goodRows ? `<div class="safety-signals">${flagRows}${goodRows}</div>` : ''}`;
 
   if (badgeEl) {
     badgeEl.textContent = verdict;
@@ -1830,8 +1726,8 @@ async function fetchBundleDetection(ca, devWallet) {
     const data = await res.json();
 
     if (!res.ok || data.error) {
-      bodyEl.innerHTML = `<span style="color:var(--text-faint);font-size:12px;">Bundle data unavailable for this token.</span>`;
-      if (badgeEl) { badgeEl.textContent = 'N/A'; badgeEl.style.cssText = ''; badgeEl.className = 'card-badge'; }
+      bodyEl.innerHTML = `<span class="no-data">Bundle data unavailable for this token.</span>`;
+      if (badgeEl) { badgeEl.textContent = 'N/A'; badgeEl.className = 'card-badge'; }
       return;
     }
 
@@ -1843,81 +1739,70 @@ async function fetchBundleDetection(ca, devWallet) {
 
     if (!data.bundled) {
       bodyEl.innerHTML = `
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span style="font-size:1.3rem;">✅</span>
+        <div class="bundle-clean">
+          <span class="bundle-clean-icon">✅</span>
           <div>
-            <div style="font-size:13px;font-weight:700;color:var(--accent);">No bundles detected</div>
-            <div style="font-size:11px;color:var(--text-faint);margin-top:2px;">No coordinated launch buys found in the launch window</div>
+            <div class="bundle-clean-txt">No bundles detected</div>
+            <div class="bundle-clean-sub">No coordinated launch buys found in the launch window</div>
           </div>
         </div>`;
-      if (badgeEl) { badgeEl.textContent = 'CLEAN'; badgeEl.style.background='rgba(20,241,149,0.1)'; badgeEl.style.color='#14F195'; badgeEl.style.border='1px solid rgba(20,241,149,0.3)'; }
+      if (badgeEl) { badgeEl.textContent = 'CLEAN'; badgeEl.className = 'card-badge badge-green'; }
       return;
     }
 
     // Extra signal badges
-    const jitoTag  = data.jitoConfirmed ? `<span style="background:rgba(255,59,48,.15);color:#ff3b30;border:1px solid rgba(255,59,48,.35);border-radius:10px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px;">JITO CONFIRMED</span>` : '';
-    const devTag   = data.devBundled    ? `<span style="background:rgba(255,159,10,.15);color:#ff9f0a;border:1px solid rgba(255,159,10,.35);border-radius:10px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px;">DEV BUNDLED</span>` : '';
-    const newTag   = data.newWallets > 0 ? `<span style="background:rgba(0,212,255,.1);color:var(--cyan);border:1px solid rgba(0,212,255,.25);border-radius:10px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px;">${data.newWallets} NEW WALLETS</span>` : '';
+    const jitoTag = data.jitoConfirmed ? `<span class="badge-jito">JITO CONFIRMED</span>` : '';
+    const devTag  = data.devBundled    ? `<span class="badge-dev-b">DEV BUNDLED</span>` : '';
+    const newTag  = data.newWallets > 0 ? `<span class="badge-new-w">${data.newWallets} NEW WALLETS</span>` : '';
 
-    // Bundle rows with type labels
-    const bundleRows = (data.bundles || []).map((b, i) => `
-      <div style="padding:6px 0;border-bottom:1px solid var(--border2);">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <span style="font-size:11px;color:var(--text-muted);font-weight:600;">${b.label}</span>
-            ${b.jitoConfirmed ? '<span style="font-size:9px;background:rgba(255,59,48,.12);color:#ff3b30;border-radius:8px;padding:1px 6px;">JITO</span>' : ''}
-            ${b.funder ? `<span style="font-size:9px;color:var(--text-faint);">funder: ${b.funder}</span>` : ''}
-            ${b.slot    ? `<span style="font-size:9px;color:var(--text-faint);">slot ${b.slot}</span>` : ''}
+    // Bundle rows
+    const bundleRows = (data.bundles || []).map(b => `
+      <div class="bundle-row">
+        <div class="bundle-row-top">
+          <div class="bundle-row-left">
+            <span class="bundle-row-name">${b.label}</span>
+            ${b.jitoConfirmed ? '<span class="badge-b-jito">JITO</span>' : ''}
+            ${b.funder ? `<span class="bundle-row-meta">funder: ${b.funder}</span>` : ''}
+            ${b.slot   ? `<span class="bundle-row-meta">slot ${b.slot}</span>` : ''}
           </div>
-          <span style="color:${riskCol};font-weight:700;font-size:13px;">${b.pct}%</span>
+          <span class="bundle-row-pct" style="color:${riskCol};">${b.pct}%</span>
         </div>
-        <div style="font-size:11px;color:var(--text-faint);">${b.wallets.join(' · ')}</div>
-        <div style="margin-top:4px;height:3px;border-radius:2px;background:var(--border2);">
-          <div style="height:3px;border-radius:2px;background:${riskCol};width:${Math.min(parseFloat(b.pct) * 3, 100)}%;"></div>
-        </div>
+        <div class="bundle-row-wallets">${b.wallets.join(' · ')}</div>
+        <div class="bundle-row-bar"><div class="bundle-row-fill" style="background:${riskCol};width:${Math.min(parseFloat(b.pct) * 3, 100)}%;"></div></div>
       </div>`
     ).join('');
 
     bodyEl.innerHTML = `
-      <!-- header tags -->
-      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-bottom:10px;">
-        <span style="font-size:12px;font-weight:700;color:${riskCol};">${pct}% of supply bundled</span>
+      <div class="bundle-header">
+        <span class="bundle-pct-lbl" style="color:${riskCol};">${pct}% of supply bundled</span>
         ${jitoTag}${devTag}${newTag}
       </div>
 
-      <!-- summary stats -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;">
-        <div style="background:${riskBg};border:1px solid ${riskBd};border-radius:var(--radius-sm);padding:7px 10px;text-align:center;">
-          <div style="font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Bundled %</div>
-          <div style="font-size:1.1rem;font-weight:700;color:${riskCol};">${pct}%</div>
+      <div class="bundle-stats">
+        <div class="bstat" style="background:${riskBg};border:1px solid ${riskBd};">
+          <div class="bstat-lbl">Bundled %</div>
+          <div class="bstat-val" style="color:${riskCol};">${pct}%</div>
         </div>
-        <div style="background:var(--bg-surface);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:7px 10px;text-align:center;">
-          <div style="font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Bundles</div>
-          <div style="font-size:1.1rem;font-weight:700;color:var(--text);">${data.bundleCount}</div>
+        <div class="bstat" style="background:var(--bg-surface);border:1px solid var(--border2);">
+          <div class="bstat-lbl">Bundles</div>
+          <div class="bstat-val">${data.bundleCount}</div>
         </div>
-        <div style="background:var(--bg-surface);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:7px 10px;text-align:center;">
-          <div style="font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Wallets</div>
-          <div style="font-size:1.1rem;font-weight:700;color:var(--text);">${data.wallets}</div>
+        <div class="bstat" style="background:var(--bg-surface);border:1px solid var(--border2);">
+          <div class="bstat-lbl">Wallets</div>
+          <div class="bstat-val">${data.wallets}</div>
         </div>
-        <div style="background:var(--bg-surface);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:7px 10px;text-align:center;">
-          <div style="font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Jito</div>
-          <div style="font-size:1.1rem;font-weight:700;color:${data.jitoConfirmed ? '#ff3b30' : 'var(--accent)'};">${data.jitoConfirmed ? 'YES' : 'NO'}</div>
-        </div>
-      </div>
-
-      <!-- progress bar -->
-      <div style="margin-bottom:10px;">
-        <div style="height:6px;border-radius:3px;background:var(--border2);">
-          <div style="height:6px;border-radius:3px;background:${riskCol};width:${Math.min(pct, 100)}%;transition:width .6s ease;"></div>
+        <div class="bstat" style="background:var(--bg-surface);border:1px solid var(--border2);">
+          <div class="bstat-lbl">Jito</div>
+          <div class="bstat-val" style="color:${data.jitoConfirmed ? '#ff3b30' : 'var(--accent)'};">${data.jitoConfirmed ? 'YES' : 'NO'}</div>
         </div>
       </div>
 
-      <!-- per-bundle breakdown -->
+      <div class="bundle-bar"><div class="bundle-bar-fill" style="background:${riskCol};width:${Math.min(pct, 100)}%;"></div></div>
+
       ${bundleRows}
 
-      <!-- risk verdict -->
-      <div style="margin-top:10px;padding:8px 12px;background:${riskBg};border:1px solid ${riskBd};border-radius:var(--radius-sm);display:flex;align-items:center;gap:8px;">
-        <span style="font-size:1rem;">${pct >= 20 ? '🚨' : pct >= 5 ? '⚠️' : '✅'}</span>
+      <div class="bundle-verdict" style="background:${riskBg};border-color:${riskBd};">
+        <span>${pct >= 20 ? '🚨' : pct >= 5 ? '⚠️' : '✅'}</span>
         <div>
           <span style="font-size:12px;font-weight:700;color:${riskCol};">${risk} RISK</span>
           <span style="font-size:11px;color:var(--text-faint);margin-left:6px;">${
@@ -1931,13 +1816,12 @@ async function fetchBundleDetection(ca, devWallet) {
 
     if (badgeEl) {
       badgeEl.textContent = risk;
-      badgeEl.style.background = riskBg;
-      badgeEl.style.color = riskCol;
-      badgeEl.style.border = `1px solid ${riskBd}`;
+      badgeEl.style.cssText = '';
+      badgeEl.className = `card-badge ${pct >= 20 ? 'badge-red' : pct >= 5 ? 'badge-amber' : 'badge-green'}`;
     }
 
   } catch (e) {
-    if (bodyEl) bodyEl.innerHTML = `<span style="color:var(--text-faint);font-size:12px;">Bundle detection unavailable.</span>`;
+    if (bodyEl) bodyEl.innerHTML = `<span class="no-data">Bundle detection unavailable.</span>`;
     if (badgeEl) { badgeEl.textContent = 'ERROR'; badgeEl.className = 'card-badge'; }
   }
 }
