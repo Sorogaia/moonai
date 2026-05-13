@@ -1629,6 +1629,25 @@ function renderTrencher(ca, dex, pump, solPrice) {
       </div>
     </div>
 
+    <!-- ── LORE BUBBLE ── -->
+    <div id="loreBubble" style="
+      margin-bottom:10px;
+      background:rgba(20,241,149,0.04);
+      border:1px solid rgba(20,241,149,0.12);
+      border-radius:var(--radius-md);
+      padding:10px 14px;
+      font-size:12.5px;
+      color:var(--text-muted);
+      line-height:1.7;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-height:42px;
+    ">
+      <span style="font-size:1rem;flex-shrink:0;">🌙</span>
+      <span id="loreText" style="color:var(--text-faint);font-style:italic;">Analysing narrative…</span>
+    </div>
+
     <!-- ── PRICE BAR ── -->
     <div class="card" style="margin-bottom:8px;background:var(--bg-surface);">
       <div class="card-body" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px 20px;">
@@ -1737,6 +1756,9 @@ function renderTrencher(ca, dex, pump, solPrice) {
   </div>`;
 
   // X embed widget activation removed — using search links in V1
+
+  // Fire lore bubble async — doesn't block render
+  fetchLoreBubble(name, symbol, pump?.description || '', mc, ch24, pump?.bonded);
 
   // Inject token image safely after HTML is in the DOM
   if (imgSrc) {
@@ -2193,6 +2215,52 @@ function renderResult(text) {
 async function sendSuggestion(msg) {
   mainInput.value = '';
   await sendChat(msg);
+}
+
+/* ══════════════════════════════════════
+   LORE BUBBLE — quick AI snapshot
+══════════════════════════════════════ */
+async function fetchLoreBubble(name, symbol, description, mc, ch24, bonded) {
+  const loreEl = document.getElementById('loreText');
+  if (!loreEl || !API_KEY) {
+    if (loreEl) loreEl.textContent = 'Add an API key to see narrative snapshot.';
+    return;
+  }
+
+  const context = [
+    `Token: ${name} ($${symbol})`,
+    mc && mc !== '—'   ? `MC: ${mc}` : '',
+    ch24               ? `24H: ${ch24.str}` : '',
+    bonded             ? 'Bonded: Yes' : 'Bonded: No',
+    description        ? `Description: ${description.slice(0, 200)}` : '',
+  ].filter(Boolean).join(' | ');
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 120,
+        system: `You are MoonAi — a sharp Solana memecoin analyst. Write a 2-sentence max lore/narrative snapshot of a token. Be direct, punchy and insightful. No fluff. No bullet points. Plain sentences only. Focus on: what the narrative is, whether it has legs, and one key thing to know. Never start with "This token" or "The token".`,
+        messages: [{ role: 'user', content: `Snapshot: ${context}` }],
+      }),
+    });
+    const data = await res.json();
+    const text = data?.content?.[0]?.text?.trim();
+    if (text && loreEl) {
+      loreEl.style.fontStyle = 'normal';
+      loreEl.style.color = 'var(--text-muted)';
+      loreEl.textContent = text;
+    }
+  } catch {
+    if (loreEl) loreEl.textContent = 'Narrative snapshot unavailable.';
+  }
 }
 
 async function runNarrativeAnalysis() {
