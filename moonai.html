@@ -1441,11 +1441,20 @@ function renderTrencher(ca, dex, pump) {
   function cleanTwitterUrl(val) {
     if (!val) return null;
     val = val.trim();
-    if (val.startsWith('http')) return val;
-    // strip leading @ or spaces
+    // extract handle from URL if needed
+    const m = val.match(/(?:twitter\.com|x\.com)\/([A-Za-z0-9_]+)/);
+    if (m) return 'https://x.com/' + m[1];
     val = val.replace(/^@+/, '').trim();
     if (!val) return null;
     return 'https://x.com/' + val;
+  }
+  function getTwitterHandle(val) {
+    if (!val) return null;
+    val = val.trim();
+    const m = val.match(/(?:twitter\.com|x\.com)\/([A-Za-z0-9_]+)/);
+    if (m) return m[1];
+    val = val.replace(/^@+/, '').trim();
+    return val || null;
   }
   function cleanTelegramUrl(val) {
     if (!val) return null;
@@ -1462,9 +1471,39 @@ function renderTrencher(ca, dex, pump) {
     return val;
   }
 
-  const twitterUrl  = cleanTwitterUrl(pump?.twitter);
-  const telegramUrl = cleanTelegramUrl(pump?.telegram);
-  const websiteUrl  = cleanWebUrl(pump?.website);
+  const twitterUrl    = cleanTwitterUrl(pump?.twitter);
+  const twitterHandle = getTwitterHandle(pump?.twitter);
+  const telegramUrl   = cleanTelegramUrl(pump?.telegram);
+  const websiteUrl    = cleanWebUrl(pump?.website);
+
+  // Build X posts section HTML before main template to avoid nested backtick issues
+  const symbolEnc = encodeURIComponent('$' + symbol + ' solana');
+  const caEnc     = encodeURIComponent(ca);
+  const xSearchUrl   = `https://x.com/search?q=${symbolEnc}&f=live`;
+  const xCaSearchUrl = `https://x.com/search?q=${caEnc}&f=live`;
+  const xMentionsUrl = `https://x.com/search?q=%24${encodeURIComponent(symbol)}&src=typed_query&f=top`;
+
+  const xQuickLinks = `
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+      <a href="${xSearchUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;color:#fff;text-decoration:none;font-size:11px;font-weight:700;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:4px 12px;white-space:nowrap;">𝕏 Live Posts ↗</a>
+      <a href="${xMentionsUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;color:#fff;text-decoration:none;font-size:11px;font-weight:700;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:4px 12px;white-space:nowrap;">𝕏 Top Mentions ↗</a>
+      <a href="${xCaSearchUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;color:var(--text-muted);text-decoration:none;font-size:11px;font-weight:600;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:4px 12px;white-space:nowrap;">𝕏 Search CA ↗</a>
+      ${twitterUrl ? `<a href="${twitterUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;color:#1d9bf0;text-decoration:none;font-size:11px;font-weight:700;background:rgba(29,155,240,0.1);border:1px solid rgba(29,155,240,0.25);border-radius:20px;padding:4px 12px;white-space:nowrap;">𝕏 Official Account ↗</a>` : ''}
+    </div>`;
+
+  const xEmbedHtml = twitterHandle ? `
+    <div id="xEmbedWrap" style="border-radius:10px;overflow:hidden;">
+      <a class="twitter-timeline"
+         href="https://twitter.com/${twitterHandle}"
+         data-tweet-limit="3"
+         data-chrome="noheader nofooter noborders transparent"
+         data-theme="dark"
+         data-dnt="true"
+         data-lang="en">Loading posts…</a>
+    </div>` : `
+    <div style="font-size:12px;color:var(--text-faint);text-align:center;padding:6px 0;line-height:1.7;">
+      No official X account linked for this token.<br>Use the links above to find posts on X.
+    </div>`;
 
   if (twitterUrl)  socialLinks.push({ label: '𝕏 Twitter',  url: twitterUrl });
   if (telegramUrl) socialLinks.push({ label: '✈ Telegram', url: telegramUrl });
@@ -1612,42 +1651,8 @@ function renderTrencher(ca, dex, pump) {
       <div class="card" style="border:1px solid rgba(255,255,255,0.4);box-shadow:0 0 24px rgba(255,255,255,0.2),0 0 8px rgba(255,255,255,0.15);animation:glowPulse 3s ease-in-out infinite;">
         <div class="card-head"><div class="card-title"><div class="card-title-dot" style="background:#fff"></div>Top X Posts</div></div>
         <div class="card-body" style="padding-bottom:8px;">
-
-          <!-- Quick X links -->
-          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
-            <a href="https://x.com/search?q=%24${escHtml(symbol)}%20solana&f=live" target="_blank" rel="noopener"
-              style="display:inline-flex;align-items:center;gap:4px;color:#fff;text-decoration:none;font-size:11px;font-weight:700;
-              background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:3px 10px;white-space:nowrap;">
-              𝕏 Search $${escHtml(symbol)} ↗
-            </a>
-            <a href="https://x.com/search?q=${escHtml(ca)}&f=live" target="_blank" rel="noopener"
-              style="display:inline-flex;align-items:center;gap:4px;color:var(--text-muted);text-decoration:none;font-size:11px;font-weight:600;
-              background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:3px 10px;white-space:nowrap;">
-              𝕏 Search CA ↗
-            </a>
-            ${twitterUrl ? `<a href="${escHtml(twitterUrl)}" target="_blank" rel="noopener"
-              style="display:inline-flex;align-items:center;gap:4px;color:#1d9bf0;text-decoration:none;font-size:11px;font-weight:700;
-              background:rgba(29,155,240,0.1);border:1px solid rgba(29,155,240,0.25);border-radius:20px;padding:3px 10px;white-space:nowrap;">
-              𝕏 Official Account ↗
-            </a>` : ''}
-          </div>
-
-          <!-- Embedded X timeline (official account if available) -->
-          ${twitterUrl ? `
-          <div id="xEmbedWrap" style="border-radius:12px;overflow:hidden;max-height:320px;overflow-y:auto;">
-            <a class="twitter-timeline"
-               href="${escHtml(twitterUrl)}"
-               data-tweet-limit="3"
-               data-chrome="noheader nofooter noborders transparent"
-               data-theme="dark"
-               data-dnt="true">
-              Loading posts…
-            </a>
-          </div>` : `
-          <div style="font-size:12px;color:var(--text-faint);text-align:center;padding:8px 0;">
-            No official X account linked — use search links above 👆
-          </div>`}
-
+          ${xQuickLinks}
+          ${xEmbedHtml}
         </div>
       </div>
 
@@ -1687,8 +1692,16 @@ function renderTrencher(ca, dex, pump) {
   </div>`;
 
   // Activate X embed widget if present
-  if (twitterUrl && window.twttr?.widgets) {
-    window.twttr.widgets.load(document.getElementById('xEmbedWrap'));
+  if (twitterHandle) {
+    const wrap = document.getElementById('xEmbedWrap');
+    if (wrap) {
+      if (window.twttr?.widgets) {
+        window.twttr.widgets.load(wrap);
+      } else {
+        // widgets.js not ready yet — wait for it
+        window.addEventListener('twttr:load', () => window.twttr.widgets.load(wrap), { once: true });
+      }
+    }
   }
 
   // Inject token image safely after HTML is in the DOM
