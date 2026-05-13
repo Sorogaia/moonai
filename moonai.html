@@ -1297,6 +1297,22 @@ Always be highly specific, technically detailed, and opinionated. Give real dire
 }
 
 /* ══════════════════════════════════════
+   SOL PRICE
+══════════════════════════════════════ */
+let _cachedSolPrice = null;
+let _solPriceFetched = 0;
+async function fetchSolPrice() {
+  if (_cachedSolPrice && Date.now() - _solPriceFetched < 60000) return _cachedSolPrice;
+  try {
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
+    const d = await r.json();
+    _cachedSolPrice = d?.solana?.usd || null;
+    _solPriceFetched = Date.now();
+    return _cachedSolPrice;
+  } catch { return null; }
+}
+
+/* ══════════════════════════════════════
    LIVE DATA — DexScreener + pump.fun
 ══════════════════════════════════════ */
 async function fetchDexScreener(ca) {
@@ -1357,9 +1373,9 @@ async function fetchPumpFun(ca) {
       mc:          d.market_cap       || null,
       replies:     d.reply_count      || 0,
       kingOfHill:  d.king_of_the_hill_timestamp != null,
-      totalSupply: d.total_supply || d.totalSupply || 1_000_000_000,
-      holders:     d.holder_count || d.holderCount || d.holders || null,
-      virtualLiq:  d.virtual_sol_reserves ? (d.virtual_sol_reserves / 1e9) : null,
+      totalSupply:       1_000_000_000, // pump.fun always 1B fixed supply
+      holders:           d.holder_count || d.holderCount || d.holders || null,
+      virtualSolReserves: d.virtual_sol_reserves ? (d.virtual_sol_reserves / 1e9) : null,
     };
   } catch { return null; }
 }
@@ -1415,20 +1431,22 @@ function timeAgo(ms) {
 /* ══════════════════════════════════════
    TRENCHER RENDER — live data card
 ══════════════════════════════════════ */
-function renderTrencher(ca, dex, pump) {
+function renderTrencher(ca, dex, pump, solPrice) {
   const name    = pump?.name   || dex?.name   || '—';
   const symbol  = pump?.symbol || dex?.symbol || '—';
   const mc      = fmtNum(dex?.mc   || pump?.mc);
   const vol24   = fmtNum(dex?.vol24h);
   const vol1    = fmtNum(dex?.vol1h);
-  const liqRaw  = dex?.liq || (pump?.virtualLiq ? pump.virtualLiq * (dex?.price || 0) : null);
-  const liq     = fmtNum(liqRaw);
+  // Liquidity: DexScreener first, fallback to pump.fun bonding curve SOL * SOL price
+  const liqRaw = dex?.liq
+    || (pump?.virtualSolReserves && solPrice ? pump.virtualSolReserves * solPrice : null);
+  const liq = fmtNum(liqRaw);
   const bonded  = pump?.bonded ? '✅ Yes' : pump?.bonded === false ? '❌ No' : '—';
   const bondPct = pump?.bondedPct ? pump.bondedPct + '%' : null;
   const dev     = pump?.dev ? pump.dev.substring(0,4)+'…'+pump.dev.slice(-4) : '—';
   const age     = dex?.created ? timeAgo(dex.created) : '—';
   const price   = fmtPrice(dex?.price);
-  const supply  = fmtSupply(pump?.totalSupply);
+  const supply  = pump ? '1B' : fmtSupply(dex?.fdv);
   const holders = pump?.holders ? pump.holders.toLocaleString() : '—';
   const ch24    = fmtChange(dex?.priceChange24h);
   const ch1     = fmtChange(dex?.priceChange1h);
@@ -1630,7 +1648,7 @@ function renderTrencher(ca, dex, pump) {
       ${statCard('BONDED', bondPct ? `${bonded} (${bondPct})` : bonded, pump?.bonded ? 'c-green' : pump?.bonded === false ? 'c-amber' : '')}
       ${statCard('DEV WALLET', dev, 'c-amber')}
       ${statCard('AGE', age, '')}
-      ${statCard('HOLDERS', holders !== '—' ? holders : (buys24 ? `${buys24}B / ${sells24}S` : '—'), holders !== '—' ? '' : (buys24 > sells24 ? 'c-green' : 'c-red'))}
+      ${statCard('HOLDERS', holders !== '—' ? holders : 'Helius V2', holders !== '—' ? '' : 'c-amber')}
     </div>
 
     <!-- ── SOCIALS / KOLS ── -->
@@ -1773,9 +1791,10 @@ async function runAnalysis(raw) {
       </div>`;
     scrollBottom();
 
-    const [dex, pump] = await Promise.all([
+    const [dex, pump, solPrice] = await Promise.all([
       fetchDexScreener(currentCA),
       fetchPumpFun(currentCA),
+      fetchSolPrice(),
     ]);
 
     document.getElementById('ls0').classList.add('done');
@@ -1784,7 +1803,7 @@ async function runAnalysis(raw) {
     document.getElementById('ls1').querySelector('.lstep-icon').textContent = '✓';
 
     await new Promise(r => setTimeout(r, 300));
-    renderTrencher(currentCA, dex, pump);
+    renderTrencher(currentCA, dex, pump, solPrice);
 
     // seed chat context with what we know
     const ctx = `Token: ${pump?.name||dex?.name||currentCA} ($${pump?.symbol||dex?.symbol||'?'}), CA: ${currentCA}, MC: ${fmtNum(dex?.mc||pump?.mc)}, Vol 24h: ${fmtNum(dex?.vol24h)}, Liquidity: ${fmtNum(dex?.liq)}, Bonded: ${pump?.bonded ? 'Yes' : 'No'}, Dev: ${pump?.dev||'unknown'}.`;
