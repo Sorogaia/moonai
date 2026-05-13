@@ -881,7 +881,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
   // Fire async enrichment — none of these block the card render
   fetchLoreBubble(name, symbol, pump?.description || '', mc, ch24, pump?.bonded);
   fetchTopHolders(ca, pump?.dev || null);
-  fetchBundleDetection(ca);
+  fetchBundleDetection(ca, pump?.dev || null);
 
   // Inject token image safely after HTML is in the DOM
   if (imgSrc) {
@@ -1463,13 +1463,14 @@ async function fetchTopHolders(ca, devWallet) {
 /* ══════════════════════════════════════
    BUNDLE DETECTION
 ══════════════════════════════════════ */
-async function fetchBundleDetection(ca) {
+async function fetchBundleDetection(ca, devWallet) {
   const bodyEl  = document.getElementById('bundleBody');
   const badgeEl = document.getElementById('bundleBadge');
   if (!bodyEl) return;
 
   try {
-    const res  = await fetch(`/api/bundles?ca=${encodeURIComponent(ca)}`);
+    const devParam = devWallet ? `&dev=${encodeURIComponent(devWallet)}` : '';
+    const res  = await fetch(`/api/bundles?ca=${encodeURIComponent(ca)}${devParam}`);
     const data = await res.json();
 
     if (!res.ok || data.error) {
@@ -1497,52 +1498,79 @@ async function fetchBundleDetection(ca) {
       return;
     }
 
-    // Build bundle rows
-    const bundleRows = (data.bundles || []).map((b, i) =>
-      `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border2);font-size:12px;">
-        <div style="color:var(--text-muted);">Bundle ${i + 1} <span style="color:var(--text-faint);font-size:10px;">slot ${b.slot}</span></div>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span style="color:var(--text-faint);font-size:11px;">${b.wallets.length} wallets</span>
-          <span style="color:${riskCol};font-weight:700;">${b.pct}%</span>
+    // Extra signal badges
+    const jitoTag  = data.jitoConfirmed ? `<span style="background:rgba(255,59,48,.15);color:#ff3b30;border:1px solid rgba(255,59,48,.35);border-radius:10px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px;">JITO CONFIRMED</span>` : '';
+    const devTag   = data.devBundled    ? `<span style="background:rgba(255,159,10,.15);color:#ff9f0a;border:1px solid rgba(255,159,10,.35);border-radius:10px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px;">DEV BUNDLED</span>` : '';
+    const newTag   = data.newWallets > 0 ? `<span style="background:rgba(0,212,255,.1);color:var(--cyan);border:1px solid rgba(0,212,255,.25);border-radius:10px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px;">${data.newWallets} NEW WALLETS</span>` : '';
+
+    // Bundle rows with type labels
+    const bundleRows = (data.bundles || []).map((b, i) => `
+      <div style="padding:6px 0;border-bottom:1px solid var(--border2);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:11px;color:var(--text-muted);font-weight:600;">${b.label}</span>
+            ${b.jitoConfirmed ? '<span style="font-size:9px;background:rgba(255,59,48,.12);color:#ff3b30;border-radius:8px;padding:1px 6px;">JITO</span>' : ''}
+            ${b.funder ? `<span style="font-size:9px;color:var(--text-faint);">funder: ${b.funder}</span>` : ''}
+            ${b.slot    ? `<span style="font-size:9px;color:var(--text-faint);">slot ${b.slot}</span>` : ''}
+          </div>
+          <span style="color:${riskCol};font-weight:700;font-size:13px;">${b.pct}%</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-faint);">${b.wallets.join(' · ')}</div>
+        <div style="margin-top:4px;height:3px;border-radius:2px;background:var(--border2);">
+          <div style="height:3px;border-radius:2px;background:${riskCol};width:${Math.min(parseFloat(b.pct) * 3, 100)}%;"></div>
         </div>
       </div>`
     ).join('');
 
     bodyEl.innerHTML = `
-      <!-- summary row -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
-        <div style="background:${riskBg};border:1px solid ${riskBd};border-radius:var(--radius-sm);padding:8px 12px;text-align:center;">
-          <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">Bundled</div>
-          <div style="font-size:1.2rem;font-weight:700;color:${riskCol};">${pct}%</div>
+      <!-- header tags -->
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-bottom:10px;">
+        <span style="font-size:12px;font-weight:700;color:${riskCol};">${pct}% of supply bundled</span>
+        ${jitoTag}${devTag}${newTag}
+      </div>
+
+      <!-- summary stats -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;">
+        <div style="background:${riskBg};border:1px solid ${riskBd};border-radius:var(--radius-sm);padding:7px 10px;text-align:center;">
+          <div style="font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Bundled %</div>
+          <div style="font-size:1.1rem;font-weight:700;color:${riskCol};">${pct}%</div>
         </div>
-        <div style="background:var(--bg-surface);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:8px 12px;text-align:center;">
-          <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">Bundles</div>
-          <div style="font-size:1.2rem;font-weight:700;color:var(--text);">${data.bundleCount}</div>
+        <div style="background:var(--bg-surface);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:7px 10px;text-align:center;">
+          <div style="font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Bundles</div>
+          <div style="font-size:1.1rem;font-weight:700;color:var(--text);">${data.bundleCount}</div>
         </div>
-        <div style="background:var(--bg-surface);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:8px 12px;text-align:center;">
-          <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">Wallets</div>
-          <div style="font-size:1.2rem;font-weight:700;color:var(--text);">${data.wallets}</div>
+        <div style="background:var(--bg-surface);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:7px 10px;text-align:center;">
+          <div style="font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Wallets</div>
+          <div style="font-size:1.1rem;font-weight:700;color:var(--text);">${data.wallets}</div>
+        </div>
+        <div style="background:var(--bg-surface);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:7px 10px;text-align:center;">
+          <div style="font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Jito</div>
+          <div style="font-size:1.1rem;font-weight:700;color:${data.jitoConfirmed ? '#ff3b30' : 'var(--accent)'};">${data.jitoConfirmed ? 'YES' : 'NO'}</div>
         </div>
       </div>
 
       <!-- progress bar -->
       <div style="margin-bottom:10px;">
-        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-faint);margin-bottom:4px;">
-          <span>Supply bundled</span><span style="color:${riskCol};font-weight:700;">${pct}%</span>
-        </div>
         <div style="height:6px;border-radius:3px;background:var(--border2);">
-          <div style="height:6px;border-radius:3px;background:${riskCol};width:${Math.min(pct,100)}%;transition:width .6s ease;"></div>
+          <div style="height:6px;border-radius:3px;background:${riskCol};width:${Math.min(pct, 100)}%;transition:width .6s ease;"></div>
         </div>
       </div>
 
-      <!-- bundle rows -->
+      <!-- per-bundle breakdown -->
       ${bundleRows}
 
-      <!-- risk label -->
-      <div style="margin-top:10px;padding:7px 12px;background:${riskBg};border:1px solid ${riskBd};border-radius:var(--radius-sm);display:flex;align-items:center;gap:8px;">
+      <!-- risk verdict -->
+      <div style="margin-top:10px;padding:8px 12px;background:${riskBg};border:1px solid ${riskBd};border-radius:var(--radius-sm);display:flex;align-items:center;gap:8px;">
         <span style="font-size:1rem;">${pct >= 20 ? '🚨' : pct >= 5 ? '⚠️' : '✅'}</span>
-        <span style="font-size:12px;font-weight:700;color:${riskCol};">${risk} RISK</span>
-        <span style="font-size:11px;color:var(--text-faint);">— ${pct >= 20 ? 'Heavy bundling detected. High manipulation risk.' : pct >= 5 ? 'Some bundling detected. Exercise caution.' : 'Minimal bundling. Relatively clean launch.'}</span>
+        <div>
+          <span style="font-size:12px;font-weight:700;color:${riskCol};">${risk} RISK</span>
+          <span style="font-size:11px;color:var(--text-faint);margin-left:6px;">${
+            data.jitoConfirmed ? 'Jito bundle confirmed — coordinated snipe.' :
+            pct >= 20 ? 'Heavy bundling. High manipulation risk.' :
+            pct >= 5  ? 'Some bundling detected. Exercise caution.' :
+                        'Minimal bundling. Relatively clean launch.'
+          }</span>
+        </div>
       </div>`;
 
     if (badgeEl) {
