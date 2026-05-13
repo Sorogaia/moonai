@@ -504,17 +504,9 @@ html, body {
   color: var(--text); border-color: var(--accent);
   background: var(--pill-bg); box-shadow: var(--glow);
 }
-.sug-pill-narrative {
-  color: #FF3B30;
-  border-color: rgba(255,59,48,0.4);
-  background: rgba(255,59,48,0.07);
-  font-weight: 600;
-}
-.sug-pill-narrative:hover {
-  color: #fff;
-  border-color: #FF3B30;
-  background: rgba(255,59,48,0.18);
-  box-shadow: 0 0 16px rgba(255,59,48,0.2);
+@keyframes narrativeBlink {
+  0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(20,241,149,0.3); }
+  50%       { opacity: 0.55; box-shadow: 0 0 18px rgba(20,241,149,0.6); }
 }
 
 /* example pills row (only shown before analysis) */
@@ -883,7 +875,6 @@ html, body {
       <span class="sug-pill" onclick="sendSuggestion('What are the biggest red flags I should watch out for?')">Red flags?</span>
       <span class="sug-pill" onclick="sendSuggestion('Where should I set my stop loss and take profit targets?')">Stop loss & targets?</span>
       <span class="sug-pill" onclick="sendSuggestion('Compare this to similar tokens. Is this a common rug pattern?')">Comparable plays?</span>
-      <span class="sug-pill sug-pill-narrative" onclick="runNarrativeAnalysis()">🔥 Narrative</span>
     </div>
 
     <!-- Example pills (shown before first analysis, centred) -->
@@ -1653,11 +1644,11 @@ function renderTrencher(ca, dex, pump, solPrice) {
       <button onclick="runNarrativeAnalysis()" style="
         flex-shrink:0;
         font-family:var(--font);font-size:11px;font-weight:700;
-        color:#FF3B30;background:rgba(255,59,48,0.08);
-        border:1px solid rgba(255,59,48,0.35);border-radius:var(--radius-pill);
+        color:#14F195;background:rgba(20,241,149,0.08);
+        border:1px solid rgba(20,241,149,0.4);border-radius:var(--radius-pill);
         padding:4px 12px;cursor:pointer;white-space:nowrap;
-        transition:all 0.2s;
-      " onmouseover="this.style.background='rgba(255,59,48,0.18)'" onmouseout="this.style.background='rgba(255,59,48,0.08)'">
+        animation:narrativeBlink 2.4s ease-in-out infinite;
+      " onmouseover="this.style.animationPlayState='paused';this.style.opacity='1';" onmouseout="this.style.animationPlayState='running';">
         🔥 Narrative
       </button>
     </div>
