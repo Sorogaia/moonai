@@ -504,6 +504,18 @@ html, body {
   color: var(--text); border-color: var(--accent);
   background: var(--pill-bg); box-shadow: var(--glow);
 }
+.sug-pill-narrative {
+  color: #FF3B30;
+  border-color: rgba(255,59,48,0.4);
+  background: rgba(255,59,48,0.07);
+  font-weight: 600;
+}
+.sug-pill-narrative:hover {
+  color: #fff;
+  border-color: #FF3B30;
+  background: rgba(255,59,48,0.18);
+  box-shadow: 0 0 16px rgba(255,59,48,0.2);
+}
 
 /* example pills row (only shown before analysis) */
 .example-row {
@@ -871,6 +883,7 @@ html, body {
       <span class="sug-pill" onclick="sendSuggestion('What are the biggest red flags I should watch out for?')">Red flags?</span>
       <span class="sug-pill" onclick="sendSuggestion('Where should I set my stop loss and take profit targets?')">Stop loss & targets?</span>
       <span class="sug-pill" onclick="sendSuggestion('Compare this to similar tokens. Is this a common rug pattern?')">Comparable plays?</span>
+      <span class="sug-pill sug-pill-narrative" onclick="runNarrativeAnalysis()">🔥 Narrative</span>
     </div>
 
     <!-- Example pills (shown before first analysis, centred) -->
@@ -2180,6 +2193,30 @@ function renderResult(text) {
 async function sendSuggestion(msg) {
   mainInput.value = '';
   await sendChat(msg);
+}
+
+async function runNarrativeAnalysis() {
+  const narrativePrompt = `Give me a deep, detailed narrative analysis of this token. Cover every dimension:
+
+1. THE STORY — What is the core narrative, theme or meme? What cultural moment, trend, character or idea does it tap into? Is the name/concept instantly understandable?
+
+2. NARRATIVE STRENGTH — Rate the narrative power 1–10 with reasoning. Does it have legs? Is it timely, timeless, or already dying? How original is it vs existing narratives?
+
+3. MEMETIC POTENTIAL — How viral and spreadable is this? Can it be turned into memes, videos, tweets easily? Does it have a built-in community or identity that people want to belong to?
+
+4. COMMUNITY ENERGY — What kind of holder base does this attract? Are they diamond hands or paper hands? Is there genuine belief or just mercenaries?
+
+5. COMPARABLE NARRATIVES — Name 3–5 tokens that ran on a similar narrative. Did they moon or die? What can we learn from those plays?
+
+6. NARRATIVE RISKS — What kills this narrative? What would make people lose belief? Is it dependent on a celebrity, trend or external event that could fade?
+
+7. CATALYST WATCH — What events, partnerships, listings, or viral moments could supercharge this narrative? What should you be watching for?
+
+8. NARRATIVE VERDICT — Summarise in 2–3 punchy sentences. Is this a narrative worth riding, and if so, when and how?
+
+Be direct, detailed and opinionated. This is alpha.`;
+
+  await sendChat(narrativePrompt);
 }
 
 async function sendChat(msg) {
