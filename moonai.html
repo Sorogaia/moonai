@@ -751,7 +751,10 @@ html, body {
 .ticker-change-up   { color: #14F195; }
 .ticker-change-down { color: #FF3B30; }
 .ticker-loading { color: var(--text-faint); font-size: 11px; padding: 0 16px; }
+/* ── X embed overrides — force dark, compact ── */
+.twitter-timeline-rendered { border-radius: var(--radius-md) !important; }
 </style>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 </head>
 <body>
 
@@ -1607,9 +1610,44 @@ function renderTrencher(ca, dex, pump) {
       </div>
 
       <div class="card" style="border:1px solid rgba(255,255,255,0.4);box-shadow:0 0 24px rgba(255,255,255,0.2),0 0 8px rgba(255,255,255,0.15);animation:glowPulse 3s ease-in-out infinite;">
-        <div class="card-head"><div class="card-title"><div class="card-title-dot" style="background:#fff"></div>Top X Posts</div><span class="card-badge" style="background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.2);">V2</span></div>
-        <div class="card-body" style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px;">
-          <span>𝕏</span> Top posts in V2
+        <div class="card-head"><div class="card-title"><div class="card-title-dot" style="background:#fff"></div>Top X Posts</div></div>
+        <div class="card-body" style="padding-bottom:8px;">
+
+          <!-- Quick X links -->
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+            <a href="https://x.com/search?q=%24${escHtml(symbol)}%20solana&f=live" target="_blank" rel="noopener"
+              style="display:inline-flex;align-items:center;gap:4px;color:#fff;text-decoration:none;font-size:11px;font-weight:700;
+              background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:3px 10px;white-space:nowrap;">
+              𝕏 Search $${escHtml(symbol)} ↗
+            </a>
+            <a href="https://x.com/search?q=${escHtml(ca)}&f=live" target="_blank" rel="noopener"
+              style="display:inline-flex;align-items:center;gap:4px;color:var(--text-muted);text-decoration:none;font-size:11px;font-weight:600;
+              background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:3px 10px;white-space:nowrap;">
+              𝕏 Search CA ↗
+            </a>
+            ${twitterUrl ? `<a href="${escHtml(twitterUrl)}" target="_blank" rel="noopener"
+              style="display:inline-flex;align-items:center;gap:4px;color:#1d9bf0;text-decoration:none;font-size:11px;font-weight:700;
+              background:rgba(29,155,240,0.1);border:1px solid rgba(29,155,240,0.25);border-radius:20px;padding:3px 10px;white-space:nowrap;">
+              𝕏 Official Account ↗
+            </a>` : ''}
+          </div>
+
+          <!-- Embedded X timeline (official account if available) -->
+          ${twitterUrl ? `
+          <div id="xEmbedWrap" style="border-radius:12px;overflow:hidden;max-height:320px;overflow-y:auto;">
+            <a class="twitter-timeline"
+               href="${escHtml(twitterUrl)}"
+               data-tweet-limit="3"
+               data-chrome="noheader nofooter noborders transparent"
+               data-theme="dark"
+               data-dnt="true">
+              Loading posts…
+            </a>
+          </div>` : `
+          <div style="font-size:12px;color:var(--text-faint);text-align:center;padding:8px 0;">
+            No official X account linked — use search links above 👆
+          </div>`}
+
         </div>
       </div>
 
@@ -1647,6 +1685,11 @@ function renderTrencher(ca, dex, pump) {
     </div>` : ''}
 
   </div>`;
+
+  // Activate X embed widget if present
+  if (twitterUrl && window.twttr?.widgets) {
+    window.twttr.widgets.load(document.getElementById('xEmbedWrap'));
+  }
 
   // Inject token image safely after HTML is in the DOM
   if (imgSrc) {
