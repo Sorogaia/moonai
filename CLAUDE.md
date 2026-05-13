@@ -1,8 +1,13 @@
 # MoonAi — Project Context
 
 ## What This Is
-A single-file Solana/pump.fun token analyzer with an AI chatbot.
-File: `moonai.html` (entire app — frontend + logic + API calls)
+A Solana/pump.fun token analyzer with an AI chatbot.
+
+## ⚠️ Source of Truth Files (edit these, NOT moonai.html)
+- `index.html` — HTML structure only
+- `css/styles.css` — all styles
+- `js/app.js` — all JavaScript logic
+- `moonai.html` — legacy single file, kept for reference only
 
 ## Live Links
 - GitHub: https://github.com/itsyaboihomelander/moonai

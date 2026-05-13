@@ -3,7 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MoonAi — Pump.fun Token Analyzer</title>
+<title>MoonAi — Solana Token Analyzer</title>
+<meta name="description" content="Paste any Solana CA or pump.fun link. Get live market data, AI narrative analysis, holder intel, and trading alpha instantly.">
+<meta name="keywords" content="solana, pump.fun, token analyzer, memecoin, crypto, AI, DexScreener, defi">
+<meta name="author" content="MoonAi">
+
+<!-- Open Graph -->
+<meta property="og:title" content="MoonAi — Solana Token Analyzer">
+<meta property="og:description" content="Paste any Solana CA or pump.fun link. Get live market data, AI narrative analysis, holder intel, and trading alpha instantly.">
+<meta property="og:image" content="https://itsyaboihomelander.github.io/moonai/logo.png">
+<meta property="og:url" content="https://itsyaboihomelander.github.io/moonai/">
+<meta property="og:type" content="website">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MoonAi — Solana Token Analyzer">
+<meta name="twitter:description" content="Paste any Solana CA or pump.fun link. Get live market data, AI narrative analysis, holder intel, and trading alpha instantly.">
+<meta name="twitter:image" content="https://itsyaboihomelander.github.io/moonai/logo.png">
+
+<!-- Favicon -->
+<link rel="icon" href="logo.png" type="image/png">
+<link rel="apple-touch-icon" href="logo.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -49,14 +70,22 @@
   <div class="modal">
     <button class="modal-close" onclick="closeModal()">✕</button>
     <h2>🔑 Anthropic API Key</h2>
-    <p>Enter your Anthropic API key to power MoonAi analysis. Your key is stored only in your browser and sent directly to Anthropic — never to us.</p>
+    <p>MoonAi uses Claude AI for narrative analysis and chat. Your key is stored only in your browser — never sent to us.</p>
+
+    <div style="background:var(--bg-surface);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:1rem;font-size:12px;color:var(--text-muted);line-height:1.8;">
+      <div style="font-weight:700;color:var(--text);margin-bottom:4px;">How to get your free key:</div>
+      1. Go to <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent);">console.anthropic.com</a><br>
+      2. Sign up → API Keys → Create Key<br>
+      3. Add $5 min credit &nbsp;·&nbsp; <span style="color:var(--accent);">~$0.003 per analysis</span>
+    </div>
+
     <input class="modal-input" type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off" />
     <div class="modal-actions">
       <button class="btn-primary" onclick="saveApiKey()">Save & Continue</button>
       <button class="btn-ghost" onclick="closeModal()">Cancel</button>
     </div>
-    <div class="modal-note">
-      Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+    <div class="modal-note" style="margin-top:0.6rem;">
+      🔒 Key stored locally in your browser only. Removed when you clear browser data. <span style="color:var(--accent);font-weight:600;">Backend proxy coming in V2</span> — no key needed.
     </div>
   </div>
 </div>
