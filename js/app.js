@@ -840,6 +840,20 @@ function renderTrencher(ca, dex, pump, solPrice) {
       </div>
     </div>
 
+    <!-- ── BUNDLE DETECTION ── -->
+    <div class="card" style="margin-bottom:10px;" id="bundleCard">
+      <div class="card-head">
+        <div class="card-title"><div class="card-title-dot" style="background:#ff9f0a"></div>Bundle Detection</div>
+        <span class="card-badge" id="bundleBadge" style="background:rgba(255,159,10,0.1);color:#ff9f0a;border:1px solid rgba(255,159,10,0.3);">SCANNING</span>
+      </div>
+      <div class="card-body" id="bundleBody">
+        <div style="display:flex;align-items:center;gap:8px;color:var(--text-faint);font-size:12px;">
+          <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+          Analysing launch transactions…
+        </div>
+      </div>
+    </div>
+
     <!-- ── TRADE ON + EXPLORE ── -->
     <div class="card" style="margin-bottom:10px;">
       <div class="card-head">
@@ -864,9 +878,10 @@ function renderTrencher(ca, dex, pump, solPrice) {
 
   // X embed widget activation removed — using search links in V1
 
-  // Fire async enrichment — neither blocks the card render
+  // Fire async enrichment — none of these block the card render
   fetchLoreBubble(name, symbol, pump?.description || '', mc, ch24, pump?.bonded);
   fetchTopHolders(ca, pump?.dev || null);
+  fetchBundleDetection(ca);
 
   // Inject token image safely after HTML is in the DOM
   if (imgSrc) {
@@ -1441,6 +1456,104 @@ async function fetchTopHolders(ca, devWallet) {
 
   } catch {
     bodyEl.textContent = 'Holder data unavailable.';
+    if (badgeEl) { badgeEl.textContent = 'ERROR'; badgeEl.className = 'card-badge'; }
+  }
+}
+
+/* ══════════════════════════════════════
+   BUNDLE DETECTION
+══════════════════════════════════════ */
+async function fetchBundleDetection(ca) {
+  const bodyEl  = document.getElementById('bundleBody');
+  const badgeEl = document.getElementById('bundleBadge');
+  if (!bodyEl) return;
+
+  try {
+    const res  = await fetch(`/api/bundles?ca=${encodeURIComponent(ca)}`);
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      bodyEl.innerHTML = `<span style="color:var(--text-faint);font-size:12px;">Bundle data unavailable for this token.</span>`;
+      if (badgeEl) { badgeEl.textContent = 'N/A'; badgeEl.style.cssText = ''; badgeEl.className = 'card-badge'; }
+      return;
+    }
+
+    const pct    = parseFloat(data.pct) || 0;
+    const risk   = pct >= 20 ? 'HIGH' : pct >= 5 ? 'MEDIUM' : 'LOW';
+    const riskCol = pct >= 20 ? '#ff3b30' : pct >= 5 ? '#ff9f0a' : '#14F195';
+    const riskBg  = pct >= 20 ? 'rgba(255,59,48,0.08)' : pct >= 5 ? 'rgba(255,159,10,0.08)' : 'rgba(20,241,149,0.08)';
+    const riskBd  = pct >= 20 ? 'rgba(255,59,48,0.25)' : pct >= 5 ? 'rgba(255,159,10,0.25)' : 'rgba(20,241,149,0.25)';
+
+    if (!data.bundled) {
+      bodyEl.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:1.3rem;">✅</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--accent);">No bundles detected</div>
+            <div style="font-size:11px;color:var(--text-faint);margin-top:2px;">No coordinated launch buys found in the launch window</div>
+          </div>
+        </div>`;
+      if (badgeEl) { badgeEl.textContent = 'CLEAN'; badgeEl.style.background='rgba(20,241,149,0.1)'; badgeEl.style.color='#14F195'; badgeEl.style.border='1px solid rgba(20,241,149,0.3)'; }
+      return;
+    }
+
+    // Build bundle rows
+    const bundleRows = (data.bundles || []).map((b, i) =>
+      `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border2);font-size:12px;">
+        <div style="color:var(--text-muted);">Bundle ${i + 1} <span style="color:var(--text-faint);font-size:10px;">slot ${b.slot}</span></div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="color:var(--text-faint);font-size:11px;">${b.wallets.length} wallets</span>
+          <span style="color:${riskCol};font-weight:700;">${b.pct}%</span>
+        </div>
+      </div>`
+    ).join('');
+
+    bodyEl.innerHTML = `
+      <!-- summary row -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
+        <div style="background:${riskBg};border:1px solid ${riskBd};border-radius:var(--radius-sm);padding:8px 12px;text-align:center;">
+          <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">Bundled</div>
+          <div style="font-size:1.2rem;font-weight:700;color:${riskCol};">${pct}%</div>
+        </div>
+        <div style="background:var(--bg-surface);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:8px 12px;text-align:center;">
+          <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">Bundles</div>
+          <div style="font-size:1.2rem;font-weight:700;color:var(--text);">${data.bundleCount}</div>
+        </div>
+        <div style="background:var(--bg-surface);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:8px 12px;text-align:center;">
+          <div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">Wallets</div>
+          <div style="font-size:1.2rem;font-weight:700;color:var(--text);">${data.wallets}</div>
+        </div>
+      </div>
+
+      <!-- progress bar -->
+      <div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-faint);margin-bottom:4px;">
+          <span>Supply bundled</span><span style="color:${riskCol};font-weight:700;">${pct}%</span>
+        </div>
+        <div style="height:6px;border-radius:3px;background:var(--border2);">
+          <div style="height:6px;border-radius:3px;background:${riskCol};width:${Math.min(pct,100)}%;transition:width .6s ease;"></div>
+        </div>
+      </div>
+
+      <!-- bundle rows -->
+      ${bundleRows}
+
+      <!-- risk label -->
+      <div style="margin-top:10px;padding:7px 12px;background:${riskBg};border:1px solid ${riskBd};border-radius:var(--radius-sm);display:flex;align-items:center;gap:8px;">
+        <span style="font-size:1rem;">${pct >= 20 ? '🚨' : pct >= 5 ? '⚠️' : '✅'}</span>
+        <span style="font-size:12px;font-weight:700;color:${riskCol};">${risk} RISK</span>
+        <span style="font-size:11px;color:var(--text-faint);">— ${pct >= 20 ? 'Heavy bundling detected. High manipulation risk.' : pct >= 5 ? 'Some bundling detected. Exercise caution.' : 'Minimal bundling. Relatively clean launch.'}</span>
+      </div>`;
+
+    if (badgeEl) {
+      badgeEl.textContent = risk;
+      badgeEl.style.background = riskBg;
+      badgeEl.style.color = riskCol;
+      badgeEl.style.border = `1px solid ${riskBd}`;
+    }
+
+  } catch (e) {
+    if (bodyEl) bodyEl.innerHTML = `<span style="color:var(--text-faint);font-size:12px;">Bundle detection unavailable.</span>`;
     if (badgeEl) { badgeEl.textContent = 'ERROR'; badgeEl.className = 'card-badge'; }
   }
 }
