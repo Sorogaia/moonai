@@ -904,7 +904,6 @@ html, body {
 /* ══════════════════════════════════════
    STATE
 ══════════════════════════════════════ */
-let API_KEY      = localStorage.getItem('moonai_api_key') || '';
 let currentCA    = '';
 let chatMessages = [];          // full conversation history
 let analysisMode = 'trencher';  // 'trencher' | 'advanced'
@@ -1051,31 +1050,6 @@ async function initTicker() {
 initTicker();
 setInterval(initTicker, 60000);
 
-/* ══════════════════════════════════════
-   API KEY MODAL
-══════════════════════════════════════ */
-function openModal() {
-  document.getElementById('apiKeyInput').value = API_KEY;
-  document.getElementById('apiModal').classList.add('open');
-  setTimeout(() => document.getElementById('apiKeyInput').focus(), 100);
-}
-function closeModal() {
-  document.getElementById('apiModal').classList.remove('open');
-}
-function saveApiKey() {
-  const val = document.getElementById('apiKeyInput').value.trim();
-  if (!val) { alert('Please enter a valid API key.'); return; }
-  API_KEY = val;
-  localStorage.setItem('moonai_api_key', val);
-  closeModal();
-  showToast('API key saved ✓');
-}
-document.getElementById('apiModal').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
-});
-document.getElementById('apiKeyInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') saveApiKey();
-});
 
 /* ══════════════════════════════════════
    TOAST
@@ -1146,8 +1120,6 @@ const OFF_TOPIC_REPLY = `I'm MoonAi — I only analyze Solana tokens and memecoi
 function handleSend() {
   const raw = mainInput.value.trim();
   if (!raw) { mainInput.focus(); return; }
-  if (!API_KEY) { openModal(); showToast('Add your API key first ↑'); return; }
-
   // Client-side topic guard
   if (isOffTopic(raw)) {
     mainInput.value = '';
@@ -1934,14 +1906,9 @@ ${liveContext}
 Use the live data above for MC, VOL, LIQUIDITY, DEV WALLET, BONDED status, and SOCIALS in your output. For holder distribution and rug signals, use your analysis and pattern recognition. Provide the complete MoonAi analysis with ALL sections.`;
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch('/api/chat', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
         max_tokens: 2000,
@@ -2244,10 +2211,7 @@ async function sendSuggestion(msg) {
 ══════════════════════════════════════ */
 async function fetchLoreBubble(name, symbol, description, mc, ch24, bonded) {
   const loreEl = document.getElementById('loreText');
-  if (!loreEl || !API_KEY) {
-    if (loreEl) loreEl.textContent = 'Add an API key to see narrative snapshot.';
-    return;
-  }
+  if (!loreEl) return;
 
   const context = [
     `Token: ${name} ($${symbol})`,
@@ -2258,14 +2222,9 @@ async function fetchLoreBubble(name, symbol, description, mc, ch24, bonded) {
   ].filter(Boolean).join(' | ');
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/chat', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
         max_tokens: 60,
@@ -2312,7 +2271,6 @@ Be direct, detailed and opinionated. This is alpha.`;
 async function sendChat(msg, aiPrompt) {
   msg = msg || mainInput.value.trim();
   if (!msg) return;
-  if (!API_KEY) { openModal(); return; }
   if (!hasAnalyzed) { runAnalysis(msg); return; }
   const promptToSend = aiPrompt || msg; // display msg in chat, send aiPrompt to AI
 
@@ -2342,14 +2300,9 @@ async function sendChat(msg, aiPrompt) {
   chatMessages.push({ role:'user', content: promptToSend });
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch('/api/chat', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
         max_tokens: 700,
@@ -2418,27 +2371,7 @@ function formatAlpha(text) {
 /* ══════════════════════════════════════
    INIT
 ══════════════════════════════════════ */
-window.addEventListener('load', () => {
-  if (!API_KEY) {
-    setTimeout(() => {
-      const banner = document.createElement('div');
-      banner.style.cssText = `
-        position:fixed;bottom:0;left:0;right:0;z-index:50;
-        background:var(--bg-surface);border-top:1px solid var(--border2);
-        padding:12px 24px;display:flex;align-items:center;
-        justify-content:center;gap:16px;font-family:var(--font);font-size:13px;
-      `;
-      banner.innerHTML = `
-        <span style="color:var(--text-muted)">⚙ Add your Anthropic API key to enable MoonAi analysis</span>
-        <button onclick="openModal();this.closest('div').remove()" style="
-          background:var(--send-btn);color:var(--send-text);
-          font-family:var(--font);font-weight:700;font-size:12px;
-          padding:7px 18px;border:none;border-radius:var(--radius-pill);cursor:pointer;
-        ">Add Key</button>`;
-      document.body.appendChild(banner);
-    }, 800);
-  }
-});
+window.addEventListener('load', () => {});
 </script>
 </body>
 </html>

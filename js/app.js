@@ -9,7 +9,6 @@
 /* ══════════════════════════════════════
    STATE
 ══════════════════════════════════════ */
-let API_KEY      = localStorage.getItem('moonai_api_key') || '';
 let currentCA    = '';
 let chatMessages = [];          // full conversation history
 let analysisMode = 'trencher';  // 'trencher' | 'advanced'
@@ -156,31 +155,6 @@ async function initTicker() {
 initTicker();
 setInterval(initTicker, 60000);
 
-/* ══════════════════════════════════════
-   API KEY MODAL
-══════════════════════════════════════ */
-function openModal() {
-  document.getElementById('apiKeyInput').value = API_KEY;
-  document.getElementById('apiModal').classList.add('open');
-  setTimeout(() => document.getElementById('apiKeyInput').focus(), 100);
-}
-function closeModal() {
-  document.getElementById('apiModal').classList.remove('open');
-}
-function saveApiKey() {
-  const val = document.getElementById('apiKeyInput').value.trim();
-  if (!val) { alert('Please enter a valid API key.'); return; }
-  API_KEY = val;
-  localStorage.setItem('moonai_api_key', val);
-  closeModal();
-  showToast('API key saved ✓');
-}
-document.getElementById('apiModal').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
-});
-document.getElementById('apiKeyInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') saveApiKey();
-});
 
 /* ══════════════════════════════════════
    TOAST
@@ -251,7 +225,6 @@ const OFF_TOPIC_REPLY = `I'm MoonAi — I only analyze Solana tokens and memecoi
 function handleSend() {
   const raw = mainInput.value.trim();
   if (!raw) { mainInput.focus(); return; }
-  if (!API_KEY) { openModal(); showToast('Add your API key first ↑'); return; }
 
   // Client-side topic guard
   if (isOffTopic(raw)) {
@@ -853,10 +826,13 @@ function renderTrencher(ca, dex, pump, solPrice) {
     <div class="card" style="margin-bottom:10px;">
       <div class="card-head">
         <div class="card-title"><div class="card-title-dot"></div>Top Holders</div>
-        <span class="card-badge badge-amber">HELIUS NEEDED</span>
+        <span class="card-badge badge-amber" id="holdersBadge">LOADING</span>
       </div>
-      <div class="card-body" style="font-size:12px;color:var(--text-muted);line-height:1.7;">
-        Real holder data requires a free <a href="https://helius.dev" target="_blank" style="color:var(--accent);">Helius API key</a>. Coming in V2 — top 10 wallets, dev %, bundle detection.
+      <div class="card-body" id="holdersBody" style="font-size:12px;color:var(--text-muted);line-height:1.7;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+          Fetching holder data…
+        </div>
       </div>
     </div>
 
@@ -884,8 +860,9 @@ function renderTrencher(ca, dex, pump, solPrice) {
 
   // X embed widget activation removed — using search links in V1
 
-  // Fire lore bubble async — doesn't block render
+  // Fire async enrichment — neither blocks the card render
   fetchLoreBubble(name, symbol, pump?.description || '', mc, ch24, pump?.bonded);
+  fetchTopHolders(ca, pump?.dev || null);
 
   // Inject token image safely after HTML is in the DOM
   if (imgSrc) {
@@ -1039,14 +1016,9 @@ ${liveContext}
 Use the live data above for MC, VOL, LIQUIDITY, DEV WALLET, BONDED status, and SOCIALS in your output. For holder distribution and rug signals, use your analysis and pattern recognition. Provide the complete MoonAi analysis with ALL sections.`;
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch('/api/chat', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
         max_tokens: 2000,
@@ -1083,9 +1055,8 @@ Use the live data above for MC, VOL, LIQUIDITY, DEV WALLET, BONDED status, and S
           <div class="alpha-content" style="border-color:rgba(255,59,48,.2);background:rgba(255,59,48,.04)">
             <b style="color:var(--danger)">Analysis failed:</b> ${escHtml(e.message)}<br><br>
             Common fixes:<br>
-            • Check your API key is correct (⚙ API Key above)<br>
-            • Ensure your key has credits at <a href="https://console.anthropic.com" target="_blank" style="color:var(--cyan)">console.anthropic.com</a><br>
-            • Check your network connection
+            • Check your network connection<br>
+            • Try again in a moment
           </div>
         </div>
       </div>`;
@@ -1349,10 +1320,7 @@ async function sendSuggestion(msg) {
 ══════════════════════════════════════ */
 async function fetchLoreBubble(name, symbol, description, mc, ch24, bonded) {
   const loreEl = document.getElementById('loreText');
-  if (!loreEl || !API_KEY) {
-    if (loreEl) loreEl.textContent = 'Add an API key to see narrative snapshot.';
-    return;
-  }
+  if (!loreEl) return;
 
   const context = [
     `Token: ${name} ($${symbol})`,
@@ -1363,14 +1331,9 @@ async function fetchLoreBubble(name, symbol, description, mc, ch24, bonded) {
   ].filter(Boolean).join(' | ');
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/chat', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
         max_tokens: 60,
@@ -1387,6 +1350,50 @@ async function fetchLoreBubble(name, symbol, description, mc, ch24, bonded) {
     }
   } catch {
     if (loreEl) loreEl.textContent = 'Narrative snapshot unavailable.';
+  }
+}
+
+/* ══════════════════════════════════════
+   TOP HOLDERS — Helius powered
+══════════════════════════════════════ */
+async function fetchTopHolders(ca, devWallet) {
+  const bodyEl  = document.getElementById('holdersBody');
+  const badgeEl = document.getElementById('holdersBadge');
+  if (!bodyEl) return;
+
+  try {
+    const res  = await fetch(`/api/holders?ca=${encodeURIComponent(ca)}`);
+    const data = await res.json();
+
+    if (!res.ok || !data.holders?.length) {
+      bodyEl.textContent = 'Holder data unavailable.';
+      if (badgeEl) { badgeEl.textContent = 'N/A'; badgeEl.className = 'card-badge'; }
+      return;
+    }
+
+    const rows = data.holders.map((h, i) => {
+      const short  = h.owner.slice(0, 4) + '…' + h.owner.slice(-4);
+      const isDev  = devWallet && h.owner.toLowerCase() === devWallet.toLowerCase();
+      const pct    = h.pct.toFixed(2);
+      const badge  = isDev ? `<span style="background:rgba(255,59,48,.15);color:#ff3b30;border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">DEV</span>` : '';
+      const pctCol = h.pct >= 10 ? '#ff3b30' : h.pct >= 5 ? '#ff9f0a' : 'var(--text-muted)';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border1);">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="color:var(--text-faint);min-width:18px;">${i + 1}.</span>
+          <a href="https://solscan.io/account/${h.owner}" target="_blank" rel="noopener"
+             style="color:var(--cyan);text-decoration:none;font-family:monospace;">${short}</a>${badge}
+        </div>
+        <span style="color:${pctCol};font-weight:700;">${pct}%</span>
+      </div>`;
+    }).join('');
+
+    const top10 = data.holders.reduce((s, h) => s + h.pct, 0).toFixed(1);
+    bodyEl.innerHTML = rows + `<div style="margin-top:8px;color:var(--text-faint);font-size:11px;">Top 10 hold <b style="color:var(--text)">${top10}%</b> of supply</div>`;
+    if (badgeEl) { badgeEl.textContent = 'LIVE'; badgeEl.className = 'card-badge badge-green'; }
+
+  } catch {
+    bodyEl.textContent = 'Holder data unavailable.';
+    if (badgeEl) { badgeEl.textContent = 'ERROR'; badgeEl.className = 'card-badge'; }
   }
 }
 
@@ -1417,7 +1424,6 @@ Be direct, detailed and opinionated. This is alpha.`;
 async function sendChat(msg, aiPrompt) {
   msg = msg || mainInput.value.trim();
   if (!msg) return;
-  if (!API_KEY) { openModal(); return; }
   if (!hasAnalyzed) { runAnalysis(msg); return; }
   const promptToSend = aiPrompt || msg; // display msg in chat, send aiPrompt to AI
 
@@ -1447,14 +1453,9 @@ async function sendChat(msg, aiPrompt) {
   chatMessages.push({ role:'user', content: promptToSend });
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch('/api/chat', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
         max_tokens: 700,
@@ -1523,24 +1524,4 @@ function formatAlpha(text) {
 /* ══════════════════════════════════════
    INIT
 ══════════════════════════════════════ */
-window.addEventListener('load', () => {
-  if (!API_KEY) {
-    setTimeout(() => {
-      const banner = document.createElement('div');
-      banner.style.cssText = `
-        position:fixed;bottom:0;left:0;right:0;z-index:50;
-        background:var(--bg-surface);border-top:1px solid var(--border2);
-        padding:12px 24px;display:flex;align-items:center;
-        justify-content:center;gap:16px;font-family:var(--font);font-size:13px;
-      `;
-      banner.innerHTML = `
-        <span style="color:var(--text-muted)">⚙ Add your Anthropic API key to enable MoonAi analysis</span>
-        <button onclick="openModal();this.closest('div').remove()" style="
-          background:var(--send-btn);color:var(--send-text);
-          font-family:var(--font);font-weight:700;font-size:12px;
-          padding:7px 18px;border:none;border-radius:var(--radius-pill);cursor:pointer;
-        ">Add Key</button>`;
-      document.body.appendChild(banner);
-    }, 800);
-  }
-});
+window.addEventListener('load', () => {});
