@@ -2,7 +2,7 @@
 
 > The most complete Solana & pump.fun token analyzer — no API key needed
 
-Paste any contract address or pump.fun link. Get live on-chain data, AI narrative, safety score, bundle detection, holder intel, and full deep analysis — instantly. Free. No signup. No key.
+Paste any contract address or pump.fun link. Get live on-chain data, AI narrative, safety score, bundle detection, and holder intel instantly. Free. No signup. No key.
 
 ---
 
@@ -12,42 +12,31 @@ Paste any contract address or pump.fun link. Get live on-chain data, AI narrativ
 
 ---
 
-## Modes
+## Features (V1 — Live Now)
 
-### 🟢 Trencher Mode
-Fast, data-first analysis. Every signal you need in seconds.
-
-- Token image, name, CA + one-click copy
-- **Narrative lore bubble** + **✦ Analysis** deep dive on demand
+- **Token header** — image, name, CA + one-click copy
+- **Narrative lore bubble** — instant AI one-liner on the token's story
+- **✦ Analysis** — deep narrative analysis on demand
 - **Safety Score (0–100)** — SAFE / CAUTION / WARNING / DANGER
 - Mint & freeze authority status
-- DEV sold tracker — live on-chain balance
-- **Price bar** — price, 5M, 1H, 24H, Vol 1H + **Momentum Score**
+- DEV sold tracker — live on-chain check
+- **Price bar** — price, 5M, 1H, 24H, Vol 1H + Momentum Score
 - **Auto-refresh every 60s** — live countdown
-- **ATH MC** — session-tracked all-time high with % down
-- Stats — MC, VOL, Liquidity, Supply, Holders
-- **Fresh Wallets %** — % of holders with new wallets
+- **ATH MC** — session-tracked with % down from ATH
+- Stats — MC, VOL, Liquidity, Supply, Holders, Fresh Wallets %
 - Colour-coded socials — Twitter, Telegram, Website, Discord
-- **Top Holders** — real Helius data, progress bars, DEV/WHALE badges, dropdown
-- **Bundle Detection** — Jito confirmation, same-funder grouping, risk scoring
-- Top X Posts search links
+- **Top Holders** — real data, progress bars, DEV/WHALE badges
+- **Bundle Detection** — advanced launch analysis with risk scoring
+- Top X Posts — search links
 - Trade & Explore — Axiom, Photon, BullX, Trojan, GMGN, Solscan, GeckoTerminal
 - AI chat with full token context
+- Topic guard — Solana/memecoins only
 
-### 🟣 Advanced Mode
-Full AI deep analysis — every signal, every risk, full alpha.
-
-- Comprehensive AI analysis with structured report
-- Verdict + Safety Score
-- TH distro with role badges (DEV, INSIDER, KOL, SNIPER, WHALE)
-- Buyers panel — Insiders count, KOLs count
-- First 10 sniper wallets (IN/OUT)
-- Risk flags — LP lock, mint auth, freeze auth, dev sells, wash trading, social signals
-- Alpha & trade setup — entry thesis, position size, exit strategy, comparable plays
-- On-chain event timeline
+### Advanced Mode
+Premium feature — coming in **V2**
 
 ### Ecosystem (Coming Soon)
-- 📱 MoonAi App — email & Solana wallet login
+- 📱 MoonAi App
 - 🤖 Telegram Bot
 - 💬 Discord Bot
 
@@ -57,24 +46,7 @@ Full AI deep analysis — every signal, every risk, full alpha.
 
 1. Go to [moonaiapp.xyz](https://moonaiapp.xyz)
 2. Paste any Solana CA or pump.fun link
-3. Toggle between Trencher and Advanced for different depth
-
----
-
-## Architecture
-
-```
-moonaiapp.xyz
-├── Frontend (index.html + css/ + js/)
-│   └── No API keys in browser
-│
-└── Backend (Vercel Serverless)
-    ├── /api/chat          → Claude AI proxy (rate-limited)
-    ├── /api/holders       → Helius top 10 holders
-    ├── /api/bundles       → Bundle detection
-    ├── /api/token-info    → Mint/freeze authority + dev balance
-    └── /api/fresh-wallets → Fresh wallet % analysis
-```
+3. Done
 
 ---
 
@@ -84,13 +56,12 @@ moonaiapp.xyz
 |---|---|
 | Frontend | HTML / CSS / Vanilla JS |
 | Font | Lexend |
-| AI | Anthropic Claude via Vercel proxy |
+| AI | Anthropic Claude via backend proxy |
 | Market data | DexScreener API |
 | Token metadata | pump.fun API |
 | On-chain data | Helius RPC |
 | SOL price | CoinGecko API |
-| Backend | Vercel Serverless (Node.js) |
-| Rate limiting | Upstash Redis |
+| Backend | Vercel Serverless |
 | Hosting | Vercel + moonaiapp.xyz |
 
 ---

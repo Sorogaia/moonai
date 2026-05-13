@@ -2,65 +2,57 @@
 
 ---
 
-## [2.0.0] — 2026-05-14 — V2 Launch 🚀
+## [1.5.0] — 2026-05-14
 
 ### Added
-- **Advanced Mode unlocked** — full AI deep analysis: verdict, score, TH distro with role badges (DEV/INSIDER/KOL/SNIPER/WHALE), buyers panel, sniper tracking, risks, alpha, timeline
-- **Auto-refresh** — live price data updates every 60 seconds, countdown timer shown
-- **Momentum Score** — weighted 5M/1H/6H/24H momentum: 🔥 HOT / ⬆ RISING / ➡ NEUTRAL / ⬇ COOLING / 🧊 COLD
-- **5M price change** — added to price bar
-- **ATH MC tracking** — session-based all-time high MC with % down from ATH
-- **Fresh Wallets %** — % of top holders with newly created wallets (farm detection)
-- `api/fresh-wallets.js` — Vercel endpoint for fresh wallet analysis
-
-### Changed
-- Advanced mode toggle now switches modes (was blocked by "Coming Soon" popup)
-- V2 popup replaced with ecosystem preview modal
-- Stats grid now live-updating without full re-render
+- Auto-refresh every 60s with live countdown
+- Momentum Score — 5M/1H/6H/24H weighted signal
+- 5M price change in price bar
+- ATH MC tracking (session-based) with % down
+- Fresh Wallets % detection
+- Live stat updates without full re-render
 
 ---
 
-## [1.4.0] — 2026-05-14 — Safety Score & Token Intel
+## [1.4.0] — 2026-05-14
 
 ### Added
 - Safety Score (0–100) — SAFE / CAUTION / WARNING / DANGER
-- DEV sold tracker — live wallet balance check
+- DEV sold tracker
 - Mint & freeze authority checks
 - Copy CA button
-- `api/token-info.js`
 
 ---
 
-## [1.3.0] — 2026-05-14 — Bundle Detection
+## [1.3.0] — 2026-05-14
 
 ### Added
-- Advanced on-chain bundle detection via Helius
-- Jito confirmation, same-funder grouping, dev bundle flag, new wallet detection
-- `api/bundles.js`
+- Bundle detection with risk scoring
+- DEV bundle flag, new wallet signal
 
 ---
 
-## [1.2.0] — 2026-05-14 — Holders UI
+## [1.2.0] — 2026-05-14
 
 ### Added
-- Top 3 holders shown by default with expandable dropdown
-- Progress bars, WHALE/DEV badges, concentration warning
+- Top Holders — progress bars, DEV/WHALE badges, expandable dropdown
+- Supply fixed to 1B
 
 ---
 
-## [1.1.0] — 2026-05-13 — Backend & Infrastructure (Sorogaia)
+## [1.1.0] — 2026-05-13
 
 ### Added
-- Vercel backend proxy — API key never in browser
-- Helius RPC — real top 10 holder data
-- Upstash Redis rate limiting
+- Vercel backend proxy — no API key in browser
+- Real top holder data via Helius
+- Rate limiting
 
 ---
 
-## [1.0.0] — 2026-05-13 — V1 Launch
+## [1.0.0] — 2026-05-13
 
 ### Added
-- Trencher mode — full live data pipeline
+- V1 launch — Trencher mode with full live data
 - AI narrative lore + deep analysis
-- Colour-coded socials, Top X Posts, Trade & Explore
-- MoonAi logo, Lexend font, custom domain
+- Trade & Explore links, socials, Top X Posts
+- MoonAi logo, Lexend font, moonaiapp.xyz

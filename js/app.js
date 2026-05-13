@@ -27,20 +27,11 @@ const labelTrencher = document.getElementById('labelTrencher');
 const labelAdvanced = document.getElementById('labelAdvanced');
 
 function toggleMode() {
-  analysisMode = analysisMode === 'trencher' ? 'advanced' : 'trencher';
-  applyMode();
-  // clear analysis so user gets a fresh run in the new mode
-  if (hasAnalyzed) {
-    document.getElementById('resultZone').innerHTML = '';
-    document.getElementById('chatFeed').innerHTML   = '';
-    document.getElementById('feedArea').style.display   = 'none';
-    document.getElementById('welcomeView').style.display = 'block';
-    document.getElementById('suggestionsRow').style.display = 'none';
-    document.getElementById('exampleRow').style.display = 'flex';
-    hasAnalyzed  = false;
-    chatMessages = [];
-    currentCA    = '';
-    clearAutoRefresh();
+  if (analysisMode === 'trencher') {
+    openV2Modal();
+  } else {
+    analysisMode = 'trencher';
+    applyMode();
   }
 }
 

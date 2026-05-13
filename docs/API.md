@@ -1,91 +1,40 @@
 # API Reference
 
-MoonAi uses a combination of free public APIs and secured backend proxies.
+MoonAi uses secured backend proxies — no keys are ever exposed in the browser.
 
 ---
 
-## Backend Endpoints (Vercel — keys never in browser)
+## Backend Endpoints
 
 ### POST /api/chat
-Proxies Claude AI server-side. Rate limited via Upstash Redis (20 req/min per IP).
-
-**Request body:** Anthropic messages format
-**Response:** Anthropic API response (passthrough)
+Proxies AI analysis server-side. Rate limited per IP.
 
 ---
 
 ### GET /api/holders?ca={CA}
-Returns top 10 token holders with wallet addresses, amounts and % of supply.
-
-**Response:**
-```json
-{
-  "holders": [
-    { "owner": "wallet...", "amount": 1234567, "pct": 1.23 }
-  ],
-  "totalSupply": 1000000000
-}
-```
+Returns top holder data for a token.
 
 ---
 
 ### GET /api/token-info?ca={CA}&dev={DEV_WALLET}
-Returns mint authority, freeze authority status, and dev wallet token balance.
-
-**Response:**
-```json
-{
-  "mintAuthority": null,
-  "freezeAuthority": null,
-  "mintRevoked": true,
-  "freezeRevoked": true,
-  "devBalance": 0,
-  "devPct": "0.00",
-  "devSold": true
-}
-```
+Returns token authority status and dev wallet activity.
 
 ---
 
 ### GET /api/bundles?ca={CA}&dev={DEV_WALLET}
-Advanced bundle detection. Analyses launch transactions and returns risk scoring.
-
-**Query params:**
-- `ca` — token contract address
-- `dev` — (optional) dev wallet address for cross-referencing
-
-**Response:**
-```json
-{
-  "bundled": true,
-  "pct": "15.20",
-  "bundleCount": 2,
-  "wallets": 5,
-  "jitoConfirmed": true,
-  "devBundled": false,
-  "newWallets": 2,
-  "bundles": [...]
-}
-```
+Returns bundle risk analysis for a token launch.
 
 ---
 
-## Public APIs (Free, No Key)
+### GET /api/fresh-wallets?ca={CA}
+Returns fresh wallet concentration data.
 
-### DexScreener
-Market data — price, MC, volume, liquidity, pair info.
-```
-GET https://api.dexscreener.com/latest/dex/tokens/{CA}
-```
+---
 
-### pump.fun
-Token metadata — name, image, dev wallet, bonded status, socials.
-```
-GET https://frontend-api.pump.fun/coins/{CA}
-```
+## Public APIs (Free, No Key Required)
 
-### CoinGecko
-SOL price for liquidity calculations.
-```
-GET https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd
-```
+| API | Used For |
+|---|---|
+| DexScreener | Price, MC, volume, liquidity |
+| pump.fun | Token metadata, socials, dev wallet |
+| CoinGecko | SOL price |
