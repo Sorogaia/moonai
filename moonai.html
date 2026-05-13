@@ -2282,7 +2282,7 @@ async function fetchLoreBubble(name, symbol, description, mc, ch24, bonded) {
 }
 
 async function runNarrativeAnalysis() {
-  const narrativePrompt = `Give me a deep, detailed narrative analysis of this token. Cover every dimension:
+  const fullPrompt = `Give me a deep, detailed narrative analysis of this token. Cover every dimension:
 
 1. THE STORY — What is the core narrative, theme or meme? What cultural moment, trend, character or idea does it tap into? Is the name/concept instantly understandable?
 
@@ -2302,14 +2302,15 @@ async function runNarrativeAnalysis() {
 
 Be direct, detailed and opinionated. This is alpha.`;
 
-  await sendChat(narrativePrompt);
+  await sendChat('📖 Deep narrative analysis', fullPrompt);
 }
 
-async function sendChat(msg) {
+async function sendChat(msg, aiPrompt) {
   msg = msg || mainInput.value.trim();
   if (!msg) return;
   if (!API_KEY) { openModal(); return; }
   if (!hasAnalyzed) { runAnalysis(msg); return; }
+  const promptToSend = aiPrompt || msg; // display msg in chat, send aiPrompt to AI
 
   mainInput.value = '';
   mainInput.style.height = 'auto';
@@ -2334,7 +2335,7 @@ async function sendChat(msg) {
   feed.appendChild(aiBubble);
   scrollBottom();
 
-  chatMessages.push({ role:'user', content: msg });
+  chatMessages.push({ role:'user', content: promptToSend });
 
   try {
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
