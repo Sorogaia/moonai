@@ -1195,6 +1195,10 @@ function scrollBottom() {
   const m = document.getElementById('mainScroll');
   setTimeout(() => { m.scrollTop = m.scrollHeight; }, 60);
 }
+function scrollTop() {
+  const m = document.getElementById('mainScroll');
+  setTimeout(() => { m.scrollTop = 0; }, 60);
+}
 
 /* ══════════════════════════════════════
    EXTRACT CA
@@ -1796,7 +1800,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
     }
   }
 
-  scrollBottom();
+  scrollTop();
 }
 
 function statCard(label, value, colorClass) {
