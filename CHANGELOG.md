@@ -2,6 +2,18 @@
 
 ---
 
+## [1.6.0] — 2026-05-14
+
+### Changed
+- Full UI cleanup — replaced all inline styles with CSS classes throughout
+- Added component CSS: `.tok-header`, `.lore-bubble`, `.analysis-btn`, `.price-bar-*`, `.stats-4/5/3`, `.social-link`, `.trade-link`, `.x-link`, `.holder-row`, `.safety-*`, `.bundle-*`
+- Fixed 5-item token details row — now uses proper 5-column grid (was wrapping in 4-col)
+- Consistent spacing, animations, and hover states across all cards
+- Safety Score, Bundle Detection, Top Holders badges now use CSS badge classes (no inline color styles)
+- Removed all structural `display:grid`/`display:flex` inline styles from JS templates
+
+---
+
 ## [1.5.0] — 2026-05-14
 
 ### Added
