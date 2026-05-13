@@ -1,39 +1,35 @@
 # MoonAi Roadmap
 
-## V1 — Live ✅
-
-- [x] Trencher mode — live token data
-- [x] AI narrative lore + deep analysis on demand
-- [x] Price bar (price, 1H, 24H, Vol 1H)
-- [x] Stats grid (MC, VOL, Liquidity, Supply)
-- [x] Colour-coded social links
-- [x] Top X Posts search links
-- [x] Trade & Explore links
-- [x] AI chat with topic guard
-- [x] Top Holders — real data, progress bars, DEV/WHALE badges
-- [x] Bundle Detection — advanced risk scoring
-- [x] Safety Score 0–100 — SAFE/CAUTION/WARNING/DANGER
-- [x] DEV sold tracker — live wallet balance check
-- [x] Mint & freeze authority checks
+## V1 — Complete ✅
+- [x] Trencher mode — full live data pipeline
+- [x] AI narrative lore + deep analysis
+- [x] DexScreener + pump.fun + CoinGecko integration
+- [x] Colour-coded socials, Top X Posts, Trade & Explore
+- [x] MoonAi logo, Lexend font, moonaiapp.xyz
+- [x] Vercel backend — no API key from users
+- [x] Helius top holders with DEV/WHALE badges
+- [x] Bundle detection — Jito, same-funder, risk scoring
+- [x] Safety Score 0–100
+- [x] DEV sold tracker + mint/freeze authority
 - [x] Copy CA button
-- [x] Vercel backend — no API key required from users
-- [x] Rate limiting
-- [x] Custom domain — moonaiapp.xyz
-- [x] MoonAi logo + Lexend font
+- [x] Rate limiting — Upstash Redis
 
-## V2 — In Development 🔧
+## V2 — Complete ✅
+- [x] Advanced mode — full AI deep analysis, role badges, snipers
+- [x] Auto-refresh every 60s with countdown
+- [x] Momentum Score — 5M/1H/6H/24H weighted
+- [x] 5M price change
+- [x] ATH MC — session tracking with % down
+- [x] Fresh Wallets % — farm detection
+- [x] Live stat updating without full re-render
 
-- [ ] Advanced mode — premium AI analysis
-- [ ] KOL detection
-- [ ] Top X Posts — full tweet display
-- [ ] MoonAi App — email & wallet login
+## V3 — Planned 🗓
+- [ ] MoonAi App — email & Solana wallet login
 - [ ] Telegram Bot
 - [ ] Discord Bot
 - [ ] Subscription model
-
-## V3 — Planned 🗓
-
 - [ ] User accounts & portfolio tracking
+- [ ] Top X Posts — full tweet display
+- [ ] KOL wallet database
 - [ ] Alerts & notifications
 - [ ] Historical analysis
-- [ ] Leaderboard
