@@ -13,7 +13,7 @@ A Solana/pump.fun token analyzer with an AI chatbot, powered by a Vercel backend
 
 ## Live Links
 - GitHub: https://github.com/itsyaboihomelander/moonai
-- Live site: https://moonai-ashen.vercel.app
+- Live site: https://moonaiapp.xyz
 
 ## Git Setup
 - Remote: origin → https://github.com/itsyaboihomelander/moonai.git

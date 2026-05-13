@@ -8,7 +8,7 @@ MoonAi is a single-file web app that gives you instant, deep analysis on any Sol
 
 ## Live Site
 
-👉 [https://itsyaboihomelander.github.io/moonai/](https://itsyaboihomelander.github.io/moonai/)
+👉 [https://moonaiapp.xyz](https://moonaiapp.xyz)
 
 ---
 
