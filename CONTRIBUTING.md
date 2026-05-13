@@ -7,7 +7,7 @@ Thanks for your interest in contributing to MoonAi!
 ## Getting Started
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/moonai.git`
+2. Clone your fork: `git clone https://github.com/Sorogaia/moonai.git`
 3. Open `moonai.html` in your browser to run locally
 4. Make your changes
 5. Submit a pull request

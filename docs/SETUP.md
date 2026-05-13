@@ -1,36 +1,65 @@
 # Setup Guide
 
-## Quick Start
+## Using MoonAi
 
-1. Visit [https://itsyaboihomelander.github.io/moonai/](https://itsyaboihomelander.github.io/moonai/)
-2. Click **⚙ API Key** in the top right
-3. Paste your Anthropic API key from [console.anthropic.com](https://console.anthropic.com)
-4. Paste any Solana contract address or pump.fun link
-5. Done
+No API key needed. No signup. No install.
 
-## Getting an Anthropic API Key
+1. Go to [moonaiapp.xyz](https://moonaiapp.xyz)
+2. Paste any Solana CA or pump.fun link
+3. Done
 
-1. Go to [console.anthropic.com](https://console.anthropic.com)
-2. Sign up for a free account
-3. Navigate to **API Keys** → **Create Key**
-4. Copy and paste into MoonAi
-
-> **Tip:** Set a monthly spend limit under Settings → Limits to protect yourself.
+---
 
 ## Running Locally
 
-No install required. Simply open `moonai.html` in any modern browser.
+Clone the repo and open `index.html` in any browser:
 
-Or with live reload:
+```bash
+git clone https://github.com/Sorogaia/moonai.git
+cd moonai
+```
+
+Open `index.html` directly, or with live reload:
 ```bash
 npx live-server .
 ```
 
-## Self-Hosting
+> **Note:** When running locally, AI chat and holder data won't work without the backend. See **Backend Setup** below.
 
-MoonAi is a single HTML file. You can host it anywhere:
+---
 
-- **GitHub Pages** — drag and drop, free
-- **Netlify Drop** — drag and drop, free
-- **Vercel** — connect GitHub repo, auto-deploys on push
-- **Cloudflare Pages** — free, fast CDN
+## Backend Setup (Vercel)
+
+The backend proxies Anthropic and Helius so API keys are never in the browser.
+
+### 1. Install Vercel CLI
+```bash
+npm install -g vercel
+```
+
+### 2. Set environment variables in Vercel dashboard
+```
+ANTHROPIC_API_KEY      = your Anthropic key
+HELIUS_API_KEY         = your Helius key
+UPSTASH_REDIS_REST_URL = your Upstash Redis URL
+UPSTASH_REDIS_REST_TOKEN = your Upstash token
+```
+
+### 3. Deploy
+```bash
+vercel --prod
+```
+
+### API Endpoints
+- `POST /api/chat` — proxies Anthropic API, rate-limited (20 req/min per IP)
+- `GET /api/holders?ca={CA}` — fetches top 10 holders via Helius RPC
+
+---
+
+## Getting API Keys
+
+| Service | Where | Cost |
+|---|---|---|
+| Anthropic | [console.anthropic.com](https://console.anthropic.com) | ~$0.003/analysis |
+| Helius | [helius.dev](https://helius.dev) | Free tier available |
+| Upstash Redis | [upstash.com](https://upstash.com) | Free tier available |

@@ -4,6 +4,38 @@ All notable changes to MoonAi are documented here.
 
 ---
 
+## [1.1.0] — 2026-05-13 — Backend & Helius (Sorogaia)
+
+### Added
+- Vercel serverless backend proxy (`/api/chat`) — Anthropic API key now lives server-side only, never in browser
+- Helius RPC integration (`/api/holders`) — real top 10 token holders with wallet addresses and % concentration
+- Upstash Redis rate limiting on `/api/chat` — 20 requests/min per IP to prevent abuse
+- `vercel.json` — Vercel deployment config (30s function timeout)
+- API key modal removed from frontend — users no longer need their own Anthropic key
+
+### Changed
+- All Anthropic API calls routed through `/api/chat` proxy
+- Top Holders card now shows live real data from Helius
+- Frontend no longer stores or transmits API keys
+
+---
+
+## [1.0.1] — 2026-05-13 — Repo & Polish
+
+### Added
+- OG/Twitter meta tags for social sharing previews
+- Favicon using MoonAi logo
+- Improved API key modal with step-by-step guide and cost info
+- LICENSE (MIT), package.json, .gitignore, CHANGELOG, CONTRIBUTING
+- docs/ folder — SETUP.md, API.md, ROADMAP.md
+- Refactored into index.html + css/styles.css + js/app.js for proper code structure
+
+### Changed
+- Custom domain set to moonaiapp.xyz
+- Hosting moved from GitHub Pages to Vercel
+
+---
+
 ## [1.0.0] — 2026-05-13 — V1 Launch
 
 ### Added
@@ -14,9 +46,8 @@ All notable changes to MoonAi are documented here.
 - Price bar — current price, 1H change, 24H change, Vol 1H with buys/sells
 - Stats grid — MC, VOL 24H, Liquidity, Supply
 - Token details — Bonded status, Dev wallet, Age, Holders
-- Colour-coded social links — Twitter (white), Telegram (blue), Website (purple), Discord
-- Top X Posts section — Top Posts & Latest Posts links to Twitter search
-- Top Holders placeholder — Helius integration coming in V2
+- Colour-coded social links — Twitter, Telegram, Website, Discord
+- Top X Posts section — search links to Twitter
 - Trade & Explore links — Axiom, Photon, BullX, Trojan, GMGN, Solscan, GeckoTerminal, pump.fun
 - AI follow-up chat with full token context pre-seeded
 - Quick suggestion pills — Entry strategy, Red flags, Stop loss, Comparable plays
@@ -27,24 +58,15 @@ All notable changes to MoonAi are documented here.
 - Lexend font — dyslexic-friendly and modern
 - SOL price fetch for liquidity fallback on bonding curve tokens
 - King of the Hill badge for pump.fun tokens
-- GitHub Pages deployment
-
-### Tech
-- Single HTML file — zero dependencies, zero build step
-- Anthropic Claude API (claude-sonnet-4-5)
-- DexScreener API — free, no key required
-- pump.fun API — free, no key required
-- CoinGecko API — SOL price, free, no key required
 
 ---
 
 ## [Upcoming] — V2
 
 - Advanced mode — full AI analysis, role badges, sniper tracking
-- Helius integration — real holder data, dev %, bundle detection
 - KOL detection
+- Bundle detection
 - Top X Posts — full tweet display with views & likes
-- Vercel backend proxy — secured API keys
 - MoonAi App — email & Solana wallet login
 - Telegram Bot
 - Discord Bot

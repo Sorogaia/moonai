@@ -14,6 +14,11 @@
 - [x] Topic guard (Solana/memecoins only)
 - [x] Advanced mode V2 preview popup
 - [x] MoonAi logo + Lexend font
+- [x] Custom domain — moonaiapp.xyz
+- [x] Vercel backend proxy — API keys server-side only
+- [x] Helius integration — real top 10 holder data
+- [x] Rate limiting — Upstash Redis, 20 req/min per IP
+- [x] No API key required from users
 
 ## V2 — In Development 🔧
 
@@ -22,10 +27,8 @@
 - [ ] Insider & KOL detection
 - [ ] First 10 sniper wallets (IN / OUT)
 - [ ] Bundle detection
-- [ ] Helius integration — real holder data
 - [ ] KOL tracker
 - [ ] Top X Posts — full tweet display with views & likes
-- [ ] Vercel backend proxy — API keys secured server-side
 - [ ] MoonAi App — email & Solana wallet login
 - [ ] Telegram Bot
 - [ ] Discord Bot

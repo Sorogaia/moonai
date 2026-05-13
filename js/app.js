@@ -1,8 +1,9 @@
 ﻿/**
  * MoonAi — Solana & pump.fun Token Analyzer
- * https://github.com/itsyaboihomelander/moonai
+ * https://moonaiapp.xyz | https://github.com/Sorogaia/moonai
  *
- * Powered by Anthropic Claude API, DexScreener, pump.fun, CoinGecko
+ * Frontend: itsyaboihomelander | Backend: Sorogaia
+ * Powered by Anthropic Claude, DexScreener, pump.fun, Helius, CoinGecko
  * License: MIT
  */
 
