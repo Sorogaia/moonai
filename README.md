@@ -29,6 +29,7 @@ MoonAi gives you instant, deep analysis on any Solana memecoin. Paste a contract
 - **AI Chat** — Full follow-up chat with token context pre-seeded
 - **Quick pills** — Entry strategy, Red flags, Stop loss & targets, Comparable plays
 - **Topic guard** — Solana/memecoins only, two-layer enforcement
+- **Bundle Detection** — on-chain launch analysis via Helius, % bundled, risk level (LOW/MEDIUM/HIGH)
 - **Rate limiting** — 20 req/min per IP via Upstash Redis
 
 ### Advanced Mode

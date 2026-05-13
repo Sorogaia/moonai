@@ -25,6 +25,27 @@ Proxies Anthropic Claude API server-side. API key never exposed to browser.
 
 ---
 
+### GET /api/bundles?ca={CA}
+Detects coordinated Jito bundles in the token's launch window via Helius enhanced transactions.
+
+**Query params:**
+- `ca` — Solana token contract address
+
+**Response:**
+```json
+{
+  "bundled": true,
+  "pct": "15.20",
+  "bundleCount": 2,
+  "wallets": 5,
+  "bundles": [
+    { "slot": 123456, "wallets": ["Ab3c…xYz1", "..."], "amount": 95000000, "pct": "9.50" }
+  ]
+}
+```
+
+---
+
 ### GET /api/holders?ca={CA}
 Fetches top 10 token holders via Helius RPC. Helius key never exposed to browser.
 

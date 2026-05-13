@@ -28,7 +28,7 @@
 - [ ] Holder distribution with role badges (DEV, INSIDER, KOL, SNIPER, WHALE)
 - [ ] Insider & KOL detection
 - [ ] First 10 sniper wallets (IN / OUT)
-- [ ] Bundle detection
+- [x] Bundle detection — Helius enhanced transactions, slot-based grouping, risk scoring
 - [ ] KOL tracker
 - [ ] Top X Posts — full tweet display with views & likes
 - [ ] MoonAi App — email & Solana wallet login

@@ -4,6 +4,19 @@ All notable changes to MoonAi are documented here.
 
 ---
 
+## [1.3.0] — 2026-05-14 — Bundle Detection
+
+### Added
+- `api/bundles.js` — Vercel serverless endpoint using Helius enhanced transactions
+- Detects coordinated Jito bundles in the launch window (first 5 slots after creation)
+- Returns: bundled %, bundle count, wallets involved, per-bundle breakdown
+- Bundle Detection card in UI — shows % supply bundled, bundle count, wallet count
+- Progress bar showing supply bundled visually
+- Risk level badge — LOW / MEDIUM / HIGH based on % bundled
+- Clean launch message when no bundles detected
+
+---
+
 ## [1.2.0] — 2026-05-14 — Holders UI & Polish
 
 ### Added
