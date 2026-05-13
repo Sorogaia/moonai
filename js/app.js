@@ -692,7 +692,15 @@ function renderTrencher(ca, dex, pump, solPrice) {
           ${escHtml(name)} <span style="color:var(--text-muted);font-size:1rem;font-weight:400;">$${escHtml(symbol)}</span>
           ${pump?.kingOfHill ? '<span style="font-size:11px;background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b44;border-radius:20px;padding:2px 8px;margin-left:6px;vertical-align:middle;">👑 King</span>' : ''}
         </div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.75);font-family:'Lexend',sans-serif;font-weight:300;letter-spacing:0.03em;margin-bottom:8px;word-break:break-all;">${escHtml(ca)}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+          <span style="font-size:11px;color:rgba(255,255,255,0.75);font-family:'Lexend',sans-serif;font-weight:300;letter-spacing:0.03em;word-break:break-all;">${escHtml(ca)}</span>
+          <button onclick="navigator.clipboard.writeText('${escHtml(ca)}').then(()=>{this.textContent='✓ Copied';this.style.color='var(--accent)';setTimeout(()=>{this.textContent='Copy CA';this.style.color='';},1500)})" style="
+            flex-shrink:0;font-family:var(--font);font-size:10px;font-weight:700;
+            color:var(--text-faint);background:var(--bg-surface);
+            border:1px solid var(--border2);border-radius:var(--radius-pill);
+            padding:2px 8px;cursor:pointer;transition:all .15s;white-space:nowrap;
+          " onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';" onmouseout="this.style.borderColor='';this.style.color='';">Copy CA</button>
+        </div>
         <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;">
           ${dataSource}
           <span style="color:var(--text-faint);font-size:11px;">· #SOL</span>
@@ -749,6 +757,20 @@ function renderTrencher(ca, dex, pump, solPrice) {
       </button>
     </div>
 
+    <!-- ── SAFETY SCORE ── -->
+    <div class="card" id="safetyCard" style="margin-bottom:8px;">
+      <div class="card-head">
+        <div class="card-title"><div class="card-title-dot" style="background:#14F195"></div>Safety Score</div>
+        <span class="card-badge" id="safetyBadge" style="background:rgba(255,159,10,0.1);color:#ff9f0a;border:1px solid rgba(255,159,10,0.3);">SCANNING</span>
+      </div>
+      <div class="card-body" id="safetyBody">
+        <div style="display:flex;align-items:center;gap:8px;color:var(--text-faint);font-size:12px;">
+          <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+          Running safety checks…
+        </div>
+      </div>
+    </div>
+
     <!-- ── PRICE BAR ── -->
     <div class="card" style="margin-bottom:8px;background:var(--bg-surface);">
       <div class="card-body" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px 20px;">
@@ -792,7 +814,10 @@ function renderTrencher(ca, dex, pump, solPrice) {
     <!-- ── TOKEN DETAILS ── -->
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;">
       ${statCard('BONDED', bondPct ? `${bonded} (${bondPct})` : bonded, pump?.bonded ? 'c-green' : pump?.bonded === false ? 'c-amber' : '')}
-      ${statCard('DEV WALLET', dev, 'c-amber')}
+      <div class="metric-card">
+        <div class="metric-lbl">DEV WALLET</div>
+        <div class="metric-val c-amber" style="font-size:13px;" id="devWalletVal">${dev}</div>
+      </div>
       ${statCard('AGE', age, '')}
       <div class="metric-card">
         <div class="metric-lbl">HOLDERS</div>
@@ -882,6 +907,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
   fetchLoreBubble(name, symbol, pump?.description || '', mc, ch24, pump?.bonded);
   fetchTopHolders(ca, pump?.dev || null);
   fetchBundleDetection(ca, pump?.dev || null);
+  fetchTokenInfo(ca, pump?.dev || null, dex, pump);
 
   // Inject token image safely after HTML is in the DOM
   if (imgSrc) {
@@ -1457,6 +1483,185 @@ async function fetchTopHolders(ca, devWallet) {
   } catch {
     bodyEl.textContent = 'Holder data unavailable.';
     if (badgeEl) { badgeEl.textContent = 'ERROR'; badgeEl.className = 'card-badge'; }
+  }
+}
+
+/* ══════════════════════════════════════
+   TOKEN INFO + SAFETY SCORE
+══════════════════════════════════════ */
+async function fetchTokenInfo(ca, devWallet, dex, pump) {
+  const bodyEl  = document.getElementById('safetyBody');
+  const badgeEl = document.getElementById('safetyBadge');
+  if (!bodyEl) return;
+
+  try {
+    const devParam = devWallet ? `&dev=${encodeURIComponent(devWallet)}` : '';
+    const res  = await fetch(`/api/token-info?ca=${encodeURIComponent(ca)}${devParam}`);
+    const info = await res.json();
+
+    if (!res.ok || info.error) {
+      bodyEl.innerHTML = `<span style="color:var(--text-faint);font-size:12px;">Safety data unavailable.</span>`;
+      if (badgeEl) badgeEl.textContent = 'N/A';
+      return;
+    }
+
+    // Update DEV WALLET card with sold status
+    const devEl = document.getElementById('devWalletVal');
+    if (devEl && devWallet) {
+      const short = devWallet.slice(0,4) + '…' + devWallet.slice(-4);
+      if (info.devSold) {
+        devEl.innerHTML = `${short} <span style="background:rgba(255,59,48,.15);color:#ff3b30;border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">SOLD</span>`;
+      } else if (info.devPct > 0) {
+        devEl.innerHTML = `${short} <span style="background:rgba(255,159,10,.12);color:#ff9f0a;border:1px solid rgba(255,159,10,.3);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">HOLDS ${info.devPct}%</span>`;
+      }
+    }
+
+    // Calculate safety score
+    const score = calculateSafetyScore(info, dex, pump);
+    renderSafetyScore(score, info);
+
+  } catch (e) {
+    if (bodyEl) bodyEl.innerHTML = `<span style="color:var(--text-faint);font-size:12px;">Safety check unavailable.</span>`;
+  }
+}
+
+function calculateSafetyScore(info, dex, pump) {
+  let score   = 100;
+  const flags = [];
+  const good  = [];
+
+  // Mint authority
+  if (!info.mintRevoked) {
+    score -= 20;
+    flags.push({ label: 'Mint authority active — dev can mint more tokens', sev: 'high' });
+  } else {
+    good.push('Mint authority revoked');
+  }
+
+  // Freeze authority
+  if (!info.freezeRevoked) {
+    score -= 15;
+    flags.push({ label: 'Freeze authority active — dev can freeze wallets', sev: 'high' });
+  } else {
+    good.push('Freeze authority revoked');
+  }
+
+  // Dev sold
+  if (info.devSold) {
+    score -= 20;
+    flags.push({ label: 'Dev wallet is empty — dev sold all tokens', sev: 'high' });
+  } else if (info.devPct > 10) {
+    score -= 10;
+    flags.push({ label: `Dev holds ${info.devPct}% — large dev position`, sev: 'med' });
+  } else if (info.devPct > 0) {
+    good.push(`Dev still holds ${info.devPct}%`);
+  }
+
+  // Bonded status
+  if (pump?.bonded === true) {
+    score += 5;
+    good.push('Token bonded / migrated to Raydium');
+  } else if (pump?.bonded === false) {
+    score -= 5;
+    flags.push({ label: 'Token not yet bonded — still on pump.fun curve', sev: 'low' });
+  }
+
+  // Liquidity
+  const liqVal = parseFloat(dex?.liq) || 0;
+  if (liqVal > 0 && liqVal < 5000) {
+    score -= 10;
+    flags.push({ label: 'Very low liquidity — easy to manipulate', sev: 'high' });
+  } else if (liqVal >= 50000) {
+    good.push('Strong liquidity');
+  }
+
+  // Age
+  const ageMs = dex?.created ? Date.now() - dex.created : null;
+  if (ageMs && ageMs < 3_600_000) {
+    score -= 5;
+    flags.push({ label: 'Token is less than 1 hour old — very early', sev: 'low' });
+  }
+
+  // Vol/MC ratio (healthy trading signal)
+  const mcVal  = parseFloat(dex?.mc)     || 0;
+  const volVal = parseFloat(dex?.vol24h) || 0;
+  if (mcVal > 0 && volVal > 0) {
+    const ratio = volVal / mcVal;
+    if (ratio > 2) {
+      good.push('High volume/MC ratio — strong trading activity');
+      score += 5;
+    } else if (ratio < 0.05) {
+      score -= 5;
+      flags.push({ label: 'Very low volume relative to MC — thin trading', sev: 'low' });
+    }
+  }
+
+  return { score: Math.max(0, Math.min(100, score)), flags, good };
+}
+
+function renderSafetyScore({ score, flags, good }, info) {
+  const bodyEl  = document.getElementById('safetyBody');
+  const badgeEl = document.getElementById('safetyBadge');
+  if (!bodyEl) return;
+
+  const verdict  = score >= 75 ? 'SAFE'    : score >= 55 ? 'CAUTION' : score >= 35 ? 'WARNING' : 'DANGER';
+  const scoreCol = score >= 75 ? '#14F195' : score >= 55 ? '#ff9f0a' : score >= 35 ? '#FF6B35' : '#ff3b30';
+  const scoreBg  = score >= 75 ? 'rgba(20,241,149,0.06)'  : score >= 55 ? 'rgba(255,159,10,0.06)'  : score >= 35 ? 'rgba(255,107,53,0.06)'  : 'rgba(255,59,48,0.06)';
+  const scoreBd  = score >= 75 ? 'rgba(20,241,149,0.2)'   : score >= 55 ? 'rgba(255,159,10,0.2)'   : score >= 35 ? 'rgba(255,107,53,0.2)'   : 'rgba(255,59,48,0.2)';
+
+  const flagRows = flags.map(f => {
+    const col = f.sev === 'high' ? '#ff3b30' : f.sev === 'med' ? '#ff9f0a' : '#ff9f0a';
+    return `<div style="display:flex;align-items:flex-start;gap:6px;font-size:12px;padding:3px 0;">
+      <span style="color:${col};flex-shrink:0;">${f.sev === 'high' ? '❌' : '⚠️'}</span>
+      <span style="color:var(--text-muted);">${f.label}</span>
+    </div>`;
+  }).join('');
+
+  const goodRows = good.map(g =>
+    `<div style="display:flex;align-items:flex-start;gap:6px;font-size:12px;padding:3px 0;">
+      <span style="color:var(--accent);flex-shrink:0;">✅</span>
+      <span style="color:var(--text-muted);">${g}</span>
+    </div>`
+  ).join('');
+
+  bodyEl.innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;">
+
+      <!-- Score circle -->
+      <div style="
+        width:72px;height:72px;border-radius:50%;flex-shrink:0;
+        background:${scoreBg};border:2px solid ${scoreBd};
+        display:flex;flex-direction:column;align-items:center;justify-content:center;
+      ">
+        <div style="font-size:1.4rem;font-weight:700;color:${scoreCol};line-height:1;">${score}</div>
+        <div style="font-size:9px;color:${scoreCol};font-weight:700;letter-spacing:.06em;">/100</div>
+      </div>
+
+      <!-- Verdict + bar -->
+      <div style="flex:1;">
+        <div style="font-size:1.1rem;font-weight:700;color:${scoreCol};margin-bottom:6px;">${verdict}</div>
+        <div style="height:6px;border-radius:3px;background:var(--border2);margin-bottom:8px;">
+          <div style="height:6px;border-radius:3px;background:${scoreCol};width:${score}%;transition:width .8s ease;"></div>
+        </div>
+        <div style="display:flex;gap:10px;font-size:11px;flex-wrap:wrap;">
+          <span style="color:var(--text-faint);">${info.mintRevoked ? '✅ Mint revoked' : '❌ Mint active'}</span>
+          <span style="color:var(--text-faint);">${info.freezeRevoked ? '✅ Freeze revoked' : '❌ Freeze active'}</span>
+          ${info.devSold ? '<span style="color:#ff3b30;">❌ Dev sold</span>' : info.devPct > 0 ? `<span style="color:#ff9f0a;">⚠️ Dev holds ${info.devPct}%</span>` : ''}
+        </div>
+      </div>
+    </div>
+
+    ${flagRows || goodRows ? `
+    <div style="border-top:1px solid var(--border2);padding-top:8px;">
+      ${flagRows}
+      ${goodRows}
+    </div>` : ''}`;
+
+  if (badgeEl) {
+    badgeEl.textContent = verdict;
+    badgeEl.style.background = scoreBg;
+    badgeEl.style.color      = scoreCol;
+    badgeEl.style.border     = `1px solid ${scoreBd}`;
   }
 }
 
