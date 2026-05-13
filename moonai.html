@@ -5,13 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MoonAi — Pump.fun Token Analyzer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ══════════════════════════════════════
    THEME VARIABLES
 ══════════════════════════════════════ */
 :root {
-  --font: 'Atkinson Hyperlegible', sans-serif;
+  --font: 'Lexend', sans-serif;
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 20px;
@@ -1604,7 +1605,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
           ${escHtml(name)} <span style="color:var(--text-muted);font-size:1rem;font-weight:400;">$${escHtml(symbol)}</span>
           ${pump?.kingOfHill ? '<span style="font-size:11px;background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b44;border-radius:20px;padding:2px 8px;margin-left:6px;vertical-align:middle;">👑 King</span>' : ''}
         </div>
-        <div style="font-size:10px;color:var(--text-faint);font-family:monospace;margin-bottom:8px;word-break:break-all;">${escHtml(ca)}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.75);font-family:'Lexend',sans-serif;font-weight:300;letter-spacing:0.03em;margin-bottom:8px;word-break:break-all;">${escHtml(ca)}</div>
         <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;">
           ${dataSource}
           <span style="color:var(--text-faint);font-size:11px;">· #SOL</span>
