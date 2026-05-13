@@ -1325,6 +1325,7 @@ async function fetchDexScreener(ca) {
       sells24h:  pair.txns?.h24?.sells   || 0,
       socials:   pair.info?.socials      || [],
       websites:  pair.info?.websites     || [],
+      imageUrl:  pair.info?.imageUrl     || null,
     };
   } catch { return null; }
 }
@@ -1391,26 +1392,57 @@ function renderTrencher(ca, dex, pump) {
     : '—';
   const changeColor = dex?.priceChange24h >= 0 ? 'var(--accent)' : 'var(--danger)';
 
-  // Socials — merge DexScreener + pump.fun
+  // Socials — merge DexScreener + pump.fun with proper URL cleaning
   const socialLinks = [];
-  if (pump?.twitter)  socialLinks.push({ label: 'Twitter', url: pump.twitter.startsWith('http') ? pump.twitter : 'https://x.com/' + pump.twitter });
-  if (pump?.telegram) socialLinks.push({ label: 'Telegram', url: pump.telegram.startsWith('http') ? pump.telegram : 'https://t.me/' + pump.telegram });
-  if (pump?.website)  socialLinks.push({ label: 'Website', url: pump.website });
+
+  function cleanTwitterUrl(val) {
+    if (!val) return null;
+    val = val.trim();
+    if (val.startsWith('http')) return val;
+    // strip leading @ or spaces
+    val = val.replace(/^@+/, '').trim();
+    if (!val) return null;
+    return 'https://x.com/' + val;
+  }
+  function cleanTelegramUrl(val) {
+    if (!val) return null;
+    val = val.trim();
+    if (val.startsWith('http')) return val;
+    val = val.replace(/^@+/, '').trim();
+    if (!val) return null;
+    return 'https://t.me/' + val;
+  }
+  function cleanWebUrl(val) {
+    if (!val) return null;
+    val = val.trim();
+    if (!val.startsWith('http')) val = 'https://' + val;
+    return val;
+  }
+
+  const twitterUrl  = cleanTwitterUrl(pump?.twitter);
+  const telegramUrl = cleanTelegramUrl(pump?.telegram);
+  const websiteUrl  = cleanWebUrl(pump?.website);
+
+  if (twitterUrl)  socialLinks.push({ label: '𝕏 Twitter',  url: twitterUrl });
+  if (telegramUrl) socialLinks.push({ label: '✈ Telegram', url: telegramUrl });
+  if (websiteUrl)  socialLinks.push({ label: '🌐 Website',  url: websiteUrl });
+
+  // Also pull from DexScreener socials/websites
   dex?.socials?.forEach(s => {
-    if (!socialLinks.find(x => x.label.toLowerCase() === s.type?.toLowerCase()))
-      socialLinks.push({ label: s.type, url: s.url });
+    if (s.url && !socialLinks.find(x => x.url === s.url))
+      socialLinks.push({ label: s.type || 'Link', url: s.url });
   });
   dex?.websites?.forEach(w => {
-    if (!socialLinks.find(x => x.url === w.url))
-      socialLinks.push({ label: 'Website', url: w.url });
+    if (w.url && !socialLinks.find(x => x.url === w.url))
+      socialLinks.push({ label: '🌐 Website', url: w.url });
   });
 
   const socialsHtml = socialLinks.length
     ? socialLinks.map(s =>
         `<a href="${escHtml(s.url)}" target="_blank" rel="noopener" style="
-          color:var(--accent);text-decoration:none;font-size:12px;
+          color:var(--accent);text-decoration:none;font-size:12px;font-weight:600;
           background:rgba(20,241,149,0.08);border:1px solid rgba(20,241,149,0.2);
-          border-radius:20px;padding:3px 10px;white-space:nowrap;
+          border-radius:20px;padding:4px 12px;white-space:nowrap;
         ">${escHtml(s.label)} ↗</a>`
       ).join('')
     : '<span style="color:var(--text-faint);font-size:12px;">No socials found</span>';
@@ -1423,10 +1455,13 @@ function renderTrencher(ca, dex, pump) {
     ? `<span style="color:var(--accent);font-size:10px;">● LIVE</span>`
     : `<span style="color:var(--amber);font-size:10px;">⚠ Token not found on DexScreener/pump.fun</span>`;
 
-  // Token image from pump.fun
-  const tokenImg = pump?.image
-    ? `<img src="${escHtml(pump.image)}" alt="${escHtml(symbol)}" style="width:80px;height:80px;border-radius:12px;object-fit:cover;flex-shrink:0;border:1px solid var(--border2);" onerror="this.style.display='none';">`
-    : `<div style="width:80px;height:80px;border-radius:12px;background:var(--bg-surface);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:2rem;flex-shrink:0;">🪙</div>`;
+  // Token image — DexScreener CDN first, pump.fun IPFS as fallback
+  const imgSrc = dex?.imageUrl || pump?.image || null;
+  const tokenImg = imgSrc
+    ? `<img id="tokenImg" src="${escHtml(imgSrc)}" alt="${escHtml(symbol)}"
+        style="width:88px;height:88px;border-radius:14px;object-fit:cover;flex-shrink:0;border:1px solid var(--border2);"
+        onerror="this.outerHTML='<div style=\'width:88px;height:88px;border-radius:14px;background:var(--bg-surface);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:2.2rem;flex-shrink:0;\'>🪙</div>'">`
+    : `<div style="width:88px;height:88px;border-radius:14px;background:var(--bg-surface);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:2.2rem;flex-shrink:0;">🪙</div>`;
 
   // Trading platform ref links
   const tradeLinks = [
@@ -1449,23 +1484,24 @@ function renderTrencher(ca, dex, pump) {
   document.getElementById('resultZone').innerHTML = `
   <div class="result-area">
 
-    <!-- Token header with image -->
-    <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:1rem;">
+    <!-- Token header — image left, name/CA/links right -->
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;">
       ${tokenImg}
       <div style="flex:1;min-width:0;">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:4px;">
-          <div style="font-size:1.3rem;font-weight:700;letter-spacing:-0.02em;line-height:1.2;">${escHtml(name)} <span style="color:var(--text-muted);font-size:0.95rem;">$${escHtml(symbol)}</span></div>
-          <div style="display:flex;align-items:center;gap:8px;">${dataSource} ${pairLink}</div>
+        <div style="font-size:1.4rem;font-weight:700;letter-spacing:-0.02em;line-height:1.2;margin-bottom:3px;">
+          ${escHtml(name)} <span style="color:var(--text-muted);font-size:1rem;font-weight:400;">$${escHtml(symbol)}</span>
         </div>
-        <div style="font-size:10px;color:var(--text-faint);font-family:monospace;margin-bottom:8px;word-break:break-all;">${escHtml(ca)}</div>
-        <!-- Core stats inline -->
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
-          ${statCard('MC', mc, mc === '—' ? '' : 'c-cyan')}
-          ${statCard('VOL 24H', vol, vol === '—' ? '' : 'c-cyan')}
-          ${statCard('LIQUIDITY', liq, liq === '—' ? '' : 'c-cyan')}
-          ${statCard('24H', change, dex?.priceChange24h >= 0 ? 'c-green' : dex?.priceChange24h < 0 ? 'c-red' : '')}
-        </div>
+        <div style="font-size:10px;color:var(--text-faint);font-family:monospace;margin-bottom:6px;word-break:break-all;">${escHtml(ca)}</div>
+        <div style="display:flex;align-items:center;gap:10px;">${dataSource} ${pairLink}</div>
       </div>
+    </div>
+
+    <!-- Core stats row — full width below header -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;">
+      ${statCard('MC', mc, mc === '—' ? '' : 'c-cyan')}
+      ${statCard('VOL 24H', vol, vol === '—' ? '' : 'c-cyan')}
+      ${statCard('LIQUIDITY', liq, liq === '—' ? '' : 'c-cyan')}
+      ${statCard('24H', change, dex?.priceChange24h >= 0 ? 'c-green' : dex?.priceChange24h < 0 ? 'c-red' : '')}
     </div>
 
     <!-- Token details row -->
