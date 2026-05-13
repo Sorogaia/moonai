@@ -1715,7 +1715,7 @@ Use the live data above for MC, VOL, LIQUIDITY, DEV WALLET, BONDED status, and S
         'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 2000,
         system: buildSystemPrompt(),
         messages: [{ role: 'user', content: userMsg }],
@@ -2052,7 +2052,7 @@ async function sendChat(msg) {
         'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 700,
         system: `You are MoonAi — an expert Solana memecoin and pump.fun token analyst. The user is asking about token CA: ${currentCA}. Mode: ${analysisMode === 'trencher' ? 'Trencher (fast, blunt, degen energy — short punchy answers)' : 'Advanced (detailed, technical, full alpha)'}.
 
