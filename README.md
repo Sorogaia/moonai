@@ -24,7 +24,7 @@ MoonAi gives you instant, deep analysis on any Solana memecoin. Paste a contract
 - **Socials** — Twitter, Telegram, Website, Discord (colour-coded per platform)
 - **KOLs** — Coming in V2
 - **Top X Posts** — Top Posts & Latest Posts links to Twitter search
-- **Top Holders** — Real top 10 wallets with % via Helius RPC
+- **Top Holders** — Real top 10 wallets with %, progress bars, DEV/WHALE badges, expandable dropdown
 - **Trade & Explore** — Axiom, Photon, BullX, Trojan, GMGN, Solscan, GeckoTerminal, pump.fun
 - **AI Chat** — Full follow-up chat with token context pre-seeded
 - **Quick pills** — Entry strategy, Red flags, Stop loss & targets, Comparable plays

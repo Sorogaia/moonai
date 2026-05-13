@@ -19,6 +19,8 @@
 - [x] Helius integration — real top 10 holder data
 - [x] Rate limiting — Upstash Redis, 20 req/min per IP
 - [x] No API key required from users
+- [x] Top Holders UI — progress bars, DEV/WHALE badges, expandable dropdown, whale warning
+- [x] Supply fixed to 1B for all pump.fun tokens
 
 ## V2 — In Development 🔧
 

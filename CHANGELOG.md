@@ -4,6 +4,23 @@ All notable changes to MoonAi are documented here.
 
 ---
 
+## [1.2.0] — 2026-05-14 — Holders UI & Polish
+
+### Added
+- Top Holders shows top 3 by default with expandable dropdown for remaining 7
+- Progress bars on each holder row scaled to top holder
+- 🐋 WHALE badge for any wallet holding 10%+
+- 🔴 DEV badge correctly tags dev wallet in top holders
+- Whale concentration warning when top 10 hold 40%+ of supply
+- Colour-coded holder % — red 10%+, amber 5–10%, green under 5%
+- HOLDERS stat card updates live with real count after Helius loads
+
+### Fixed
+- SUPPLY now always shows `1B` — pump.fun tokens are always 1 billion fixed supply
+- HOLDERS stat card no longer shows stale "Helius V2" label
+
+---
+
 ## [1.1.0] — 2026-05-13 — Backend & Helius (Sorogaia)
 
 ### Added
