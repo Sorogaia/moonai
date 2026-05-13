@@ -1663,8 +1663,8 @@ function renderTrencher(ca, dex, pump, solPrice) {
       ${statCard('HOLDERS', holders !== '—' ? holders : 'Helius V2', holders !== '—' ? '' : 'c-amber')}
     </div>
 
-    <!-- ── SOCIALS / KOLS ── -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+    <!-- ── SOCIALS / KOLS / TOP X ── -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
 
       <div class="card">
         <div class="card-head"><div class="card-title"><div class="card-title-dot"></div>Socials</div></div>
@@ -1680,17 +1680,13 @@ function renderTrencher(ca, dex, pump, solPrice) {
         </div>
       </div>
 
-    </div>
+      <div class="card" style="border:1px solid rgba(255,255,255,0.4);box-shadow:0 0 24px rgba(255,255,255,0.2),0 0 8px rgba(255,255,255,0.15);animation:glowPulse 3s ease-in-out infinite;">
+        <div class="card-head"><div class="card-title"><div class="card-title-dot" style="background:#fff"></div>Top X Posts</div></div>
+        <div class="card-body">
+          ${xPostsHtml}
+        </div>
+      </div>
 
-    <!-- ── TOP X POSTS — full width ── -->
-    <div class="card" style="margin-bottom:10px;border:1px solid rgba(255,255,255,0.4);box-shadow:0 0 24px rgba(255,255,255,0.2),0 0 8px rgba(255,255,255,0.15);animation:glowPulse 3s ease-in-out infinite;">
-      <div class="card-head">
-        <div class="card-title"><div class="card-title-dot" style="background:#fff"></div>Top X Posts</div>
-        <span style="font-size:11px;color:var(--text-faint);">Powered by 𝕏</span>
-      </div>
-      <div class="card-body">
-        ${xPostsHtml}
-      </div>
     </div>
 
     <!-- ── TOP HOLDERS ── -->
