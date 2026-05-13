@@ -1,35 +1,40 @@
 # API Reference
 
-MoonAi uses a mix of free public APIs and secured backend proxies.
+MoonAi uses a combination of free public APIs and secured backend proxies.
 
 ---
 
-## Backend Endpoints (Vercel)
+## Backend Endpoints (Vercel — keys never in browser)
 
 ### POST /api/chat
-Proxies Anthropic Claude API server-side. API key never exposed to browser.
+Proxies Claude AI server-side. Rate limited via Upstash Redis (20 req/min per IP).
 
-**Rate limit:** 20 requests/min per IP (Upstash Redis)
-
-**Request body:**
-```json
-{
-  "model": "claude-sonnet-4-5",
-  "max_tokens": 2000,
-  "system": "...",
-  "messages": [{ "role": "user", "content": "..." }]
-}
-```
-
+**Request body:** Anthropic messages format
 **Response:** Anthropic API response (passthrough)
 
 ---
 
-### GET /api/bundles?ca={CA}
-Detects coordinated Jito bundles in the token's launch window via Helius enhanced transactions.
+### GET /api/holders?ca={CA}
+Returns top 10 token holders with wallet addresses, amounts and % of supply.
+
+**Response:**
+```json
+{
+  "holders": [
+    { "owner": "wallet...", "amount": 1234567, "pct": 1.23 }
+  ],
+  "totalSupply": 1000000000
+}
+```
+
+---
+
+### GET /api/bundles?ca={CA}&dev={DEV_WALLET}
+Advanced bundle detection. Analyses launch transactions and returns risk scoring.
 
 **Query params:**
-- `ca` — Solana token contract address
+- `ca` — token contract address
+- `dev` — (optional) dev wallet address for cross-referencing
 
 **Response:**
 ```json
@@ -38,27 +43,10 @@ Detects coordinated Jito bundles in the token's launch window via Helius enhance
   "pct": "15.20",
   "bundleCount": 2,
   "wallets": 5,
-  "bundles": [
-    { "slot": 123456, "wallets": ["Ab3c…xYz1", "..."], "amount": 95000000, "pct": "9.50" }
-  ]
-}
-```
-
----
-
-### GET /api/holders?ca={CA}
-Fetches top 10 token holders via Helius RPC. Helius key never exposed to browser.
-
-**Query params:**
-- `ca` — Solana token contract address
-
-**Response:**
-```json
-{
-  "holders": [
-    { "owner": "wallet...", "tokenAccount": "...", "amount": 1234567, "pct": 1.23 }
-  ],
-  "totalSupply": 1000000000
+  "jitoConfirmed": true,
+  "devBundled": false,
+  "newWallets": 2,
+  "bundles": [...]
 }
 ```
 
@@ -67,19 +55,19 @@ Fetches top 10 token holders via Helius RPC. Helius key never exposed to browser
 ## Public APIs (Free, No Key)
 
 ### DexScreener
-Used for: MC, price, volume, liquidity, 1H/24H changes, buys/sells, pair URL, token image, socials.
+Market data — price, MC, volume, liquidity, pair info.
 ```
 GET https://api.dexscreener.com/latest/dex/tokens/{CA}
 ```
 
 ### pump.fun
-Used for: token name, symbol, description, image, dev wallet, bonded status, Twitter, Telegram, website.
+Token metadata — name, image, dev wallet, bonded status, socials.
 ```
 GET https://frontend-api.pump.fun/coins/{CA}
 ```
 
 ### CoinGecko
-Used for: live SOL price (liquidity fallback for bonding curve tokens).
+SOL price for liquidity calculations.
 ```
 GET https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd
 ```

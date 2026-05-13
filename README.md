@@ -2,7 +2,7 @@
 
 > Real-time Solana & pump.fun token analyzer powered by AI — no API key needed
 
-MoonAi gives you instant, deep analysis on any Solana memecoin. Paste a contract address or pump.fun link and get live on-chain data, AI-powered narrative lore, real holder intel, and trading alpha — all in one place. Free to use, no signup, no key required.
+MoonAi gives you instant, deep analysis on any Solana memecoin. Paste a contract address or pump.fun link and get live on-chain data, AI-powered narrative lore, real holder intel, bundle detection, and trading alpha — all in one place. Free to use, no signup, no key required.
 
 ---
 
@@ -17,34 +17,25 @@ MoonAi gives you instant, deep analysis on any Solana memecoin. Paste a contract
 ### Trencher Mode (V1 — Live Now)
 - **Token header** — live image, name, symbol, CA, age, holder count
 - **Narrative lore bubble** — instant AI one-liner on the token's story and vibe
-- **✦ Analysis button** — deep 8-point narrative analysis on demand
-- **Price bar** — current price, 1H change + buys/sells, 24H change + buys/sells, Vol 1H
-- **Stats grid** — MC, VOL 24H, Liquidity, Supply (1B fixed for pump.fun tokens)
+- **✦ Analysis button** — deep narrative analysis on demand
+- **Price bar** — current price, 1H & 24H change with buys/sells, Vol 1H
+- **Stats grid** — MC, VOL 24H, Liquidity, Supply
 - **Token details** — Bonded status, Dev wallet, Age, Holders
-- **Socials** — Twitter, Telegram, Website, Discord (colour-coded per platform)
-- **KOLs** — Coming in V2
-- **Top X Posts** — Top Posts & Latest Posts links to Twitter search
-- **Top Holders** — Real top 10 wallets with %, progress bars, DEV/WHALE badges, expandable dropdown
+- **Socials** — Twitter, Telegram, Website, Discord (colour-coded)
+- **Top X Posts** — live search links to Twitter
+- **Top Holders** — real top 10 wallets with %, progress bars, DEV/WHALE badges
+- **Bundle Detection** — advanced on-chain launch analysis with risk scoring
 - **Trade & Explore** — Axiom, Photon, BullX, Trojan, GMGN, Solscan, GeckoTerminal, pump.fun
-- **AI Chat** — Full follow-up chat with token context pre-seeded
-- **Quick pills** — Entry strategy, Red flags, Stop loss & targets, Comparable plays
-- **Topic guard** — Solana/memecoins only, two-layer enforcement
-- **Bundle Detection** — on-chain launch analysis via Helius, % bundled, risk level (LOW/MEDIUM/HIGH)
-- **Rate limiting** — 20 req/min per IP via Upstash Redis
+- **AI Chat** — full follow-up chat with token context pre-seeded
+- **Topic guard** — Solana/memecoins only
 
 ### Advanced Mode
-- Locked — Premium feature releasing in **V2**
-- Full AI risk score & verdict
-- Holder distribution with role badges (DEV, INSIDER, KOL, SNIPER, WHALE)
-- Insider & KOL detection
-- First 10 sniper wallets (IN / OUT status)
-- Hourly price momentum
-- Bundle detection
+- Premium feature — releasing in **V2**
 
 ### Ecosystem (In Development)
-- 📱 **MoonAi App** — Exclusive Solana seeker app (email & wallet login in V2)
-- 🤖 **Telegram Bot** — Scan tokens directly in Telegram
-- 💬 **Discord Bot** — MoonAi analysis inside your server
+- 📱 **MoonAi App** — Exclusive Solana seeker app
+- 🤖 **Telegram Bot** — Scan tokens in Telegram
+- 💬 **Discord Bot** — MoonAi inside your server
 
 ---
 
@@ -61,31 +52,15 @@ MoonAi gives you instant, deep analysis on any Solana memecoin. Paste a contract
 | Layer | Tech |
 |---|---|
 | Frontend | HTML / CSS / Vanilla JS |
-| Font | Lexend — dyslexic-friendly, modern |
-| AI | Anthropic Claude (claude-sonnet-4-5) via Vercel proxy |
-| Market data | DexScreener API — free, no key |
-| Token metadata | pump.fun API — free, no key |
-| Holder data | Helius RPC — server-side, key hidden |
-| SOL price | CoinGecko API — free, no key |
-| Backend | Vercel Serverless Functions (Node.js) |
+| Font | Lexend |
+| AI | Anthropic Claude via Vercel proxy |
+| Market data | DexScreener API |
+| Token metadata | pump.fun API |
+| Holder & bundle data | Helius RPC — server-side |
+| SOL price | CoinGecko API |
+| Backend | Vercel Serverless Functions |
 | Rate limiting | Upstash Redis |
-| Hosting | Vercel + custom domain (moonaiapp.xyz) |
-
----
-
-## Architecture
-
-```
-moonaiapp.xyz
-├── Frontend (index.html + css/ + js/)
-│   └── No API keys — calls /api/* endpoints only
-│
-└── Backend (Vercel Serverless)
-    ├── /api/chat      → proxies Anthropic API (rate-limited)
-    └── /api/holders   → proxies Helius RPC (top 10 holders)
-```
-
-All API keys live in Vercel environment variables — never in the browser.
+| Hosting | Vercel + moonaiapp.xyz |
 
 ---
 
@@ -93,23 +68,16 @@ All API keys live in Vercel environment variables — never in the browser.
 
 ```
 moonai/
-├── index.html          # App shell
-├── css/styles.css      # All styles (750 lines)
-├── js/app.js           # Frontend logic (1500+ lines)
+├── index.html
+├── css/styles.css
+├── js/app.js
 ├── api/
-│   ├── chat.js         # Anthropic proxy + rate limiting
-│   └── holders.js      # Helius top holders proxy
-├── vercel.json         # Vercel config
+│   ├── chat.js
+│   ├── holders.js
+│   └── bundles.js
+├── vercel.json
 ├── logo.png
-├── README.md
-├── CHANGELOG.md
-├── CONTRIBUTING.md
-├── LICENSE
-├── package.json
 └── docs/
-    ├── SETUP.md
-    ├── API.md
-    └── ROADMAP.md
 ```
 
 ---
@@ -117,33 +85,20 @@ moonai/
 ## Roadmap
 
 ### V1 — Live ✅
-- [x] Trencher mode — live data cards
-- [x] Token image, name, CA, age display
-- [x] Narrative lore bubble + Analysis button
-- [x] Price bar — current price, 1H, 24H, Vol 1H
-- [x] DexScreener + pump.fun + CoinGecko API integration
-- [x] Colour-coded social links
-- [x] Top X Posts search links
-- [x] Trade & Explore links
-- [x] Topic guard — Solana/memecoins only
-- [x] AI follow-up chat
-- [x] Lexend font — dyslexic-friendly
-- [x] MoonAi logo + custom domain (moonaiapp.xyz)
-- [x] Advanced mode V2 coming soon popup
-- [x] Ecosystem preview (App, Telegram Bot, Discord Bot)
-- [x] Vercel backend proxy — API keys secured server-side
-- [x] Helius integration — real top 10 holder data
-- [x] Rate limiting — Upstash Redis, 20 req/min per IP
-- [x] No API key required from users
+- [x] Trencher mode with live data
+- [x] AI narrative lore + deep analysis
+- [x] Real top holder data with DEV/WHALE badges
+- [x] Bundle detection with risk scoring
+- [x] Vercel backend — no API key required
+- [x] Rate limiting
+- [x] Custom domain — moonaiapp.xyz
 
 ### V2 — In Development 🔧
-- [ ] Advanced mode — full AI analysis, role badges, snipers, buyers panel
+- [ ] Advanced mode — premium AI analysis
 - [ ] KOL detection
-- [ ] Bundle detection
-- [ ] Top X Posts — full tweet display with views & likes
-- [ ] MoonAi App — email & Solana wallet login
-- [ ] Telegram Bot
-- [ ] Discord Bot
+- [ ] Top X Posts — full tweet display
+- [ ] MoonAi App
+- [ ] Telegram & Discord Bot
 - [ ] Subscription model
 
 ---
@@ -153,7 +108,7 @@ moonai/
 | | |
 |---|---|
 | **itsyaboihomelander** | Frontend, UI/UX, product |
-| **Sorogaia** | Backend, Vercel infrastructure, Helius integration |
+| **Sorogaia** | Backend, infrastructure |
 
 ---
 
