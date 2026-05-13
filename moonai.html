@@ -1357,8 +1357,9 @@ async function fetchPumpFun(ca) {
       mc:          d.market_cap       || null,
       replies:     d.reply_count      || 0,
       kingOfHill:  d.king_of_the_hill_timestamp != null,
-      totalSupply: d.total_supply     || null,
-      holders:     d.holder_count     || null,
+      totalSupply: d.total_supply || d.totalSupply || 1_000_000_000,
+      holders:     d.holder_count || d.holderCount || d.holders || null,
+      virtualLiq:  d.virtual_sol_reserves ? (d.virtual_sol_reserves / 1e9) : null,
     };
   } catch { return null; }
 }
@@ -1420,7 +1421,8 @@ function renderTrencher(ca, dex, pump) {
   const mc      = fmtNum(dex?.mc   || pump?.mc);
   const vol24   = fmtNum(dex?.vol24h);
   const vol1    = fmtNum(dex?.vol1h);
-  const liq     = fmtNum(dex?.liq);
+  const liqRaw  = dex?.liq || (pump?.virtualLiq ? pump.virtualLiq * (dex?.price || 0) : null);
+  const liq     = fmtNum(liqRaw);
   const bonded  = pump?.bonded ? '✅ Yes' : pump?.bonded === false ? '❌ No' : '—';
   const bondPct = pump?.bondedPct ? pump.bondedPct + '%' : null;
   const dev     = pump?.dev ? pump.dev.substring(0,4)+'…'+pump.dev.slice(-4) : '—';
@@ -1631,8 +1633,8 @@ function renderTrencher(ca, dex, pump) {
       ${statCard('HOLDERS', holders !== '—' ? holders : (buys24 ? `${buys24}B / ${sells24}S` : '—'), holders !== '—' ? '' : (buys24 > sells24 ? 'c-green' : 'c-red'))}
     </div>
 
-    <!-- ── SOCIALS / KOLS / TOP X ── -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+    <!-- ── SOCIALS / KOLS ── -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
 
       <div class="card">
         <div class="card-head"><div class="card-title"><div class="card-title-dot"></div>Socials</div></div>
@@ -1644,18 +1646,22 @@ function renderTrencher(ca, dex, pump) {
       <div class="card">
         <div class="card-head"><div class="card-title"><div class="card-title-dot" style="background:var(--cyan)"></div>KOLs</div><span class="card-badge" style="background:rgba(0,212,255,0.1);color:var(--cyan);border:1px solid rgba(0,212,255,0.25);">V2</span></div>
         <div class="card-body" style="font-size:12px;color:var(--text-faint);display:flex;align-items:center;gap:6px;">
-          <span>📡</span> KOL detection in V2
+          <span>📡</span> KOL detection coming in V2
         </div>
       </div>
 
-      <div class="card" style="border:1px solid rgba(255,255,255,0.4);box-shadow:0 0 24px rgba(255,255,255,0.2),0 0 8px rgba(255,255,255,0.15);animation:glowPulse 3s ease-in-out infinite;">
-        <div class="card-head"><div class="card-title"><div class="card-title-dot" style="background:#fff"></div>Top X Posts</div></div>
-        <div class="card-body" style="padding-bottom:8px;">
-          ${xQuickLinks}
-          ${xEmbedHtml}
-        </div>
-      </div>
+    </div>
 
+    <!-- ── TOP X POSTS — full width ── -->
+    <div class="card" style="margin-bottom:10px;border:1px solid rgba(255,255,255,0.4);box-shadow:0 0 24px rgba(255,255,255,0.2),0 0 8px rgba(255,255,255,0.15);animation:glowPulse 3s ease-in-out infinite;">
+      <div class="card-head">
+        <div class="card-title"><div class="card-title-dot" style="background:#fff"></div>Top X Posts</div>
+        <span style="font-size:11px;color:var(--text-faint);">Powered by 𝕏</span>
+      </div>
+      <div class="card-body">
+        ${xQuickLinks}
+        ${xEmbedHtml}
+      </div>
     </div>
 
     <!-- ── TOP HOLDERS ── -->
