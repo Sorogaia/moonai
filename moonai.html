@@ -1497,32 +1497,32 @@ function renderTrencher(ca, dex, pump, solPrice) {
   const websiteUrl    = cleanWebUrl(pump?.website);
 
   // Build X posts section HTML before main template to avoid nested backtick issues
-  const symbolEnc = encodeURIComponent('$' + symbol + ' solana');
-  const caEnc     = encodeURIComponent(ca);
-  const xSearchUrl   = `https://x.com/search?q=${symbolEnc}&f=live`;
-  const xCaSearchUrl = `https://x.com/search?q=${caEnc}&f=live`;
-  const xMentionsUrl = `https://x.com/search?q=%24${encodeURIComponent(symbol)}&src=typed_query&f=top`;
-
-  const xQuickLinks = `
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
-      <a href="${xSearchUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;color:#fff;text-decoration:none;font-size:11px;font-weight:700;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:4px 12px;white-space:nowrap;">𝕏 Live Posts ↗</a>
-      <a href="${xMentionsUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;color:#fff;text-decoration:none;font-size:11px;font-weight:700;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:4px 12px;white-space:nowrap;">𝕏 Top Mentions ↗</a>
-      <a href="${xCaSearchUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;color:var(--text-muted);text-decoration:none;font-size:11px;font-weight:600;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:4px 12px;white-space:nowrap;">𝕏 Search CA ↗</a>
-      ${twitterUrl ? `<a href="${twitterUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;color:#1d9bf0;text-decoration:none;font-size:11px;font-weight:700;background:rgba(29,155,240,0.1);border:1px solid rgba(29,155,240,0.25);border-radius:20px;padding:4px 12px;white-space:nowrap;">𝕏 Official Account ↗</a>` : ''}
-    </div>`;
-
+  // X posts section
   const xEmbedHtml = twitterHandle ? `
-    <div id="xEmbedWrap" style="border-radius:10px;overflow:hidden;">
+    <div style="margin-bottom:8px;font-size:11px;color:var(--text-faint);">
+      Showing latest posts from the official account — <strong style="color:var(--text-muted);">@${twitterHandle}</strong>
+    </div>
+    <div id="xEmbedWrap" style="border-radius:10px;overflow:hidden;border:1px solid var(--border2);">
       <a class="twitter-timeline"
          href="https://twitter.com/${twitterHandle}"
-         data-tweet-limit="3"
+         data-tweet-limit="5"
          data-chrome="noheader nofooter noborders transparent"
          data-theme="dark"
          data-dnt="true"
-         data-lang="en">Loading posts…</a>
+         data-lang="en"
+         style="color:var(--text-muted);font-size:12px;padding:12px;display:block;">
+        Loading posts from @${twitterHandle}…
+      </a>
     </div>` : `
-    <div style="font-size:12px;color:var(--text-faint);text-align:center;padding:6px 0;line-height:1.7;">
-      No official X account linked for this token.<br>Use the links above to find posts on X.
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px 0;text-align:center;">
+      <span style="font-size:2rem;">𝕏</span>
+      <div style="font-size:13px;color:var(--text-muted);">No official X account linked for this token.</div>
+      <div style="font-size:12px;color:var(--text-faint);">Top X posts require an official account to be linked on pump.fun.</div>
+      ${twitterUrl === null && symbol ? `<a href="https://twitter.com/search?q=%24${encodeURIComponent(symbol)}" target="_blank" rel="noopener"
+        style="display:inline-flex;align-items:center;gap:5px;color:#1d9bf0;text-decoration:none;font-size:12px;font-weight:700;
+        background:rgba(29,155,240,0.1);border:1px solid rgba(29,155,240,0.25);border-radius:20px;padding:6px 16px;margin-top:4px;">
+        Search $${escHtml(symbol)} on 𝕏 ↗
+      </a>` : ''}
     </div>`;
 
   if (twitterUrl)  socialLinks.push({ label: '𝕏 Twitter',  url: twitterUrl });
@@ -1677,7 +1677,6 @@ function renderTrencher(ca, dex, pump, solPrice) {
         <span style="font-size:11px;color:var(--text-faint);">Powered by 𝕏</span>
       </div>
       <div class="card-body">
-        ${xQuickLinks}
         ${xEmbedHtml}
       </div>
     </div>
