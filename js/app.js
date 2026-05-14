@@ -853,9 +853,8 @@ function renderTrencher(ca, dex, pump, solPrice) {
         <div class="card-title"><div class="card-title-dot"></div>Top Holders</div>
         <span class="card-badge badge-amber" id="holdersBadge">LOADING</span>
       </div>
-      <div class="card-body card-muted" id="holdersBody">
-        <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
-        Fetching holder data…
+      <div class="card-body" id="holdersBody">
+        <div class="card-muted"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>Fetching holder data…</div>
       </div>
     </div>
 
@@ -865,9 +864,8 @@ function renderTrencher(ca, dex, pump, solPrice) {
         <div class="card-title"><div class="card-title-dot" style="background:#ff9f0a"></div>Bundle Detection</div>
         <span class="card-badge badge-amber" id="bundleBadge">SCANNING</span>
       </div>
-      <div class="card-body card-muted" id="bundleBody">
-        <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
-        Analysing launch transactions…
+      <div class="card-body" id="bundleBody">
+        <div class="card-muted"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>Analysing launch transactions…</div>
       </div>
     </div>
 
