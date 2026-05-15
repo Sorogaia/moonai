@@ -75,6 +75,13 @@
 ══════════════════════════════════════ */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* Remove 300ms tap delay on all interactive elements */
+a, button, [onclick], .sug-pill, .ex-pill, .feat-chip,
+.dev-tok-row, .vamp-tok-row, .expand-btn, .copy-ca-btn,
+.analysis-btn, .send-btn, .toggle-track {
+  touch-action: manipulation;
+}
+
 html, body {
   height: 100%;
   font-family: var(--font);
@@ -461,6 +468,7 @@ html, body {
 .bottom-bar {
   flex-shrink: 0;
   padding: 0.6rem 0 1.1rem;
+  padding-bottom: calc(1.1rem + env(safe-area-inset-bottom, 0px)); /* iPhone home bar */
   background: var(--bg);
   border-top: 1px solid var(--border);
   transition: background var(--transition), border-color var(--transition);
@@ -506,9 +514,10 @@ html, body {
 }
 .main-input {
   flex: 1; background: transparent; border: none; outline: none;
-  font-family: var(--font); font-size: 14px; color: var(--text);
+  font-family: var(--font); font-size: 16px; color: var(--text); /* 16px prevents iOS zoom-in on focus */
   caret-color: var(--accent); resize: none;
   line-height: 1.6; max-height: 120px; overflow-y: auto; min-height: 22px;
+  -webkit-appearance: none; /* remove iOS inner shadow */
 }
 .main-input::placeholder { color: var(--text-faint); }
 .main-input::-webkit-scrollbar { width: 3px; }
@@ -880,16 +889,82 @@ html, body {
 /* ══════════════════════════════════════
    RESPONSIVE
 ══════════════════════════════════════ */
+
+/* ── Large mobile (≤640px) ── */
 @media (max-width: 640px) {
-  .metrics-grid { grid-template-columns: repeat(2,1fr); }
-  .stats-4, .stats-3 { grid-template-columns: repeat(2,1fr); }
-  .stats-5 { grid-template-columns: repeat(3,1fr); }
-  .live-badge   { display: none; }
+  /* Grids */
+  .metrics-grid   { grid-template-columns: repeat(2,1fr); }
+  .stats-4        { grid-template-columns: repeat(2,1fr); }
+  .stats-5        { grid-template-columns: repeat(3,1fr); }
+  .stats-3        { grid-template-columns: repeat(2,1fr); }
+  .bundle-stats   { grid-template-columns: repeat(2,1fr); }
+  .dev-hist-stats { grid-template-columns: repeat(2,1fr); }
+
+  /* Header */
+  .live-badge     { display: none; }
+
+  /* Token image: slightly smaller, more room for name/CA */
+  .tok-img-ph, .tok-img { width:68px; height:68px; border-radius:10px; font-size:1.8rem; }
+  .tok-header     { gap:12px; }
+
+  /* Price bar: hide vertical dividers — flex gap provides spacing when items wrap */
+  .price-divider  { display: none; }
+  .price-bar-body { gap:10px 18px; }
+
+  /* Holder detail lines slightly compact */
+  .holder-detail  { font-size:10px; }
+
+  /* Dev/vamp image rows */
+  .dev-tok-name, .vamp-tok-name { font-size:11px; }
 }
+
+/* ── Small mobile (≤480px) ── */
 @media (max-width: 480px) {
-  .header-right    { gap: 6px; }
-  .mode-toggle-wrap { padding: 3px 8px 3px 5px; }
+  /* Layout */
+  .shell           { padding: 0 0.75rem; }
+  .header-right    { gap: 5px; }
+  .mode-toggle-wrap { padding: 3px 7px 3px 5px; }
   .mode-label      { font-size: 9px; }
-  .shell           { padding: 0 0.85rem; }
-  .stats-5 { grid-template-columns: repeat(2,1fr); }
+
+  /* Grids — everything collapses to 2 col */
+  .stats-4         { grid-template-columns: repeat(2,1fr); }
+  .stats-5         { grid-template-columns: repeat(2,1fr); }
+  .stats-3         { grid-template-columns: repeat(1,1fr); } /* socials/kols/x each full width */
+  .roi-grid        { grid-template-columns: repeat(3,1fr); }
+  .bundle-stats    { grid-template-columns: repeat(2,1fr); }
+  .dev-hist-stats  { grid-template-columns: repeat(2,1fr); }
+
+  /* Token header */
+  .tok-img-ph, .tok-img { width:60px; height:60px; border-radius:8px; font-size:1.6rem; }
+  .tok-header      { gap:10px; margin-bottom:12px; }
+  .tok-name        { font-size:1.15rem; }
+
+  /* ✅ Tap targets — Apple HIG minimum 44×44 */
+  .send-btn        { width:44px; height:44px; border-radius:12px; font-size:16px; }
+  .copy-ca-btn     { padding:5px 10px; font-size:10px; }
+  .expand-btn      { padding:9px; font-size:12px; }
+
+  /* Suggestions: slightly smaller to fit more per row */
+  .sug-pill        { font-size:10px; padding:4px 10px; }
+  .ex-pill         { font-size:10px; padding:4px 9px; }
+
+  /* Lore bubble: stack button below text on very small screens */
+  .lore-bubble     { flex-direction:column; align-items:flex-start; gap:10px; }
+  .analysis-btn    { align-self:flex-start; }
+
+  /* Moon circle compact */
+  .moon-circle     { width:48px; height:48px; }
+  .moon-num        { font-size:0.95rem; }
+  .score-circle    { width:60px; height:60px; }
+
+  /* Safety checks: wrap tighter */
+  .safety-checks   { gap:6px; }
+
+  /* Chat bubbles don't overflow */
+  .bubble-user     { max-width:90%; }
+  .bubble-ai       { max-width:96%; }
+
+  /* Welcome screen */
+  .welcome h1      { font-size:1.5rem; }
+  .feat-chip       { font-size:11px; padding:6px 10px; }
 }
