@@ -1,15 +1,13 @@
 {
   "name": "moonai",
-  "version": "1.0.0",
+  "version": "1.8.0",
   "description": "Real-time Solana & pump.fun token analyzer powered by AI",
-  "main": "moonai.html",
   "scripts": {
-    "start": "npx serve .",
     "dev": "npx live-server ."
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Sorogaia/moonai.git"
+    "url": "https://github.com/itsyaboihomelander/moonai.git"
   },
   "keywords": [
     "solana",

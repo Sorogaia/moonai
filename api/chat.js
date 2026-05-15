@@ -1,22 +1,9 @@
-const ANTHROPIC_KEY  = process.env.ANTHROPIC_API_KEY;
-const UPSTASH_URL    = process.env.UPSTASH_REDIS_REST_URL;
-const UPSTASH_TOKEN  = process.env.UPSTASH_REDIS_REST_TOKEN;
+const { checkRateLimit } = require('./_ratelimit');
+const { getIP }          = require('./_validate');
 
-const RATE_LIMIT     = 20;   // requests per window per IP
-const RATE_WINDOW    = 60;   // seconds
-
-async function checkRateLimit(ip) {
-  if (!UPSTASH_URL || !UPSTASH_TOKEN) return true;
-  const key = `moonai:rl:${ip}`;
-  const res = await fetch(`${UPSTASH_URL}/pipeline`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify([['INCR', key], ['EXPIRE', key, RATE_WINDOW]]),
-  });
-  const data = await res.json();
-  const count = data?.[0]?.result ?? 0;
-  return count <= RATE_LIMIT;
-}
+const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+const MAX_TOKENS_CAP = 4096; // hard server-side cap — prevents cost attacks
+const ALLOWED_MODELS = ['claude-sonnet-4-5', 'claude-haiku-4-5'];
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -26,19 +13,28 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: { message: 'Method not allowed' } });
 
-  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
-  const allowed = await checkRateLimit(ip).catch(() => true);
+  // Rate limit: 20 AI requests per minute per IP
+  const ip      = getIP(req);
+  const allowed = await checkRateLimit(ip, { limit: 20, window: 60, prefix: 'chat' }).catch(() => true);
   if (!allowed) {
     return res.status(429).json({ error: { message: 'Rate limit exceeded — try again in a minute.' } });
   }
 
   const { model, max_tokens, system, messages } = req.body || {};
+
+  // Validate messages
   if (!Array.isArray(messages) || messages.length === 0) {
-    return res.status(400).json({ error: { message: 'Invalid request: messages array required.' } });
+    return res.status(400).json({ error: { message: 'Invalid request.' } });
   }
 
+  // Cap tokens — prevent cost abuse
+  const safeTokens = Math.min(parseInt(max_tokens) || 1024, MAX_TOKENS_CAP);
+
+  // Validate model — only allow known safe models
+  const safeModel = ALLOWED_MODELS.includes(model) ? model : ALLOWED_MODELS[0];
+
   if (!ANTHROPIC_KEY) {
-    return res.status(500).json({ error: { message: 'Server misconfiguration: missing API key.' } });
+    return res.status(500).json({ error: { message: 'Service unavailable.' } });
   }
 
   try {
@@ -49,12 +45,12 @@ module.exports = async (req, res) => {
         'x-api-key': ANTHROPIC_KEY,
         'anthropic-version': '2023-06-01',
       },
-      body: JSON.stringify({ model, max_tokens, system, messages }),
+      body: JSON.stringify({ model: safeModel, max_tokens: safeTokens, system, messages }),
     });
 
     const data = await upstream.json();
     return res.status(upstream.status).json(data);
-  } catch (e) {
-    return res.status(502).json({ error: { message: `Proxy error: ${e.message}` } });
+  } catch {
+    return res.status(502).json({ error: { message: 'Service temporarily unavailable.' } });
   }
 };

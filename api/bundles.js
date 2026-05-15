@@ -1,7 +1,5 @@
-﻿/**
- * MoonAi — Bundle Detection
- * Proprietary multi-layer launch analysis via Helius.
- */
+﻿const { isValidCA, getIP } = require('./_validate');
+const { checkRateLimit }   = require('./_ratelimit');
 
 const HELIUS_KEY    = process.env.HELIUS_API_KEY;
 const RPC_URL       = () => `https://mainnet.helius-rpc.com/?api-key=${HELIUS_KEY}`;
@@ -67,9 +65,14 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
+  const ip      = getIP(req);
+  const allowed = await checkRateLimit(ip, { limit: 30, window: 60, prefix: 'bundles' }).catch(() => true);
+  if (!allowed) return res.status(429).json({ error: 'Rate limit exceeded.' });
+
   const { ca, dev } = req.query;
-  if (!ca)         return res.status(400).json({ error: 'Missing ca parameter' });
-  if (!HELIUS_KEY) return res.status(500).json({ error: 'Missing HELIUS_API_KEY' });
+  if (!ca || !isValidCA(ca))     return res.status(400).json({ error: 'Invalid token address.' });
+  if (dev && !isValidCA(dev))    return res.status(400).json({ error: 'Invalid dev address.' });
+  if (!HELIUS_KEY)               return res.status(500).json({ error: 'Service unavailable.' });
 
   try {
         const sigsData = await rpc(1, 'getSignaturesForAddress', [
@@ -221,6 +224,6 @@ module.exports = async (req, res) => {
     });
 
   } catch (e) {
-    return res.status(502).json({ error: `Bundle detection error: ${e.message}` });
+    return res.status(502).json({ error: 'Bundle detection unavailable.' });
   }
 };
