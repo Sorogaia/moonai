@@ -2,6 +2,24 @@
 
 ---
 
+## [1.9.0] — 2026-05-14
+
+### Added
+- Top Holders deep intel — buy/sell history per holder via Helius Enhanced Transactions
+  - Tokens bought + SOL spent (with live USD value)
+  - Sell detection: % of position sold + SOL received back
+  - Current holding USD value at live MC
+  - 🆕 FRESH badge (wallet < 30d old) · 👴 VETERAN badge (180d+ active)
+
+### Fixed
+- Dead ticker code — `initTicker()` was fetching prices for 10 tokens every 60s even though the ticker element was removed from the DOM. Guarded with early return — eliminates 10 wasted API calls per minute.
+- Bonding curve ETA now uses live SOL price instead of hardcoded $13K — accurate at any SOL price
+- All `style="margin-bottom:10px;"` inline overrides removed — now handled by `.card` CSS (10px)
+- `stats-4` and `stats-5` margins unified to 10px
+- Added `card-sub-label` CSS class for ROI card subtitle
+
+---
+
 ## [1.8.0] — 2026-05-14
 
 ### Added

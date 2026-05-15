@@ -283,7 +283,7 @@ html, body {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   overflow: hidden;
   transition: background var(--transition), border-color var(--transition);
   animation: fadeIn 0.3s ease;
@@ -312,6 +312,7 @@ html, body {
 [data-mode="advanced"] .badge-green { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.2); }
 [data-mode="advanced"] .badge-cyan  { background: rgba(192,132,252,0.1); color: #c084fc; border-color: rgba(192,132,252,0.2); }
 .card-body { padding: 12px 14px; }
+.card-sub-label { font-size:10px; color:var(--text-faint); }
 
 /* ══════════════════════════════════════
    METRIC CARDS (stat grid)
@@ -685,8 +686,8 @@ html, body {
 /* ══════════════════════════════════════
    STATS GRIDS
 ══════════════════════════════════════ */
-.stats-4  { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:8px; }
-.stats-5  { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:8px; }
+.stats-4  { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:10px; }
+.stats-5  { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:10px; }
 .stats-3  { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
 .ath-down { font-size:10px; color:var(--danger); margin-top:2px; }
 

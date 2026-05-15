@@ -151,13 +151,16 @@ function buildTickerHTML(tokens) {
 
 async function initTicker() {
   const track = document.getElementById('tickerTrack');
+  if (!track) return; // ticker not present in DOM — skip all fetches
   const tokens = await fetchTickerData();
   track.innerHTML = buildTickerHTML(tokens);
 }
 
-// init on load, refresh every 60s
-initTicker();
-setInterval(initTicker, 60000);
+// only init if ticker element exists in DOM
+if (document.getElementById('tickerTrack')) {
+  initTicker();
+  setInterval(initTicker, 60000);
+}
 
 
 /* ══════════════════════════════════════
@@ -657,8 +660,9 @@ function renderTrencher(ca, dex, pump, solPrice) {
   } else if (pump?.bondedPct !== undefined && pump?.bondedPct !== null) {
     const bPct    = parseFloat(pump.bondedPct) || 0;
     const bCol    = bPct >= 75 ? '#14F195' : bPct >= 40 ? '#ff9f0a' : '#00d4ff';
-    const vol1hRaw = parseFloat(dex?.vol1h) || 0;
-    const remainUsd = ((100 - bPct) / 100) * 13000;
+    const vol1hRaw    = parseFloat(dex?.vol1h) || 0;
+    const bondTarget  = 85 * (parseFloat(solPrice) || 150); // 85 SOL to graduate, use live SOL price
+    const remainUsd   = ((100 - bPct) / 100) * bondTarget;
     const etaH = vol1hRaw > 100 ? remainUsd / vol1hRaw : null;
     const etaStr = etaH !== null
       ? (etaH < 1 ? `~${Math.round(etaH * 60)}m to graduation` : `~${etaH.toFixed(1)}h to graduation`)
@@ -676,10 +680,10 @@ function renderTrencher(ca, dex, pump, solPrice) {
 
   // ── ROI CALCULATOR ──
   const roiHtml = mcRaw > 0 ? `
-    <div class="card" style="margin-bottom:10px;">
+    <div class="card">
       <div class="card-head">
         <div class="card-title"><div class="card-title-dot"></div>Quick ROI</div>
-        <span style="font-size:10px;color:var(--text-faint);">per $100 invested at current MC</span>
+        <span class="card-sub-label">per $100 invested at current MC</span>
       </div>
       <div class="card-body roi-grid">
         ${[2,5,10,50,100].map(x => `
@@ -973,7 +977,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
     ${roiHtml}
 
     <!-- ── SOCIALS / KOLS / TOP X ── -->
-    <div class="stats-3" style="margin-bottom:10px;">
+    <div class="stats-3">
 
       <div class="card">
         <div class="card-head"><div class="card-title"><div class="card-title-dot"></div>Socials</div></div>
@@ -996,18 +1000,18 @@ function renderTrencher(ca, dex, pump, solPrice) {
     </div>
 
     <!-- ── TOP HOLDERS ── -->
-    <div class="card" style="margin-bottom:10px;">
+    <div class="card">
       <div class="card-head">
         <div class="card-title"><div class="card-title-dot"></div>Top Holders</div>
         <span class="card-badge badge-amber" id="holdersBadge">LOADING</span>
       </div>
       <div class="card-body" id="holdersBody">
-        <div class="card-muted"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>Fetching holder data…</div>
+        <div class="card-muted"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>Deep scanning holders — buy/sell history loading…</div>
       </div>
     </div>
 
     <!-- ── BUNDLE DETECTION ── -->
-    <div class="card" style="margin-bottom:10px;" id="bundleCard">
+    <div class="card" id="bundleCard">
       <div class="card-head">
         <div class="card-title"><div class="card-title-dot" style="background:#ff9f0a"></div>Bundle Detection</div>
         <span class="card-badge badge-amber" id="bundleBadge">SCANNING</span>
@@ -1018,7 +1022,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
     </div>
 
     <!-- ── TRADE & EXPLORE ── -->
-    <div class="card" style="margin-bottom:10px;">
+    <div class="card">
       <div class="card-head">
         <div class="card-title"><div class="card-title-dot"></div>Trade &amp; Explore</div>
       </div>
@@ -1031,7 +1035,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
     </div>
 
     <!-- ── VAMP COINS ── -->
-    <div class="card" id="vampCard" style="margin-bottom:10px;">
+    <div class="card" id="vampCard">
       <div class="card-head">
         <div class="card-title"><div class="card-title-dot" style="background:#a855f7"></div>Vamp Coins</div>
         <span class="card-badge" id="vampBadge" style="background:rgba(168,85,247,.12);color:#a855f7;border:1px solid rgba(168,85,247,.28);">SCANNING</span>
@@ -1043,7 +1047,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
 
     <!-- ── DESCRIPTION ── -->
     ${pump?.description ? `
-    <div class="card" style="margin-bottom:10px;">
+    <div class="card">
       <div class="card-head"><div class="card-title"><div class="card-title-dot" style="background:var(--text-muted)"></div>Description</div></div>
       <div class="card-body card-desc">${escHtml(pump.description.slice(0,300))}${pump.description.length>300?'…':''}</div>
     </div>` : ''}
@@ -1331,7 +1335,7 @@ function renderResult(text) {
   if (s.METRICS) {
     const lines = s.METRICS.split('\n').filter(l => l.includes(':') && l.trim());
     if (lines.length) {
-      html += `<div class="metrics-grid" style="margin-bottom:10px;">`;
+      html += `<div class="metrics-grid">`;
       lines.slice(0,8).forEach(line => {
         const ci  = line.indexOf(':');
         const lbl = line.substring(0,ci).trim();
@@ -1417,7 +1421,7 @@ function renderResult(text) {
       const snipBadge = inCount > outCount
         ? `<span class="card-badge badge-red">${inCount} Still In 🔴</span>`
         : `<span class="card-badge badge-green">${outCount} Exited 🟢</span>`;
-      html += `<div class="card" style="margin-bottom:10px;">
+      html += `<div class="card">
         <div class="card-head">
           <div class="card-title"><div class="card-title-dot" style="background:var(--danger)"></div>First 10 Snipers</div>
           <div style="display:flex;align-items:center;gap:8px;">
@@ -1460,7 +1464,7 @@ function renderResult(text) {
     const riskBadge= redCount > 3 ? `<span class="card-badge badge-red">High Risk</span>`
                    : redCount > 1 ? `<span class="card-badge badge-amber">Moderate</span>`
                    : `<span class="card-badge badge-green">Low Risk</span>`;
-    html += `<div class="card" style="margin-bottom:10px;"><div class="card-head"><div class="card-title"><div class="card-title-dot"></div>Risk Analysis</div>${riskBadge}</div><div class="card-body"><ul class="flag-list">`;
+    html += `<div class="card"><div class="card-head"><div class="card-title"><div class="card-title-dot"></div>Risk Analysis</div>${riskBadge}</div><div class="card-body"><ul class="flag-list">`;
     lines.forEach(line => {
       const isGood = line.startsWith('✅');
       const isBad  = line.startsWith('❌');
@@ -1475,14 +1479,14 @@ function renderResult(text) {
 
   // ── ALPHA ──
   if (s.ALPHA) {
-    html += `<div class="card" style="margin-bottom:10px;"><div class="card-head"><div class="card-title"><div class="card-title-dot" style="background:var(--cyan)"></div>Alpha & Trade Setup</div><span class="card-badge badge-cyan">Alpha</span></div><div class="card-body"><div class="alpha-content">${formatAlpha(s.ALPHA)}</div></div></div>`;
+    html += `<div class="card"><div class="card-head"><div class="card-title"><div class="card-title-dot" style="background:var(--cyan)"></div>Alpha & Trade Setup</div><span class="card-badge badge-cyan">Alpha</span></div><div class="card-body"><div class="alpha-content">${formatAlpha(s.ALPHA)}</div></div></div>`;
   }
 
   // ── TIMELINE ──
   if (s.TIMELINE) {
     const lines = s.TIMELINE.split('\n').filter(l => l.includes('|') && l.trim());
     if (lines.length) {
-      html += `<div class="card" style="margin-bottom:10px;"><div class="card-head"><div class="card-title"><div class="card-title-dot" style="background:var(--text-muted)"></div>On-Chain Timeline</div><span class="card-badge badge-muted">History</span></div><div class="card-body"><div class="tl">`;
+      html += `<div class="card"><div class="card-head"><div class="card-title"><div class="card-title-dot" style="background:var(--text-muted)"></div>On-Chain Timeline</div><span class="card-badge badge-muted">History</span></div><div class="card-body"><div class="tl">`;
       lines.forEach(line => {
         const [evt, time] = line.split('|');
         html += `<div class="tl-row"><div class="tl-dot">◆</div><div class="tl-body"><div class="tl-event">${escHtml((evt||'').trim())}</div><div class="tl-when">${escHtml((time||'').trim())}</div></div></div>`;
