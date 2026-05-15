@@ -2,6 +2,22 @@
 
 ---
 
+## [1.8.0] — 2026-05-14
+
+### Added
+- Vamp Coins — detects copycat tokens with same symbol/name (DexScreener search)
+  - Shows image, name, 🧛 VAMP badge, MC, 24h%, copy CA button
+  - Click any vamp → loads full analysis for that token
+  - Clean state: "No vamp coins detected"
+- Dev History — traces dev wallet's previous token launches (pump.fun API)
+  - Stats: total launched / alive / bonded / dead
+  - Reputation badge: SERIAL RUGGER / MIXED / BUILDER / CLEAN / NEW DEV
+  - Per-token rows with image, name, status pill, MC, age
+  - Click any previous token → loads full analysis
+- New API endpoints: `/api/vamps.js`, `/api/dev-history.js`
+
+---
+
 ## [1.7.0] — 2026-05-14
 
 ### Added

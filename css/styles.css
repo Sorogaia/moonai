@@ -830,6 +830,47 @@ html, body {
 .bundle-clean-sub   { font-size:11px; color:var(--text-faint); margin-top:2px; }
 
 /* ══════════════════════════════════════
+   DEV HISTORY
+══════════════════════════════════════ */
+.dev-hist-stats       { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:10px; }
+.dev-hist-stat        { background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:7px 8px; text-align:center; }
+.dev-hist-stat-val    { font-size:1.1rem; font-weight:700; line-height:1; margin-bottom:3px; }
+.dev-hist-stat-lbl    { font-size:9px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.08em; }
+.dev-hist-empty       { font-size:12px; color:var(--text-faint); }
+.dev-tok-row          { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--border); cursor:pointer; transition:background var(--transition); border-radius:var(--radius-sm); }
+.dev-tok-row:last-child { border-bottom:none; }
+.dev-tok-row:hover    { background:var(--bg-surface); padding-left:4px; }
+.dev-tok-img          { width:32px; height:32px; border-radius:8px; object-fit:cover; flex-shrink:0; border:1px solid var(--border2); }
+.dev-tok-img-ph       { width:32px; height:32px; border-radius:8px; background:var(--bg-surface); border:1px solid var(--border2); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+.dev-tok-info         { flex:1; min-width:0; }
+.dev-tok-name         { font-size:12px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.dev-tok-sym          { color:var(--text-muted); font-weight:400; font-size:11px; }
+.dev-tok-meta         { font-size:10px; color:var(--text-faint); margin-top:1px; }
+.dev-tok-right        { display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex-shrink:0; }
+.dev-tok-status       { font-size:9px; font-weight:700; border-radius:var(--radius-pill); padding:2px 7px; }
+.status-alive         { background:rgba(20,241,149,.1); color:#14F195; border:1px solid rgba(20,241,149,.25); }
+.status-bonded        { background:rgba(0,212,255,.1);  color:var(--cyan); border:1px solid rgba(0,212,255,.25); }
+.status-dead          { background:rgba(255,59,48,.1);  color:#ff3b30; border:1px solid rgba(255,59,48,.25); }
+.dev-tok-ca           { font-size:10px; color:var(--text-faint); }
+
+/* ══════════════════════════════════════
+   VAMP COINS
+══════════════════════════════════════ */
+.vamp-tok-row         { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--border); cursor:pointer; transition:background var(--transition); border-radius:var(--radius-sm); }
+.vamp-tok-row:last-child { border-bottom:none; }
+.vamp-tok-row:hover   { background:var(--bg-surface); padding-left:4px; }
+.vamp-tok-img         { width:32px; height:32px; border-radius:8px; object-fit:cover; flex-shrink:0; border:1px solid rgba(168,85,247,.3); }
+.vamp-tok-img-ph      { width:32px; height:32px; border-radius:8px; background:rgba(168,85,247,.08); border:1px solid rgba(168,85,247,.25); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+.vamp-tok-info        { flex:1; min-width:0; }
+.vamp-tok-name        { font-size:12px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.vamp-tok-meta        { font-size:10px; color:var(--text-faint); margin-top:1px; }
+.vamp-tok-right       { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
+.vamp-tok-ca          { font-size:10px; color:var(--text-faint); display:flex; align-items:center; gap:5px; }
+.badge-vamp           { background:rgba(168,85,247,.15); color:#a855f7; border:1px solid rgba(168,85,247,.35); border-radius:var(--radius-pill); padding:1px 7px; font-size:9px; font-weight:700; vertical-align:middle; margin-left:4px; }
+.vamp-copy-btn        { font-family:var(--font); font-size:9px; font-weight:700; color:var(--text-faint); background:var(--bg-surface); border:1px solid var(--border2); border-radius:var(--radius-pill); padding:1px 6px; cursor:pointer; transition:all .15s; }
+.vamp-copy-btn:hover  { border-color:#a855f7; color:#a855f7; }
+
+/* ══════════════════════════════════════
    RESPONSIVE
 ══════════════════════════════════════ */
 @media (max-width: 640px) {

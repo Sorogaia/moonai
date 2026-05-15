@@ -23,6 +23,8 @@ Edit these — NOT moonai.html (legacy reference only)
 | `api/bundles.js` | Bundle detection — Jito tip, same funder, same slot |
 | `api/token-info.js` | Mint/freeze authority, dev wallet balance |
 | `api/fresh-wallets.js` | Fresh wallet % — wallet age vs token launch date |
+| `api/vamps.js` | Vamp coin detection — DexScreener search by symbol |
+| `api/dev-history.js` | Dev wallet history — pump.fun creator coins + DexScreener status |
 
 ## Deployment
 - Hosted on Vercel (Sorogaia's account)
@@ -50,6 +52,11 @@ Black + green. Real live data, no AI required to load.
 - Bundle Detection: Jito confirmed / same funder / same slot
   - % bundled, bundle count, wallet count, Jito YES/NO, per-bundle rows, risk verdict
 - Trade & Explore: Axiom · Photon · BullX · Trojan · GMGN · Solscan · GeckoTerminal · pump.fun
+- Moon Score 0–100: upside potential (momentum, age, MC, vol/MC, bonded, 24h change)
+- Bonding Curve progress bar + ETA to graduation (pump.fun tokens)
+- Quick ROI Calculator: $100 at 2x/5x/10x/50x/100x with MC targets
+- Dev History: dev wallet's previous launches, reputation badge, alive/dead/bonded status
+- Vamp Coins: copycat token detection via DexScreener symbol search
 - AI Chat: full token context seeded, Solana/memecoins topic guard
 
 ### Advanced (V2 — locked)

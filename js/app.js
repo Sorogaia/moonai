@@ -675,8 +675,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
   }
 
   // ── ROI CALCULATOR ──
-  const mcRaw2 = parseFloat(dex?.mc || pump?.mc) || 0;
-  const roiHtml = mcRaw2 > 0 ? `
+  const roiHtml = mcRaw > 0 ? `
     <div class="card" style="margin-bottom:10px;">
       <div class="card-head">
         <div class="card-title"><div class="card-title-dot"></div>Quick ROI</div>
@@ -687,7 +686,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
           <div class="roi-item">
             <div class="roi-mult">${x}x</div>
             <div class="roi-val">$${x * 100 >= 1000 ? fmtNum(x * 100).replace('$','') : x * 100}</div>
-            <div class="roi-mc">${fmtNum(mcRaw2 * x)}</div>
+            <div class="roi-mc">${fmtNum(mcRaw * x)}</div>
           </div>`).join('')}
       </div>
     </div>` : '';
@@ -883,6 +882,17 @@ function renderTrencher(ca, dex, pump, solPrice) {
       </div>
     </div>
 
+    <!-- ── DEV HISTORY ── -->
+    <div class="card" id="devHistoryCard">
+      <div class="card-head">
+        <div class="card-title"><div class="card-title-dot" style="background:#a855f7"></div>Dev History</div>
+        <span class="card-badge badge-amber" id="devHistoryBadge">SCANNING</span>
+      </div>
+      <div class="card-body" id="devHistoryBody">
+        <div class="card-muted"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>Checking dev wallet history…</div>
+      </div>
+    </div>
+
     <!-- ── PRICE BAR ── -->
     <div class="card price-card">
       <div class="card-head price-bar-head">
@@ -1020,6 +1030,17 @@ function renderTrencher(ca, dex, pump, solPrice) {
       </div>
     </div>
 
+    <!-- ── VAMP COINS ── -->
+    <div class="card" id="vampCard" style="margin-bottom:10px;">
+      <div class="card-head">
+        <div class="card-title"><div class="card-title-dot" style="background:#a855f7"></div>Vamp Coins</div>
+        <span class="card-badge" id="vampBadge" style="background:rgba(168,85,247,.12);color:#a855f7;border:1px solid rgba(168,85,247,.28);">SCANNING</span>
+      </div>
+      <div class="card-body" id="vampBody">
+        <div class="card-muted"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>Scanning for vamp coins…</div>
+      </div>
+    </div>
+
     <!-- ── DESCRIPTION ── -->
     ${pump?.description ? `
     <div class="card" style="margin-bottom:10px;">
@@ -1040,6 +1061,8 @@ function renderTrencher(ca, dex, pump, solPrice) {
   fetchBundleDetection(ca, pump?.dev || null);
   fetchTokenInfo(ca, pump?.dev || null, dex, pump);
   fetchFreshWallets(ca, dex?.created || null);
+  fetchDevHistory(pump?.dev || null);
+  fetchVampCoins(ca, symbol, name);
 
   // Inject token image safely after HTML is in the DOM
   if (imgSrc) {
@@ -1959,6 +1982,144 @@ async function fetchBundleDetection(ca, devWallet) {
   } catch (e) {
     if (bodyEl) bodyEl.innerHTML = `<span class="no-data">Bundle detection unavailable.</span>`;
     if (badgeEl) { badgeEl.textContent = 'ERROR'; badgeEl.className = 'card-badge'; }
+  }
+}
+
+/* ══════════════════════════════════════
+   DEV HISTORY
+══════════════════════════════════════ */
+async function fetchDevHistory(devWallet) {
+  const bodyEl  = document.getElementById('devHistoryBody');
+  const badgeEl = document.getElementById('devHistoryBadge');
+  if (!bodyEl) return;
+
+  if (!devWallet) {
+    bodyEl.innerHTML = `<span class="no-data">No dev wallet found for this token.</span>`;
+    if (badgeEl) { badgeEl.textContent = 'N/A'; badgeEl.className = 'card-badge'; }
+    return;
+  }
+
+  try {
+    const res  = await fetch(`/api/dev-history?dev=${encodeURIComponent(devWallet)}`);
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      bodyEl.innerHTML = `<span class="no-data">Dev history unavailable.</span>`;
+      if (badgeEl) { badgeEl.textContent = 'N/A'; badgeEl.className = 'card-badge'; }
+      return;
+    }
+
+    // Badge
+    const badgeCfg = {
+      SERIAL_RUGGER: { text: '🚨 SERIAL RUGGER', cls: 'badge-red' },
+      MIXED:         { text: '⚠️ MIXED',          cls: 'badge-amber' },
+      BUILDER:       { text: '✅ BUILDER',          cls: 'badge-green' },
+      CLEAN:         { text: '✅ CLEAN',            cls: 'badge-green' },
+      NEW_DEV:       { text: '🆕 NEW DEV',          cls: 'badge-cyan' },
+      UNKNOWN:       { text: '❓ UNKNOWN',           cls: 'card-badge' },
+    };
+    const bc = badgeCfg[data.badge] || badgeCfg.UNKNOWN;
+    if (badgeEl) { badgeEl.textContent = bc.text; badgeEl.className = `card-badge ${bc.cls}`; }
+
+    if (!data.tokens || data.tokens.length === 0) {
+      bodyEl.innerHTML = `<div class="dev-hist-empty">No previous tokens found — first launch or new dev wallet.</div>`;
+      return;
+    }
+
+    // Stats row
+    const statsHtml = `
+      <div class="dev-hist-stats">
+        <div class="dev-hist-stat"><div class="dev-hist-stat-val">${data.total}</div><div class="dev-hist-stat-lbl">Launched</div></div>
+        <div class="dev-hist-stat"><div class="dev-hist-stat-val c-green">${data.alive}</div><div class="dev-hist-stat-lbl">Alive</div></div>
+        <div class="dev-hist-stat"><div class="dev-hist-stat-val c-amber">${data.bonded}</div><div class="dev-hist-stat-lbl">Bonded</div></div>
+        <div class="dev-hist-stat"><div class="dev-hist-stat-val c-red">${data.dead}</div><div class="dev-hist-stat-lbl">Rugged</div></div>
+      </div>`;
+
+    // Token rows
+    const rowsHtml = data.tokens.map(t => {
+      const short   = t.ca.slice(0,4) + '…' + t.ca.slice(-4);
+      const mcStr   = t.mc > 0 ? fmtNum(t.mc) : '—';
+      const status  = t.bonded ? '<span class="dev-tok-status status-bonded">BONDED</span>'
+                    : t.alive  ? '<span class="dev-tok-status status-alive">ALIVE</span>'
+                    :            '<span class="dev-tok-status status-dead">DEAD</span>';
+      const imgHtml = t.image
+        ? `<img src="${t.image}" class="dev-tok-img" onerror="this.outerHTML='<div class=\\'dev-tok-img-ph\\'>🪙</div>'">`
+        : `<div class="dev-tok-img-ph">🪙</div>`;
+      return `
+        <div class="dev-tok-row" onclick="loadExample('${t.ca}')" title="Analyse ${escHtml(t.name)}">
+          ${imgHtml}
+          <div class="dev-tok-info">
+            <div class="dev-tok-name">${escHtml(t.name)} <span class="dev-tok-sym">$${escHtml(t.symbol)}</span></div>
+            <div class="dev-tok-meta">${mcStr} · ${timeAgo(t.created)}</div>
+          </div>
+          <div class="dev-tok-right">
+            ${status}
+            <div class="dev-tok-ca">${short}</div>
+          </div>
+        </div>`;
+    }).join('');
+
+    bodyEl.innerHTML = statsHtml + rowsHtml;
+
+  } catch {
+    bodyEl.innerHTML = `<span class="no-data">Dev history unavailable.</span>`;
+    if (badgeEl) { badgeEl.textContent = 'ERROR'; badgeEl.className = 'card-badge'; }
+  }
+}
+
+/* ══════════════════════════════════════
+   VAMP COINS
+══════════════════════════════════════ */
+async function fetchVampCoins(ca, symbol, name) {
+  const bodyEl  = document.getElementById('vampBody');
+  const badgeEl = document.getElementById('vampBadge');
+  if (!bodyEl) return;
+
+  try {
+    const res  = await fetch(`/api/vamps?ca=${encodeURIComponent(ca)}&symbol=${encodeURIComponent(symbol)}&name=${encodeURIComponent(name)}`);
+    const data = await res.json();
+
+    if (!res.ok || data.error || !data.vamps?.length) {
+      bodyEl.innerHTML = `<span class="no-data">✅ No vamp coins detected — clean launch.</span>`;
+      if (badgeEl) { badgeEl.textContent = 'CLEAN'; badgeEl.className = 'card-badge badge-green'; badgeEl.style = ''; }
+      return;
+    }
+
+    const count = data.vamps.length;
+    if (badgeEl) {
+      badgeEl.textContent = `${count} FOUND`;
+      badgeEl.style.cssText = '';
+      badgeEl.className = count >= 3 ? 'card-badge badge-red' : 'card-badge badge-amber';
+    }
+
+    const rowsHtml = data.vamps.map(v => {
+      const short   = v.ca.slice(0,4) + '…' + v.ca.slice(-4);
+      const mcStr   = v.mc > 0 ? fmtNum(v.mc) : '—';
+      const ch      = v.priceChange24h;
+      const chStr   = ch != null ? `<span style="color:${ch>=0?'var(--accent)':'var(--danger)'};">${ch>=0?'+':''}${ch.toFixed(1)}%</span>` : '';
+      const imgHtml = v.image
+        ? `<img src="${v.image}" class="vamp-tok-img" onerror="this.outerHTML='<div class=\\'vamp-tok-img-ph\\'>🧛</div>'">`
+        : `<div class="vamp-tok-img-ph">🧛</div>`;
+      return `
+        <div class="vamp-tok-row" onclick="loadExample('${v.ca}')" title="Analyse ${escHtml(v.name)}">
+          ${imgHtml}
+          <div class="vamp-tok-info">
+            <div class="vamp-tok-name">${escHtml(v.name)} <span class="badge-vamp">🧛 VAMP</span></div>
+            <div class="vamp-tok-meta">${mcStr} · ${chStr}</div>
+          </div>
+          <div class="vamp-tok-right">
+            <div class="vamp-tok-ca">${short}
+              <button class="vamp-copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText('${v.ca}').then(()=>{this.textContent='✓';setTimeout(()=>this.textContent='copy',1200)})">copy</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+
+    bodyEl.innerHTML = rowsHtml;
+
+  } catch {
+    bodyEl.innerHTML = `<span class="no-data">Vamp scan unavailable.</span>`;
+    if (badgeEl) { badgeEl.textContent = 'ERROR'; badgeEl.className = 'card-badge'; badgeEl.style = ''; }
   }
 }
 
