@@ -2089,7 +2089,7 @@ async function fetchDevHistory(devWallet) {
         ? `<img src="${t.image}" class="dev-tok-img" onerror="this.outerHTML='<div class=\\'dev-tok-img-ph\\'>🪙</div>'">`
         : `<div class="dev-tok-img-ph">🪙</div>`;
       return `
-        <div class="dev-tok-row" onclick="loadExample('${t.ca}')" title="Analyse ${escHtml(t.name)}">
+        <div class="dev-tok-row" onclick="loadExample('${escHtml(t.ca)}')" title="Analyse ${escHtml(t.name)}">
           ${imgHtml}
           <div class="dev-tok-info">
             <div class="dev-tok-name">${escHtml(t.name)} <span class="dev-tok-sym">$${escHtml(t.symbol)}</span></div>
@@ -2144,7 +2144,7 @@ async function fetchVampCoins(ca, symbol, name) {
         ? `<img src="${v.image}" class="vamp-tok-img" onerror="this.outerHTML='<div class=\\'vamp-tok-img-ph\\'>🧛</div>'">`
         : `<div class="vamp-tok-img-ph">🧛</div>`;
       return `
-        <div class="vamp-tok-row" onclick="loadExample('${v.ca}')" title="Analyse ${escHtml(v.name)}">
+        <div class="vamp-tok-row" onclick="loadExample('${escHtml(v.ca)}')" title="Analyse ${escHtml(v.name)}">
           ${imgHtml}
           <div class="vamp-tok-info">
             <div class="vamp-tok-name">${escHtml(v.name)} <span class="badge-vamp">🧛 VAMP</span></div>
@@ -2152,7 +2152,7 @@ async function fetchVampCoins(ca, symbol, name) {
           </div>
           <div class="vamp-tok-right">
             <div class="vamp-tok-ca">${short}
-              <button class="vamp-copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText('${v.ca}').then(()=>{this.textContent='✓';setTimeout(()=>this.textContent='copy',1200)})">copy</button>
+              <button class="vamp-copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText('${escHtml(v.ca)}').then(()=>{this.textContent='✓';setTimeout(()=>this.textContent='copy',1200)})">copy</button>
             </div>
           </div>
         </div>`;
@@ -2277,9 +2277,13 @@ function getVerdictClass(v) {
 }
 
 function escHtml(s) {
+  if (s == null) return '';
   return String(s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#039;');
 }
 
 function formatAlpha(text) {
