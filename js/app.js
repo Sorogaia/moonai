@@ -523,6 +523,66 @@ function timeAgo(ms) {
 }
 
 /* ══════════════════════════════════════
+   MOON SCORE — upside potential 0–100
+══════════════════════════════════════ */
+function calculateMoonScore(dex, pump, momentumScore) {
+  let score = 50;
+  const pos = [], neg = [];
+
+  // Bonding status
+  if (pump?.bonded)                         { score += 12; pos.push('Bonded'); }
+  else if ((pump?.bondedPct || 0) > 70)     { score += 8;  pos.push('Almost bonded'); }
+  else if ((pump?.bondedPct || 0) > 40)     { score += 4; }
+
+  // Momentum
+  if      (momentumScore > 30)  { score += 18; pos.push('Strong momentum'); }
+  else if (momentumScore > 10)  { score += 12; pos.push('Good momentum'); }
+  else if (momentumScore > 0)   { score += 6;  pos.push('Positive momentum'); }
+  else if (momentumScore < -10) { score -= 12; neg.push('Negative momentum'); }
+  else if (momentumScore < 0)   { score -= 6;  neg.push('Cooling down'); }
+
+  // Age — earlier = more upside
+  const ageH = dex?.created ? (Date.now() - dex.created) / 3600000 : null;
+  if (ageH !== null) {
+    if      (ageH < 2)   { score += 14; pos.push('Very early'); }
+    else if (ageH < 6)   { score += 10; pos.push('Early gem'); }
+    else if (ageH < 24)  { score += 5;  pos.push('Under 24h'); }
+    else if (ageH > 168) { score -= 10; neg.push('Over a week old'); }
+    else if (ageH > 72)  { score -= 5;  neg.push('Few days old'); }
+  }
+
+  // Market cap — lower = more room to grow
+  const mc = parseFloat(dex?.mc) || 0;
+  if (mc > 0) {
+    if      (mc < 50000)   { score += 10; pos.push('Micro MC'); }
+    else if (mc < 200000)  { score += 6;  pos.push('Low MC'); }
+    else if (mc > 5000000) { score -= 8;  neg.push('Already pumped'); }
+    else if (mc > 2000000) { score -= 4; }
+  }
+
+  // Volume/MC ratio — trading activity
+  const vol = parseFloat(dex?.vol24h) || 0;
+  if (mc > 0 && vol > 0) {
+    const r = vol / mc;
+    if      (r > 2)    { score += 10; pos.push('Very high volume'); }
+    else if (r > 0.5)  { score += 5;  pos.push('Strong volume'); }
+    else if (r < 0.05) { score -= 5;  neg.push('Thin volume'); }
+  }
+
+  // 24h price change
+  const ch24 = parseFloat(dex?.priceChange24h) || 0;
+  if      (ch24 > 100) { score += 8; pos.push('+100% 24h'); }
+  else if (ch24 > 20)  { score += 4; }
+  else if (ch24 < -50) { score -= 8; neg.push('-50% 24h'); }
+  else if (ch24 < -20) { score -= 4; }
+
+  const s     = Math.max(0, Math.min(100, Math.round(score)));
+  const label = s >= 81 ? '🌙 MOON' : s >= 66 ? '🔥 HOT' : s >= 46 ? '⚡ HEATING' : s >= 26 ? '🌡️ WARMING' : '❄️ COLD';
+  const col   = s >= 81 ? '#14F195' : s >= 66 ? '#ff9f0a' : s >= 46 ? '#ff6b35' : s >= 26 ? '#00d4ff' : '#666';
+  return { score: s, label, col, pos, neg };
+}
+
+/* ══════════════════════════════════════
    TRENCHER RENDER — live data card
 ══════════════════════════════════════ */
 function renderTrencher(ca, dex, pump, solPrice) {
@@ -583,6 +643,54 @@ function renderTrencher(ca, dex, pump, solPrice) {
   const sells24 = dex?.sells24h || 0;
   const buys1   = dex?.buys1h   || 0;
   const sells1  = dex?.sells1h  || 0;
+
+  // ── MOON SCORE ──
+  const moon = calculateMoonScore(dex, pump, momentumScore);
+
+  // ── BONDING CURVE ──
+  let bondingCurveHtml = '';
+  if (pump?.bonded) {
+    bondingCurveHtml = `
+      <div class="bond-label">Bonding Curve</div>
+      <div class="bond-status-ok">✅ Graduated to Raydium</div>
+      <div class="bond-sub">Migrated from pump.fun</div>`;
+  } else if (pump?.bondedPct !== undefined && pump?.bondedPct !== null) {
+    const bPct    = parseFloat(pump.bondedPct) || 0;
+    const bCol    = bPct >= 75 ? '#14F195' : bPct >= 40 ? '#ff9f0a' : '#00d4ff';
+    const vol1hRaw = parseFloat(dex?.vol1h) || 0;
+    const remainUsd = ((100 - bPct) / 100) * 13000;
+    const etaH = vol1hRaw > 100 ? remainUsd / vol1hRaw : null;
+    const etaStr = etaH !== null
+      ? (etaH < 1 ? `~${Math.round(etaH * 60)}m to graduation` : `~${etaH.toFixed(1)}h to graduation`)
+      : `${(100 - bPct).toFixed(1)}% remaining`;
+    bondingCurveHtml = `
+      <div class="bond-label">Bonding Curve</div>
+      <div class="bond-pct" style="color:${bCol};">${bPct.toFixed(1)}% filled</div>
+      <div class="bond-bar-wrap"><div class="bond-bar-fill" style="background:${bCol};width:${Math.min(bPct,100)}%;"></div></div>
+      <div class="bond-eta">${etaStr}</div>`;
+  } else {
+    bondingCurveHtml = `
+      <div class="bond-label">Bonding Curve</div>
+      <div class="bond-sub">Not a pump.fun token</div>`;
+  }
+
+  // ── ROI CALCULATOR ──
+  const mcRaw2 = parseFloat(dex?.mc || pump?.mc) || 0;
+  const roiHtml = mcRaw2 > 0 ? `
+    <div class="card" style="margin-bottom:10px;">
+      <div class="card-head">
+        <div class="card-title"><div class="card-title-dot"></div>Quick ROI</div>
+        <span style="font-size:10px;color:var(--text-faint);">per $100 invested at current MC</span>
+      </div>
+      <div class="card-body roi-grid">
+        ${[2,5,10,50,100].map(x => `
+          <div class="roi-item">
+            <div class="roi-mult">${x}x</div>
+            <div class="roi-val">$${x * 100 >= 1000 ? fmtNum(x * 100).replace('$','') : x * 100}</div>
+            <div class="roi-mc">${fmtNum(mcRaw2 * x)}</div>
+          </div>`).join('')}
+      </div>
+    </div>` : '';
 
   // Socials — merge DexScreener + pump.fun with proper URL cleaning
   const socialLinks = [];
@@ -734,6 +842,33 @@ function renderTrencher(ca, dex, pump, solPrice) {
       <button onclick="runNarrativeAnalysis()" class="analysis-btn">✦ Analysis</button>
     </div>
 
+    <!-- ── MOON SCORE + BONDING CURVE ── -->
+    <div class="card moon-bond-card">
+      <div class="moon-bond-grid">
+        <div class="moon-panel">
+          <div class="moon-panel-top">
+            <div class="moon-circle" style="border-color:${moon.col};">
+              <div class="moon-num" style="color:${moon.col};">${moon.score}</div>
+              <div class="moon-sub" style="color:${moon.col};">/100</div>
+            </div>
+            <div class="moon-info">
+              <div class="moon-title" style="color:${moon.col};">${moon.label}</div>
+              <div class="moon-bar-wrap"><div class="moon-bar-fill" style="background:${moon.col};width:${moon.score}%;"></div></div>
+              <div class="moon-sigs">
+                ${moon.pos.slice(0,2).map(s=>`<span class="moon-sig-pos">✦ ${s}</span>`).join('')}
+                ${moon.neg.slice(0,1).map(s=>`<span class="moon-sig-neg">✕ ${s}</span>`).join('')}
+              </div>
+            </div>
+          </div>
+          <div class="moon-panel-lbl">Moon Score</div>
+        </div>
+        <div class="moon-bond-divider"></div>
+        <div class="bond-panel">
+          ${bondingCurveHtml}
+        </div>
+      </div>
+    </div>
+
     <!-- ── SAFETY SCORE ── -->
     <div class="card" id="safetyCard">
       <div class="card-head">
@@ -823,6 +958,9 @@ function renderTrencher(ca, dex, pump, solPrice) {
         <div class="metric-val" id="freshWalletVal"><span class="no-data">…</span></div>
       </div>
     </div>
+
+    <!-- ── ROI CALCULATOR ── -->
+    ${roiHtml}
 
     <!-- ── SOCIALS / KOLS / TOP X ── -->
     <div class="stats-3" style="margin-bottom:10px;">

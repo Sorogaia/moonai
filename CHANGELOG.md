@@ -2,6 +2,18 @@
 
 ---
 
+## [1.7.0] — 2026-05-14
+
+### Added
+- Moon Score (0–100) — upside potential score alongside Safety Score
+  - Signals: momentum, age, MC size, vol/MC ratio, bonded status, 24h change
+  - Labels: ❄️ COLD / 🌡️ WARMING / ⚡ HEATING / 🔥 HOT / 🌙 MOON
+- Bonding Curve progress bar — % filled + ETA to graduation (pump.fun tokens)
+- Quick ROI Calculator — shows $100 return at 2x/5x/10x/50x/100x with MC targets
+- Moon Score + Bonding Curve displayed in a single compact 2-panel card
+
+---
+
 ## [1.6.0] — 2026-05-14
 
 ### Changed

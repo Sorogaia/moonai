@@ -707,6 +707,57 @@ html, body {
 .card-muted        { font-size:12px; color:var(--text-faint); display:flex; align-items:center; gap:6px; }
 .card-desc         { font-size:13px; color:var(--text-muted); line-height:1.7; }
 
+/* ══════════════════════════════════════
+   MOON SCORE + BONDING CURVE CARD
+══════════════════════════════════════ */
+.moon-bond-card  { margin-bottom:8px; }
+.moon-bond-grid  { display:grid; grid-template-columns:1fr 1px 1fr; }
+.moon-bond-divider { background:var(--border); }
+
+/* Moon panel */
+.moon-panel      { padding:12px 14px; display:flex; flex-direction:column; gap:8px; }
+.moon-panel-top  { display:flex; align-items:center; gap:12px; }
+.moon-panel-lbl  { font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); }
+.moon-circle     { width:56px; height:56px; border-radius:50%; border:2px solid; flex-shrink:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.moon-num        { font-size:1.05rem; font-weight:700; line-height:1; }
+.moon-sub        { font-size:8px; font-weight:700; letter-spacing:.05em; margin-top:1px; }
+.moon-info       { flex:1; min-width:0; }
+.moon-title      { font-size:1rem; font-weight:700; margin-bottom:5px; line-height:1; }
+.moon-bar-wrap   { height:4px; border-radius:2px; background:var(--border2); margin-bottom:6px; }
+.moon-bar-fill   { height:4px; border-radius:2px; transition:width .8s ease; }
+.moon-sigs       { display:flex; flex-wrap:wrap; gap:5px; }
+.moon-sig-pos    { font-size:10px; color:var(--accent); }
+.moon-sig-neg    { font-size:10px; color:var(--danger); }
+
+/* Bonding curve panel */
+.bond-panel      { padding:12px 14px; display:flex; flex-direction:column; gap:6px; justify-content:center; }
+.bond-label      { font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); }
+.bond-status-ok  { font-size:13px; font-weight:700; color:var(--accent); }
+.bond-pct        { font-size:1.05rem; font-weight:700; line-height:1; }
+.bond-bar-wrap   { height:6px; border-radius:3px; background:var(--border2); }
+.bond-bar-fill   { height:6px; border-radius:3px; transition:width .8s ease; }
+.bond-eta        { font-size:11px; color:var(--text-faint); }
+.bond-sub        { font-size:12px; color:var(--text-faint); }
+
+@media (max-width: 520px) {
+  .moon-bond-grid { grid-template-columns:1fr; }
+  .moon-bond-divider { width:100%; height:1px; }
+}
+
+/* ══════════════════════════════════════
+   ROI CALCULATOR
+══════════════════════════════════════ */
+.roi-grid   { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
+.roi-item   { background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 4px; text-align:center; transition:border-color var(--transition); }
+.roi-item:hover { border-color:var(--accent); }
+.roi-mult   { font-size:10px; font-weight:700; color:var(--text-faint); letter-spacing:.05em; text-transform:uppercase; margin-bottom:4px; }
+.roi-val    { font-size:13px; font-weight:700; color:var(--accent); margin-bottom:3px; }
+.roi-mc     { font-size:9px; color:var(--text-faint); }
+
+@media (max-width: 480px) {
+  .roi-grid { grid-template-columns:repeat(3,1fr); }
+}
+
 /* Top X Posts highlight card */
 .top-x-card { border:1px solid rgba(255,255,255,0.38) !important; box-shadow:0 0 24px rgba(255,255,255,0.18), 0 0 8px rgba(255,255,255,0.12) !important; animation:glowPulse 3s ease-in-out infinite; }
 .top-x-card .card-title-dot { background:#fff !important; }
