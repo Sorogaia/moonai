@@ -1057,7 +1057,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
 
   // Fire async enrichment — none of these block the card render
   fetchLoreBubble(name, symbol, pump?.description || '', mc, ch24, pump?.bonded);
-  fetchTopHolders(ca, pump?.dev || null);
+  fetchTopHolders(ca, pump?.dev || null, solPrice, mcRaw);
   fetchBundleDetection(ca, pump?.dev || null);
   fetchTokenInfo(ca, pump?.dev || null, dex, pump);
   fetchFreshWallets(ca, dex?.created || null);
@@ -1555,7 +1555,7 @@ async function fetchLoreBubble(name, symbol, description, mc, ch24, bonded) {
 /* ══════════════════════════════════════
    TOP HOLDERS — Helius powered
 ══════════════════════════════════════ */
-async function fetchTopHolders(ca, devWallet) {
+async function fetchTopHolders(ca, devWallet, solPrice, mcRaw) {
   const bodyEl  = document.getElementById('holdersBody');
   const badgeEl = document.getElementById('holdersBadge');
   if (!bodyEl) return;
@@ -1572,34 +1572,74 @@ async function fetchTopHolders(ca, devWallet) {
 
     const top10pct = data.holders.reduce((s, h) => s + h.pct, 0);
     const maxPct   = data.holders[0]?.pct || 1;
+    const sol      = parseFloat(solPrice) || 0;
+    const mc       = parseFloat(mcRaw)    || 0;
 
     const rows = data.holders.map((h, i) => {
-      const short   = h.owner.slice(0, 4) + '…' + h.owner.slice(-4);
-      const isDev   = devWallet && h.owner.toLowerCase() === devWallet.toLowerCase();
-      const pct     = h.pct.toFixed(2);
-      const pctCol  = h.pct >= 10 ? '#ff3b30' : h.pct >= 5 ? '#ff9f0a' : 'var(--accent)';
-      const barW    = Math.max(2, (h.pct / maxPct) * 100).toFixed(1);
-      const devBadge = isDev
-        ? `<span class="badge-dev">DEV</span>`
+      const short    = h.owner.slice(0, 4) + '…' + h.owner.slice(-4);
+      const isDev    = devWallet && h.owner.toLowerCase() === devWallet.toLowerCase();
+      const pct      = h.pct.toFixed(2);
+      const pctCol   = h.pct >= 10 ? '#ff3b30' : h.pct >= 5 ? '#ff9f0a' : 'var(--accent)';
+      const barW     = Math.max(2, (h.pct / maxPct) * 100).toFixed(1);
+
+      // Badges
+      const devBadge   = isDev ? `<span class="badge-dev">DEV</span>` : '';
+      const whaleBadge = !isDev && h.pct >= 10 ? `<span class="badge-whale">🐋 WHALE</span>` : '';
+      const freshBadge = h.isFresh   ? `<span class="badge-fresh">🆕 FRESH</span>` : '';
+      const vetBadge   = h.isVeteran ? `<span class="badge-vet">👴 VETERAN</span>` : '';
+
+      // Holding value
+      const holdVal  = mc > 0 ? fmtNum(mc * h.pct / 100) : null;
+      const holdLine = holdVal ? `Holds <b>${holdVal}</b>` : `Holds <b>${fmtSupply(h.amount)}</b> tokens`;
+
+      // Buy info
+      let buyLine = '';
+      if (h.totalBought > 0) {
+        const boughtFmt = fmtSupply(h.totalBought);
+        if (h.solSpent > 0) {
+          const spentUsd = sol > 0 ? ` ($${(h.solSpent * sol).toFixed(0)})` : '';
+          buyLine = `Bought <b>${boughtFmt}</b> tokens · spent <b>${h.solSpent.toFixed(2)} SOL${spentUsd}</b>`;
+        } else {
+          buyLine = `Bought <b>${boughtFmt}</b> tokens`;
+        }
+      }
+
+      // Sell info
+      let sellLine = '';
+      if (h.hasSold === true && h.totalSold > 0) {
+        const soldFmt = fmtSupply(h.totalSold);
+        let receivedStr = '';
+        if (h.solReceived > 0) {
+          const recvUsd = sol > 0 ? ` ($${(h.solReceived * sol).toFixed(0)})` : '';
+          receivedStr = ` · received <b>${h.solReceived.toFixed(2)} SOL${recvUsd}</b>`;
+        }
+        sellLine = `<span class="holder-sold">⚠ Sold ${h.soldPct}% of position (${soldFmt} tokens)${receivedStr}</span>`;
+      } else if (h.hasSold === false) {
+        sellLine = `<span class="holder-clean">✅ No sells detected</span>`;
+      }
+
+      // Wallet age line
+      const ageLine = h.walletAge !== null
+        ? `Wallet active ${h.walletAge < 1 ? 'today' : h.walletAge + 'd ago'}`
         : '';
-      const whaleBadge = !isDev && h.pct >= 10
-        ? `<span class="badge-whale">🐋 WHALE</span>`
-        : '';
+
+      const detailLines = [buyLine, sellLine, holdLine, ageLine].filter(Boolean);
+
       return `
       <div class="holder-row">
         <div class="holder-row-top">
           <div class="holder-row-left">
             <span class="holder-num">${i + 1}.</span>
             <a href="https://solscan.io/account/${h.owner}" target="_blank" rel="noopener" class="holder-addr">${short}</a>
-            ${devBadge}${whaleBadge}
+            ${devBadge}${whaleBadge}${freshBadge}${vetBadge}
           </div>
           <span class="holder-pct" style="color:${pctCol};">${pct}%</span>
         </div>
+        ${detailLines.map(l => `<div class="holder-detail">${l}</div>`).join('')}
         <div class="holder-bar"><div class="holder-bar-fill" style="background:${pctCol};width:${barW}%;"></div></div>
       </div>`;
     });
 
-    // whale concentration warning
     const whaleWarn = top10pct >= 40
       ? `<div class="holder-warn">⚠️ High concentration — top 10 hold <b>${top10pct.toFixed(1)}%</b> of supply</div>`
       : `<div class="holder-supply">Top 10 hold <b style="color:var(--text);">${top10pct.toFixed(1)}%</b> of supply</div>`;
@@ -1617,7 +1657,6 @@ async function fetchTopHolders(ca, devWallet) {
     bodyEl.innerHTML = top3.join('') + whaleWarn + restHtml;
     if (badgeEl) { badgeEl.textContent = 'LIVE'; badgeEl.className = 'card-badge badge-green'; }
 
-    // update HOLDERS stat card with real count
     const holdersStatEl = document.getElementById('holdersStatVal');
     if (holdersStatEl) holdersStatEl.textContent = data.holders.length + '+ tracked';
 

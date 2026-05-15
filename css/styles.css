@@ -777,6 +777,12 @@ html, body {
 .holder-bar-fill        { height:3px; border-radius:2px; transition:width .4s ease; }
 .badge-dev              { background:rgba(255,59,48,.15);  color:#ff3b30;    border:1px solid rgba(255,59,48,.35);   border-radius:10px; padding:1px 7px; font-size:10px; font-weight:700; margin-left:5px; }
 .badge-whale            { background:rgba(0,212,255,.1);   color:var(--cyan); border:1px solid rgba(0,212,255,.25);  border-radius:10px; padding:1px 7px; font-size:10px; font-weight:700; margin-left:5px; }
+.badge-fresh            { background:rgba(20,241,149,.1);  color:#14F195;    border:1px solid rgba(20,241,149,.28);  border-radius:10px; padding:1px 7px; font-size:10px; font-weight:700; margin-left:5px; }
+.badge-vet              { background:rgba(168,85,247,.1);  color:#a855f7;    border:1px solid rgba(168,85,247,.28);  border-radius:10px; padding:1px 7px; font-size:10px; font-weight:700; margin-left:5px; }
+.holder-detail          { font-size:10px; color:var(--text-faint); margin-top:3px; padding-left:22px; line-height:1.6; }
+.holder-detail b        { color:var(--text-muted); font-weight:700; }
+.holder-sold            { color:var(--amber); }
+.holder-clean           { color:var(--accent); }
 .holder-warn            { margin-top:10px; padding:8px 12px; background:rgba(255,59,48,.07); border:1px solid rgba(255,59,48,.25); border-radius:var(--radius-sm); font-size:12px; color:#ff3b30; }
 .holder-supply          { margin-top:8px; color:var(--text-faint); font-size:11px; }
 .expand-btn             { width:100%; margin-top:8px; padding:7px; font-family:var(--font); font-size:12px; font-weight:600; color:var(--text-muted); background:var(--bg-surface); border:1px solid var(--border2); border-radius:var(--radius-sm); cursor:pointer; transition:all .2s; }
