@@ -65,6 +65,24 @@ function toggleSafety() {
   if (chevron) chevron.textContent = open ? '▼' : '▲';
 }
 
+function revealSafetyScore() {
+  const card    = document.getElementById('safetyCard');
+  const body    = document.getElementById('safetyBody');
+  const chevron = document.getElementById('safetyChevron');
+  if (!card) return;
+  card.style.display = 'block';
+  if (body)    body.style.display    = 'block';
+  if (chevron) chevron.textContent   = '▲';
+  setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+}
+
+function revealROI() {
+  const card = document.getElementById('roiCard');
+  if (!card) return;
+  card.style.display = 'block';
+  setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+}
+
 function openV2Modal() {
   document.getElementById('v2Modal').classList.add('open');
 }
@@ -689,7 +707,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
 
   // ── ROI CALCULATOR ──
   const roiHtml = mcRaw > 0 ? `
-    <div class="card">
+    <div class="card" id="roiCard" style="display:none;">
       <div class="card-head">
         <div class="card-title"><div class="card-title-dot"></div>Quick ROI</div>
         <span class="card-sub-label">per $100 invested at current MC</span>
@@ -882,7 +900,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
     </div>
 
     <!-- ── SAFETY SCORE ── -->
-    <div class="card" id="safetyCard">
+    <div class="card" id="safetyCard" style="display:none;">
       <div class="card-head safety-toggle" onclick="toggleSafety()">
         <div class="card-title"><div class="card-title-dot"></div>Safety Score</div>
         <div class="safety-head-right">
