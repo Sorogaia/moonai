@@ -98,17 +98,42 @@ module.exports = async (req, res) => {
   if (!HELIUS_KEY)            return res.status(500).json({ error: 'Service unavailable.' });
 
   try {
-    // Step 1: get top 10 token accounts + supply
-    const [largestData, supplyData] = await Promise.all([
+    // Step 1: get top 20 token accounts + supply + REAL total holder count in parallel
+    const [largestData, supplyData, allAccountsData] = await Promise.all([
       rpc(1, 'getTokenLargestAccounts', [ca, { commitment: 'confirmed' }]),
       rpc(2, 'getTokenSupply',          [ca, { commitment: 'confirmed' }]),
+      // Real holder count: getProgramAccounts with minimal data slice (just the 8-byte balance)
+      // dataSlice reduces bandwidth — we only need to know if balance > 0
+      rpc(3, 'getProgramAccounts', [
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        {
+          filters: [
+            { dataSize: 165 },
+            { memcmp: { offset: 0, bytes: ca } },
+          ],
+          dataSlice: { offset: 64, length: 8 },
+          encoding: 'base64',
+          commitment: 'confirmed',
+        },
+      ]),
     ]);
+
+    // Count wallets with non-zero token balance (zero = 8 null bytes = 'AAAAAAAA' in base64)
+    const allAccounts = allAccountsData?.result || [];
+    const totalHolderCount = allAccounts.filter(acct => {
+      const b64 = acct.account?.data?.[0] || '';
+      if (!b64 || b64 === 'AAAAAAAA') return false;
+      try {
+        const buf = Buffer.from(b64, 'base64');
+        return buf.readBigUInt64LE(0) > 0n;
+      } catch { return b64 !== 'AAAAAAAA'; }
+    }).length;
 
     // Solana returns up to 20 largest token accounts — use ALL 20 before dedup.
     // A wallet with 2 accounts at positions 11 + 15 combined might be top-5.
     const accounts    = largestData.result?.value?.slice(0, 20) || [];
     const totalSupply = parseFloat(supplyData.result?.value?.uiAmount) || 0;
-    if (accounts.length === 0) return res.status(200).json({ holders: [], totalSupply });
+    if (accounts.length === 0) return res.status(200).json({ holders: [], totalSupply, totalHolderCount });
 
     // Step 2: resolve token account → owner wallet
     const tokenAddresses = accounts.map(a => a.address);
@@ -161,7 +186,7 @@ module.exports = async (req, res) => {
       };
     });
 
-    return res.status(200).json({ holders: enriched, totalSupply });
+    return res.status(200).json({ holders: enriched, totalSupply, totalHolderCount });
   } catch {
     return res.status(502).json({ error: 'Unable to fetch holder data.' });
   }

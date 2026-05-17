@@ -260,11 +260,12 @@ module.exports = async (req, res) => {
     const jitoBuyers = launchBuyers.filter(([, d]) => d.jitoConfirmed);
     if (jitoBuyers.length >= 1) {
       jitoConfirmedAny = true;
-      const jb = { type: 'JITO', label: '🔴 Jito Bundle', wallets: [], amount: 0, pct: '0.00', jitoConfirmed: true };
+      const jb = { type: 'JITO', label: '🔴 Jito Bundle', wallets: [], fullWallets: [], amount: 0, pct: '0.00', jitoConfirmed: true };
       for (const [wallet, data] of jitoBuyers) {
         if (bundleSet.has(wallet)) continue;
         bundleSet.add(wallet);
         jb.wallets.push(wallet.slice(0, 4) + '…' + wallet.slice(-4));
+        jb.fullWallets.push(wallet);
         jb.amount += data.amount;
         if (dev && wallet.toLowerCase() === dev.toLowerCase()) devBundled = true;
       }
@@ -274,11 +275,12 @@ module.exports = async (req, res) => {
     // Same-funder bundles
     for (const [funder, wallets] of Object.entries(funderGroups)) {
       if (funder.startsWith('solo_') || wallets.length < 2) continue;
-      const fb = { type: 'FUNDED', label: '🟠 Same Funder', wallets: [], amount: 0, pct: '0.00', funder: funder.slice(0, 4) + '…' + funder.slice(-4), jitoConfirmed: false };
+      const fb = { type: 'FUNDED', label: '🟠 Same Funder', wallets: [], fullWallets: [], amount: 0, pct: '0.00', funder: funder.slice(0, 4) + '…' + funder.slice(-4), jitoConfirmed: false };
       for (const { wallet, amount } of wallets) {
         if (bundleSet.has(wallet)) continue;
         bundleSet.add(wallet);
         fb.wallets.push(wallet.slice(0, 4) + '…' + wallet.slice(-4));
+        fb.fullWallets.push(wallet);
         fb.amount += amount;
         if (dev && wallet.toLowerCase() === dev.toLowerCase()) devBundled = true;
       }
@@ -288,11 +290,12 @@ module.exports = async (req, res) => {
     // Same-slot / adjacent-slot bundles
     for (const [, wallets] of Object.entries(slotBuckets)) {
       if (wallets.length < 2) continue;
-      const sb = { type: 'SLOT', label: '🟡 Same Slot', wallets: [], amount: 0, pct: '0.00', slot: wallets[0].slot, jitoConfirmed: false };
+      const sb = { type: 'SLOT', label: '🟡 Same Slot', wallets: [], fullWallets: [], amount: 0, pct: '0.00', slot: wallets[0].slot, jitoConfirmed: false };
       for (const { wallet, amount, jitoConfirmed } of wallets) {
         if (bundleSet.has(wallet)) continue;
         bundleSet.add(wallet);
         sb.wallets.push(wallet.slice(0, 4) + '…' + wallet.slice(-4));
+        sb.fullWallets.push(wallet);
         sb.amount += amount;
         sb.jitoConfirmed = sb.jitoConfirmed || jitoConfirmed;
         if (dev && wallet.toLowerCase() === dev.toLowerCase()) devBundled = true;
@@ -303,14 +306,66 @@ module.exports = async (req, res) => {
     const totalBundledAmount = bundleList.reduce((s, b) => s + b.amount, 0);
     const totalPct  = ((totalBundledAmount / totalSupply) * 100).toFixed(2);
 
+    // ── Step 8: Still-holding — fetch current on-chain balances for all bundled wallets ──
+    // This tells us: of the tokens bundled at launch, how many are STILL held vs dumped.
+    const bundleWallets = [...bundleSet];
+    let currentHoldingTotal = 0;
+    const currentBalMap = {};
+
+    if (bundleWallets.length > 0) {
+      const cbResults = await Promise.allSettled(
+        bundleWallets.map(wallet =>
+          rpc('cb_' + wallet.slice(0, 8), 'getTokenAccountsByOwner', [
+            wallet,
+            { mint: ca },
+            { encoding: 'jsonParsed', commitment: 'confirmed' },
+          ])
+        )
+      );
+      bundleWallets.forEach((wallet, i) => {
+        const r = cbResults[i];
+        if (r.status !== 'fulfilled') return;
+        const accts = r.value?.result?.value || [];
+        const bal = accts.reduce(
+          (s, a) => s + parseFloat(a.account?.data?.parsed?.info?.tokenAmount?.uiAmount || 0), 0
+        );
+        currentBalMap[wallet] = bal;
+        currentHoldingTotal += bal;
+      });
+    }
+
+    // Overall still-holding metrics
+    const stillHoldingPct = totalBundledAmount > 0
+      ? parseFloat(((currentHoldingTotal / totalBundledAmount) * 100).toFixed(1))
+      : 0;
+    const dumpedPct = parseFloat((100 - stillHoldingPct).toFixed(1));
+    const stillHoldingSupplyPct = totalSupply > 0
+      ? parseFloat(((currentHoldingTotal / totalSupply) * 100).toFixed(2))
+      : 0;
+
+    // Per-bundle still-holding + clean up fullWallets before response
+    for (const bundle of bundleList) {
+      const bundleCurrentBal = (bundle.fullWallets || [])
+        .reduce((s, w) => s + (currentBalMap[w] || 0), 0);
+      bundle.stillHoldingPct = bundle.amount > 0
+        ? parseFloat(((bundleCurrentBal / bundle.amount) * 100).toFixed(1))
+        : 0;
+      bundle.dumpedPct = parseFloat((100 - bundle.stillHoldingPct).toFixed(1));
+      bundle.currentAmount = parseFloat(bundleCurrentBal.toFixed(0));
+      delete bundle.fullWallets; // internal only — not sent to client
+    }
+
     return res.status(200).json({
-      bundled:       bundleList.length > 0,
-      pct:           totalPct,
-      bundleCount:   bundleList.length,
-      wallets:       bundleSet.size,
-      jitoConfirmed: jitoConfirmedAny,
+      bundled:              bundleList.length > 0,
+      pct:                  totalPct,
+      bundleCount:          bundleList.length,
+      wallets:              bundleSet.size,
+      jitoConfirmed:        jitoConfirmedAny,
       devBundled,
-      bundles:       bundleList,
+      stillHoldingPct,
+      dumpedPct,
+      stillHoldingSupplyPct,
+      bundles:              bundleList,
       _meta: {
         totalSigsScanned:    allSigsNewestFirst.length,
         launchTxnsAnalyzed:  enhanced.length,

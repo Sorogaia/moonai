@@ -101,7 +101,7 @@ function buildChatSystem() {
     d.safetyGood?.length    ? `Safety positives: ${d.safetyGood.join('; ')}` : '',
     // Bundles
     d.bundled != null ? `Bundle detection: ${d.bundled
-      ? `${d.bundlePct}% of supply was bundled at launch — ${d.bundleRisk} RISK. ${d.bundleCount} bundles, ${d.bundleWallets} wallets. Jito: ${d.jitoConfirmed ? 'CONFIRMED' : 'No'}. Dev bundled: ${d.devBundled ? 'YES' : 'No'}. New wallets: ${d.newWallets || 0}.`
+      ? `${d.bundlePct}% of supply was bundled at launch — ${d.bundleRisk} RISK. ${d.bundleCount} bundles, ${d.bundleWallets} wallets. Jito: ${d.jitoConfirmed ? 'CONFIRMED' : 'No'}. Dev bundled: ${d.devBundled ? 'YES' : 'No'}.${d.bundleStillHolding != null ? ` Bundle wallets still holding ${d.bundleStillHolding}% of what they bought (${d.bundleSupplyHeld}% of total supply) — ${d.bundleDumped}% already dumped.` : ''}`
       : 'CLEAN — no coordinated launch bundles detected'}` : '',
     // Fresh wallets
     d.freshWalletPct != null ? `Fresh wallets among top holders: ${d.freshWalletPct.toFixed(0)}% (${d.freshWalletCount} of ${d.freshWalletTotal})` : '',
@@ -592,6 +592,16 @@ function fmtNum(n) {
   if (n >= 1_000_000)     return '$' + (n/1_000_000).toFixed(2) + 'M';
   if (n >= 1_000)         return '$' + (n/1_000).toFixed(1) + 'K';
   return '$' + n.toFixed(2);
+}
+
+// Format a plain integer count (no $ prefix) — e.g. 12300 → "12.3K"
+function fmtCompact(n) {
+  if (n == null) return '—';
+  n = parseFloat(n);
+  if (isNaN(n)) return '—';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1_000)     return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(Math.round(n));
 }
 
 function fmtPrice(p) {
@@ -1505,6 +1515,11 @@ function updateTokenIntel() {
   if (d.freezeRevoked === true)  set('tiq-freeze', `<span style="color:#14F195;">Revoked</span>`);
   else if (d.freezeRevoked === false) set('tiq-freeze', `<span style="color:#ff3b30;">Active</span>`);
 
+  // Real total holder count
+  if (d.totalHolderCount > 0) {
+    set('tiq-holders', `<span style="color:var(--text);">${fmtCompact(d.totalHolderCount)}</span>`);
+  }
+
   // Dex Paid — updated by fetchDexPaid directly
 }
 
@@ -2181,8 +2196,20 @@ async function fetchTopHolders(ca, devWallet, solPrice, mcRaw) {
     bodyEl.innerHTML = top3.join('') + whaleWarn + restHtml;
     if (badgeEl) { badgeEl.textContent = 'LIVE'; badgeEl.className = 'card-badge badge-green'; }
 
+    // Update holders stat card with real total count if available
     const holdersStatEl = document.getElementById('holdersStatVal');
-    if (holdersStatEl) holdersStatEl.textContent = data.holders.length + '+ tracked';
+    if (holdersStatEl) {
+      if (data.totalHolderCount > 0) {
+        holdersStatEl.textContent = fmtCompact(data.totalHolderCount);
+      } else {
+        holdersStatEl.textContent = data.holders.length + '+ tracked';
+      }
+    }
+
+    // Store real holder count for Token Intel grid + AI context
+    if (data.totalHolderCount > 0) {
+      _liveData.totalHolderCount = data.totalHolderCount;
+    }
 
     // Inject holder data into chat context so AI can answer questions about it
     const devHolder  = devWallet ? data.holders.find(h => h.owner.toLowerCase() === devWallet.toLowerCase()) : null;
@@ -2577,8 +2604,27 @@ async function fetchBundleDetection(ca, devWallet) {
     const devTag  = data.devBundled    ? `<span class="badge-dev-b">DEV BUNDLED</span>` : '';
     const newTag  = data.newWallets > 0 ? `<span class="badge-new-w">${data.newWallets} NEW WALLETS</span>` : '';
 
-    // Bundle rows
-    const bundleRows = (data.bundles || []).map(b => `
+    // "Still holding" colors
+    const stillHolding  = data.stillHoldingPct ?? null;
+    const stillCol = stillHolding == null ? 'var(--text-faint)'
+                   : stillHolding >= 70 ? '#ff3b30'    // mostly still holding = dump risk
+                   : stillHolding >= 30 ? '#ff9f0a'
+                   : '#14F195';                          // most has already been sold
+    const dumpedCol = stillHolding == null ? 'var(--text-faint)'
+                    : stillHolding <= 30 ? '#14F195'    // most dumped = lower pressure
+                    : stillHolding <= 70 ? '#ff9f0a'
+                    : '#ff3b30';
+
+    // Bundle rows (with per-bundle still-holding)
+    const bundleRows = (data.bundles || []).map(b => {
+      const bStillCol = b.stillHoldingPct == null ? 'var(--text-faint)'
+                      : b.stillHoldingPct >= 70 ? '#ff3b30'
+                      : b.stillHoldingPct >= 30 ? '#ff9f0a'
+                      : '#14F195';
+      const stillLine = b.stillHoldingPct != null
+        ? `<span style="font-size:10px;color:${bStillCol};margin-left:4px;">▸ ${b.stillHoldingPct}% still held</span>`
+        : '';
+      return `
       <div class="bundle-row">
         <div class="bundle-row-top">
           <div class="bundle-row-left">
@@ -2586,13 +2632,14 @@ async function fetchBundleDetection(ca, devWallet) {
             ${b.jitoConfirmed ? '<span class="badge-b-jito">JITO</span>' : ''}
             ${b.funder ? `<span class="bundle-row-meta">funder: ${b.funder}</span>` : ''}
             ${b.slot   ? `<span class="bundle-row-meta">slot ${b.slot}</span>` : ''}
+            ${stillLine}
           </div>
           <span class="bundle-row-pct" style="color:${riskCol};">${b.pct}%</span>
         </div>
         <div class="bundle-row-wallets">${b.wallets.join(' · ')}</div>
         <div class="bundle-row-bar"><div class="bundle-row-fill" style="background:${riskCol};width:${Math.min(parseFloat(b.pct) * 3, 100)}%;"></div></div>
-      </div>`
-    ).join('');
+      </div>`;
+    }).join('');
 
     bodyEl.innerHTML = `
       <div class="bundle-header">
@@ -2610,13 +2657,20 @@ async function fetchBundleDetection(ca, devWallet) {
           <div class="bstat-val">${data.bundleCount}</div>
         </div>
         <div class="bstat" style="background:var(--bg-surface);border:1px solid var(--border2);">
-          <div class="bstat-lbl">Wallets</div>
-          <div class="bstat-val">${data.wallets}</div>
+          <div class="bstat-lbl">Still Holding</div>
+          <div class="bstat-val" style="color:${stillCol};">${stillHolding != null ? stillHolding + '%' : '—'}</div>
         </div>
         <div class="bstat" style="background:var(--bg-surface);border:1px solid var(--border2);">
-          <div class="bstat-lbl">Jito</div>
-          <div class="bstat-val" style="color:${data.jitoConfirmed ? '#ff3b30' : 'var(--accent)'};">${data.jitoConfirmed ? 'YES' : 'NO'}</div>
+          <div class="bstat-lbl">Dumped</div>
+          <div class="bstat-val" style="color:${dumpedCol};">${data.dumpedPct != null ? data.dumpedPct + '%' : '—'}</div>
         </div>
+      </div>
+
+      <div class="bundle-sub-stats">
+        <span style="color:var(--text-faint);font-size:10px;">
+          ${data.wallets} wallets · Jito: <span style="color:${data.jitoConfirmed ? '#ff3b30' : '#14F195'};">${data.jitoConfirmed ? 'YES' : 'NO'}</span>
+          ${data.stillHoldingSupplyPct != null ? ` · currently holds <b style="color:${stillCol};">${data.stillHoldingSupplyPct}%</b> of total supply` : ''}
+        </span>
       </div>
 
       <div class="bundle-bar"><div class="bundle-bar-fill" style="background:${riskCol};width:${Math.min(pct, 100)}%;"></div></div>
@@ -2643,17 +2697,20 @@ async function fetchBundleDetection(ca, devWallet) {
     }
 
     // Update live data context for AI
-    _liveData.bundled       = data.bundled;
-    _liveData.bundlePct     = pct;
-    _liveData.bundleRisk    = risk;
+    _liveData.bundled             = data.bundled;
+    _liveData.bundlePct           = pct;
+    _liveData.bundleRisk          = risk;
+    _liveData.bundleCount         = data.bundleCount;
+    _liveData.bundleWallets       = data.wallets;
+    _liveData.jitoConfirmed       = data.jitoConfirmed;
+    _liveData.devBundled          = data.devBundled;
+    _liveData.newWallets          = data.newWallets;
+    _liveData.bundleStillHolding  = data.stillHoldingPct;
+    _liveData.bundleDumped        = data.dumpedPct;
+    _liveData.bundleSupplyHeld    = data.stillHoldingSupplyPct;
     updateRiskStrip();
     updateTokenIntel();
     updateVerdictBadge();
-    _liveData.bundleCount   = data.bundleCount;
-    _liveData.bundleWallets = data.wallets;
-    _liveData.jitoConfirmed = data.jitoConfirmed;
-    _liveData.devBundled    = data.devBundled;
-    _liveData.newWallets    = data.newWallets;
 
   } catch (e) {
     if (bodyEl) bodyEl.innerHTML = `<span class="no-data">Bundle detection unavailable.</span>`;
