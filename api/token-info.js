@@ -27,16 +27,24 @@ module.exports = async (req, res) => {
   if (!HELIUS_KEY)                     return res.status(500).json({ error: 'Service unavailable.' });
 
   try {
-    const calls = [rpc(1, 'getAccountInfo', [ca, { encoding: 'jsonParsed', commitment: 'confirmed' }])];
+    // Always fetch mint info + actual supply in parallel.
+    // If dev provided, also fetch their token accounts.
+    const calls = [
+      rpc(1, 'getAccountInfo',  [ca, { encoding: 'jsonParsed', commitment: 'confirmed' }]),
+      rpc('sup', 'getTokenSupply', [ca, { commitment: 'confirmed' }]),
+    ];
     if (dev) {
       calls.push(rpc(2, 'getTokenAccountsByOwner', [dev, { mint: ca }, { encoding: 'jsonParsed', commitment: 'confirmed' }]));
     }
 
-    const [mintInfo, devTokenInfo] = await Promise.all(calls);
+    const [mintInfo, supplyData, devTokenInfo] = await Promise.all(calls);
 
     const parsed     = mintInfo?.result?.value?.data?.parsed?.info || {};
     const mintAuth   = parsed.mintAuthority   || null;
     const freezeAuth = parsed.freezeAuthority || null;
+
+    // Use real on-chain supply — critical for non-pump.fun tokens
+    const actualSupply = parseFloat(supplyData?.result?.value?.uiAmount || 0) || 1_000_000_000;
 
     let devBalance = null, devPct = null, devSold = false;
     if (dev && devTokenInfo) {
@@ -44,7 +52,7 @@ module.exports = async (req, res) => {
       const totalRaw = accounts.reduce((sum, a) =>
         sum + parseFloat(a.account?.data?.parsed?.info?.tokenAmount?.uiAmount || 0), 0);
       devBalance = totalRaw;
-      devPct     = ((totalRaw / 1_000_000_000) * 100).toFixed(2);
+      devPct     = actualSupply > 0 ? ((totalRaw / actualSupply) * 100).toFixed(2) : '0.00';
       devSold    = totalRaw === 0;
     }
 

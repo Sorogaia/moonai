@@ -51,14 +51,27 @@ module.exports = async (req, res) => {
 
     const walletChecks = await Promise.allSettled(
       owners.map(async ({ owner }) => {
+        // Fetch 50 sigs — if wallet has fewer than 50 total txns, we see ALL of its history.
+        // The LAST signature in this list is the wallet's OLDEST known transaction.
+        // With limit:1 we only got the most recent tx (the buy itself) which made
+        // every buyer look "fresh" — that was the bug.
         const sigsData = await rpc('fs_' + owner.slice(0, 8), 'getSignaturesForAddress', [
-          owner, { limit: 1, commitment: 'confirmed' },
+          owner, { limit: 50, commitment: 'confirmed' },
         ]);
         const sigs = sigsData.result || [];
         if (!sigs.length) return { owner, fresh: false };
-        const oldest      = sigs[sigs.length - 1];
-        const walletCreated = (oldest.blockTime || 0) * 1000;
-        const isFresh     = Math.abs(walletCreated - tokenCreatedAt) < freshWindow;
+
+        // If wallet has < 50 total txns, we have its complete history.
+        // The oldest tx timestamp is its effective creation date.
+        const totalTxns   = sigs.length;
+        const oldest      = sigs[sigs.length - 1]; // oldest in 50-tx window
+        const walletOldest = (oldest.blockTime || 0) * 1000;
+
+        // Fresh = wallet was created within 30 days before or after token launch
+        // AND has fewer than 50 total transactions (genuinely new wallet).
+        // A veteran wallet with 5000 txns should NEVER be called fresh.
+        const ageRelativeToToken = walletOldest - tokenCreatedAt; // positive = wallet older than token
+        const isFresh = totalTxns < 50 && Math.abs(ageRelativeToToken) < (30 * 24 * 3600 * 1000);
         return { owner, fresh: isFresh };
       })
     );

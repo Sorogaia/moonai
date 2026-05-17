@@ -104,7 +104,9 @@ module.exports = async (req, res) => {
       rpc(2, 'getTokenSupply',          [ca, { commitment: 'confirmed' }]),
     ]);
 
-    const accounts    = largestData.result?.value?.slice(0, 10) || [];
+    // Solana returns up to 20 largest token accounts — use ALL 20 before dedup.
+    // A wallet with 2 accounts at positions 11 + 15 combined might be top-5.
+    const accounts    = largestData.result?.value?.slice(0, 20) || [];
     const totalSupply = parseFloat(supplyData.result?.value?.uiAmount) || 0;
     if (accounts.length === 0) return res.status(200).json({ holders: [], totalSupply });
 

@@ -188,11 +188,32 @@ module.exports = async (req, res) => {
       }
     }
 
-    // ── Step 5: Wallets detected via nativeTransfers only have amount=0.
-    // Do NOT estimate token amounts from SOL — pump.fun bonding curve pricing
-    // is non-linear and any estimate is wildly inaccurate (was inflating % by 20x).
-    // These wallets still contribute to slot/funder grouping detection.
-    // % will only reflect wallets with confirmed tokenTransfer amounts.
+    // ── Step 5: Fill missing token amounts from current on-chain balance ────
+    // Wallets detected via nativeTransfers have amount=0 because Helius's
+    // tokenTransfers was empty for their pump.fun buy transaction.
+    // For new tokens, current balance ≈ launch buy amount (they haven't sold).
+    // Use getTokenAccountsByOwner to get actual current holdings.
+    const walletsWithoutAmount = Object.entries(buyerMap).filter(([, d]) => d.amount === 0);
+    if (walletsWithoutAmount.length > 0) {
+      const balResults = await Promise.allSettled(
+        walletsWithoutAmount.map(([wallet]) =>
+          rpc('bal_' + wallet.slice(0, 8), 'getTokenAccountsByOwner', [
+            wallet,
+            { mint: ca },
+            { encoding: 'jsonParsed', commitment: 'confirmed' },
+          ])
+        )
+      );
+      walletsWithoutAmount.forEach(([wallet, data], i) => {
+        const r = balResults[i];
+        if (r.status !== 'fulfilled') return;
+        const accts = r.value?.result?.value || [];
+        for (const acct of accts) {
+          const bal = parseFloat(acct.account?.data?.parsed?.info?.tokenAmount?.uiAmount || 0);
+          if (bal > 0) data.amount += bal;
+        }
+      });
+    }
 
     const launchBuyers = Object.entries(buyerMap);
     if (!launchBuyers.length) {
