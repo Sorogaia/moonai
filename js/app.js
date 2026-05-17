@@ -507,10 +507,13 @@ async function fetchDexScreener(ca) {
     if (!r.ok) return null;
     const d = await r.json();
     const pairs = d.pairs || [];
-    // prefer Raydium, then any Solana pair
-    const pair = pairs.find(p => p.chainId === 'solana' && p.dexId === 'raydium')
-                || pairs.find(p => p.chainId === 'solana')
-                || pairs[0];
+    const caLower = ca.toLowerCase();
+    // Must match the exact CA on Solana — prefer Raydium, then any Solana pair
+    // Never fall back to pairs[0] which could be a different chain/token
+    const pair = pairs.find(p => p.chainId === 'solana' && p.dexId === 'raydium' && p.baseToken?.address?.toLowerCase() === caLower)
+                || pairs.find(p => p.chainId === 'solana' && p.baseToken?.address?.toLowerCase() === caLower)
+                || pairs.find(p => p.chainId === 'solana' && p.dexId === 'raydium')
+                || pairs.find(p => p.chainId === 'solana');
     if (!pair) return null;
     return {
       name:      pair.baseToken?.name    || '—',
@@ -546,6 +549,8 @@ async function fetchPumpFun(ca) {
     const r = await fetch(`https://frontend-api.pump.fun/coins/${ca}`);
     if (!r.ok) return null;
     const d = await r.json();
+    // Validate the returned mint matches what we searched
+    if (d.mint && d.mint.toLowerCase() !== ca.toLowerCase()) return null;
     return {
       name:        d.name            || '—',
       symbol:      d.symbol          || '—',
