@@ -703,6 +703,13 @@ html, body {
 .stats-5  { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:10px; }
 .stats-3  { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
 .ath-down { font-size:10px; color:var(--danger); margin-top:2px; }
+.launch-info-bar {
+  display:flex; flex-wrap:wrap; gap:12px; align-items:center;
+  background:var(--bg-surface); border:1px solid var(--border);
+  border-radius:var(--radius-md); padding:8px 14px;
+  font-size:11px; color:var(--text-faint); margin-bottom:10px;
+}
+.launch-info-bar b { color:var(--text-muted); font-weight:700; }
 
 /* ══════════════════════════════════════
    SOCIAL + TRADE PILLS

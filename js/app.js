@@ -76,8 +76,13 @@ function buildChatSystem() {
     d.priceChange5m  != null ? `5m change: ${d.priceChange5m}%` : '',
     d.buys24h    != null ? `Buys 24h: ${d.buys24h} | Sells 24h: ${d.sells24h}` : '',
     d.buys1h     != null ? `Buys 1h: ${d.buys1h} | Sells 1h: ${d.sells1h}` : '',
-    d.momentumLabel  ? `Momentum: ${d.momentumLabel}` : '',
-    d.athMc          ? `ATH MC this session: ${d.athMc}` : '',
+    d.momentumLabel      ? `Momentum: ${d.momentumLabel}` : '',
+    d.athPrice           ? `All-time high price: $${d.athPrice.toPrecision(4)}${d.athDate ? ` (on ${d.athDate})` : ''}` : '',
+    d.downFromAth        ? `Down from ATH: -${d.downFromAth}%` : '',
+    d.launchPrice        ? `Launch price: $${d.launchPrice.toPrecision(4)}` : '',
+    d.changeSinceLaunch  ? `Change since launch: ${d.changeSinceLaunch}%` : '',
+    d.totalVolAllTime    ? `All-time volume: ${d.totalVolAllTime}` : '',
+    d.daysSinceLaunch    != null ? `Days since launch: ${d.daysSinceLaunch}` : '',
     // Bonding
     d.bonded != null ? `Bonded: ${d.bonded ? 'YES — migrated to Raydium' : `NO — bonding curve ${d.bondedPct != null ? d.bondedPct + '% filled' : 'unknown'}`}` : '',
     // Dev
@@ -527,8 +532,9 @@ async function fetchDexScreener(ca) {
       priceChange5m:  pair.priceChange?.m5  || null,
       vol6h:          pair.volume?.h6        || null,
       athPrice:  pair.priceUsd           || null,
-      pairUrl:   pair.url                || null,
-      dex:       pair.dexId              || '—',
+      pairUrl:     pair.url               || null,
+      pairAddress: pair.pairAddress      || null,
+      dex:         pair.dexId            || '—',
       created:   pair.pairCreatedAt      || null,
       txns24h:      (pair.txns?.h24?.buys||0) + (pair.txns?.h24?.sells||0),
       buys24h:      pair.txns?.h24?.buys    || 0,
@@ -1217,6 +1223,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
   fetchFreshWallets(ca, dex?.created || null);
   fetchDevHistory(pump?.dev || null);
   fetchVampCoins(ca, symbol, name);
+  fetchTokenHistory(ca, dex?.pairAddress || null);
 
   // Inject token image safely after HTML is in the DOM
   if (imgSrc) {
@@ -2391,6 +2398,96 @@ async function fetchVampCoins(ca, symbol, name) {
     bodyEl.innerHTML = `<span class="no-data">Vamp scan unavailable.</span>`;
     if (badgeEl) { badgeEl.textContent = 'ERROR'; badgeEl.className = 'card-badge'; badgeEl.style = ''; }
   }
+}
+
+/* ══════════════════════════════════════
+   TOKEN HISTORY — real ATH + launch data
+══════════════════════════════════════ */
+async function fetchTokenHistory(ca, pairAddress) {
+  try {
+    const pairParam = pairAddress ? `&pair=${encodeURIComponent(pairAddress)}` : '';
+    const res  = await fetch(`/api/token-history?ca=${encodeURIComponent(ca)}${pairParam}`);
+    const data = await res.json();
+
+    if (!res.ok || data.error || !data.athPrice) return;
+
+    // Update ATH MC stat card with real all-time high
+    const athEl    = document.getElementById('athMcVal');
+    const athCard  = athEl?.closest('.metric-card');
+
+    if (athEl) {
+      // Convert ATH price to MC (ATH price × 1B supply for pump.fun, or use ratio)
+      // We show ATH price since we may not have exact supply
+      const athPriceStr = data.athPrice >= 1
+        ? '$' + data.athPrice.toFixed(4)
+        : '$' + data.athPrice.toPrecision(4);
+
+      // Try to get MC equivalent — if we have current price and MC, we can scale
+      const currentMcEl = document.getElementById('liveMc');
+      const currentMcTxt = currentMcEl?.textContent || '';
+
+      athEl.textContent = athPriceStr + ' price';
+
+      // Show down from ATH
+      if (data.downFromAth && athCard) {
+        let downEl = athCard.querySelector('.ath-down');
+        if (!downEl) {
+          downEl = document.createElement('div');
+          downEl.className = 'ath-down';
+          athCard.appendChild(downEl);
+        }
+        downEl.textContent = `-${data.downFromAth}% from ATH`;
+      }
+
+      // Update label
+      const lbl = athCard?.querySelector('.metric-lbl');
+      if (lbl) lbl.textContent = 'ALL-TIME HIGH';
+    }
+
+    // Add launch info line below the stats if not already there
+    if (data.launchPrice && data.daysSinceLaunch != null) {
+      const statsGrid = document.querySelector('.stats-4');
+      if (statsGrid && !document.getElementById('launchInfoBar')) {
+        const launchBar = document.createElement('div');
+        launchBar.id = 'launchInfoBar';
+        launchBar.className = 'launch-info-bar';
+
+        const changeStr = data.changeSinceLaunch !== null
+          ? `<span class="${parseFloat(data.changeSinceLaunch) >= 0 ? 'c-green' : 'c-red'}">${parseFloat(data.changeSinceLaunch) >= 0 ? '+' : ''}${data.changeSinceLaunch}% since launch</span>`
+          : '';
+
+        const volStr = data.totalVol > 0
+          ? `<span>All-time vol: <b>${fmtNum(data.totalVol)}</b></span>`
+          : '';
+
+        const launchPriceStr = data.launchPrice >= 1
+          ? '$' + data.launchPrice.toFixed(4)
+          : '$' + data.launchPrice.toPrecision(4);
+
+        const athDateStr = data.athTs
+          ? new Date(data.athTs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          : '';
+
+        launchBar.innerHTML = `
+          <span>Launch price: <b>${launchPriceStr}</b></span>
+          ${changeStr}
+          ${volStr}
+          ${athDateStr ? `<span>ATH on ${athDateStr}</span>` : ''}
+        `;
+        statsGrid.after(launchBar);
+      }
+    }
+
+    // Update chat context with historical data
+    _liveData.athPrice          = data.athPrice;
+    _liveData.downFromAth       = data.downFromAth;
+    _liveData.launchPrice       = data.launchPrice;
+    _liveData.changeSinceLaunch = data.changeSinceLaunch;
+    _liveData.totalVolAllTime   = fmtNum(data.totalVol);
+    _liveData.daysSinceLaunch   = data.daysSinceLaunch;
+    _liveData.athDate           = data.athTs ? new Date(data.athTs).toLocaleDateString() : null;
+
+  } catch {}
 }
 
 async function runNarrativeAnalysis() {
