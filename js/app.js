@@ -958,6 +958,14 @@ function renderTrencher(ca, dex, pump, solPrice) {
       </div>
     </div>
 
+    <!-- ── TRADE & EXPLORE ── -->
+    <div class="card-flex" style="gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+      ${tradeLinksHtml}
+      <a href="https://solscan.io/token/${ca}" target="_blank" rel="noopener" class="trade-link" style="color:#9945ff;background:#9945ff18;border:1px solid #9945ff44;">Solscan ↗</a>
+      <a href="https://www.geckoterminal.com/solana/pools/${ca}" target="_blank" rel="noopener" class="trade-link" style="color:#86efac;background:#86efac18;border:1px solid #86efac44;">GeckoTerminal ↗</a>
+      <a href="https://pump.fun/${ca}" target="_blank" rel="noopener" class="trade-link" style="color:#a78bfa;background:#a78bfa18;border:1px solid #a78bfa44;">pump.fun ↗</a>
+    </div>
+
     <!-- ── LORE BUBBLE ── -->
     <div id="loreBubble" class="lore-bubble">
       <div class="lore-inner">
@@ -1127,6 +1135,17 @@ function renderTrencher(ca, dex, pump, solPrice) {
 
     </div>
 
+    <!-- ── VAMP COINS ── -->
+    <div class="card" id="vampCard">
+      <div class="card-head">
+        <div class="card-title"><div class="card-title-dot" style="background:#a855f7"></div>Vamp Coins</div>
+        <span class="card-badge" id="vampBadge" style="background:rgba(168,85,247,.12);color:#a855f7;border:1px solid rgba(168,85,247,.28);">SCANNING</span>
+      </div>
+      <div class="card-body" id="vampBody">
+        <div class="card-muted"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>Scanning for vamp coins…</div>
+      </div>
+    </div>
+
     <!-- ── TOP HOLDERS ── -->
     <div class="card">
       <div class="card-head">
@@ -1146,30 +1165,6 @@ function renderTrencher(ca, dex, pump, solPrice) {
       </div>
       <div class="card-body" id="bundleBody">
         <div class="card-muted"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>Analysing launch transactions…</div>
-      </div>
-    </div>
-
-    <!-- ── TRADE & EXPLORE ── -->
-    <div class="card">
-      <div class="card-head">
-        <div class="card-title"><div class="card-title-dot"></div>Trade &amp; Explore</div>
-      </div>
-      <div class="card-body card-flex" style="gap:8px;">
-        ${tradeLinksHtml}
-        <a href="https://solscan.io/token/${ca}" target="_blank" rel="noopener" class="trade-link" style="color:#9945ff;background:#9945ff18;border:1px solid #9945ff44;">Solscan ↗</a>
-        <a href="https://www.geckoterminal.com/solana/pools/${ca}" target="_blank" rel="noopener" class="trade-link" style="color:#86efac;background:#86efac18;border:1px solid #86efac44;">GeckoTerminal ↗</a>
-        <a href="https://pump.fun/${ca}" target="_blank" rel="noopener" class="trade-link" style="color:#a78bfa;background:#a78bfa18;border:1px solid #a78bfa44;">pump.fun ↗</a>
-      </div>
-    </div>
-
-    <!-- ── VAMP COINS ── -->
-    <div class="card" id="vampCard">
-      <div class="card-head">
-        <div class="card-title"><div class="card-title-dot" style="background:#a855f7"></div>Vamp Coins</div>
-        <span class="card-badge" id="vampBadge" style="background:rgba(168,85,247,.12);color:#a855f7;border:1px solid rgba(168,85,247,.28);">SCANNING</span>
-      </div>
-      <div class="card-body" id="vampBody">
-        <div class="card-muted"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>Scanning for vamp coins…</div>
       </div>
     </div>
 
