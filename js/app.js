@@ -875,25 +875,52 @@ function renderTrencher(ca, dex, pump, solPrice) {
     </div>
     <div class="x-posts-note">Full tweet display with views &amp; likes coming in <span class="v2-accent">V2</span></div>`;
 
-  if (twitterUrl)  socialLinks.push({ label: '𝕏 Twitter',  url: twitterUrl,  color: '#ffffff', bg: 'rgba(255,255,255,0.07)', border: 'rgba(255,255,255,0.18)' });
-  if (telegramUrl) socialLinks.push({ label: '✈ Telegram', url: telegramUrl, color: '#29b6f6', bg: 'rgba(41,182,246,0.1)',   border: 'rgba(41,182,246,0.3)'  });
-  if (websiteUrl)  socialLinks.push({ label: '🌐 Website',  url: websiteUrl,  color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', border: 'rgba(167,139,250,0.3)'  });
+  // Comprehensive social config — every platform
+  const SOCIAL_CFG = {
+    twitter:   { label: '𝕏 Twitter',    color: '#ffffff', bg: 'rgba(255,255,255,0.07)', border: 'rgba(255,255,255,0.18)' },
+    x:         { label: '𝕏 Twitter',    color: '#ffffff', bg: 'rgba(255,255,255,0.07)', border: 'rgba(255,255,255,0.18)' },
+    telegram:  { label: '✈ Telegram',   color: '#29b6f6', bg: 'rgba(41,182,246,0.1)',   border: 'rgba(41,182,246,0.3)'  },
+    discord:   { label: '💬 Discord',    color: '#7289da', bg: 'rgba(114,137,218,0.1)', border: 'rgba(114,137,218,0.3)'  },
+    tiktok:    { label: '🎵 TikTok',     color: '#ff0050', bg: 'rgba(255,0,80,0.1)',     border: 'rgba(255,0,80,0.3)'    },
+    instagram: { label: '📸 Instagram',  color: '#e1306c', bg: 'rgba(225,48,108,0.1)',   border: 'rgba(225,48,108,0.3)'  },
+    youtube:   { label: '▶ YouTube',     color: '#ff0000', bg: 'rgba(255,0,0,0.1)',      border: 'rgba(255,0,0,0.3)'     },
+    reddit:    { label: '👽 Reddit',      color: '#ff4500', bg: 'rgba(255,69,0,0.1)',     border: 'rgba(255,69,0,0.3)'    },
+    medium:    { label: '✍ Medium',      color: '#ffffff', bg: 'rgba(255,255,255,0.07)', border: 'rgba(255,255,255,0.18)' },
+    github:    { label: '🐙 GitHub',      color: '#ffffff', bg: 'rgba(255,255,255,0.07)', border: 'rgba(255,255,255,0.18)' },
+    website:   { label: '🌐 Website',    color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', border: 'rgba(167,139,250,0.3)'  },
+  };
 
-  // DexScreener socials
+  function getSocialCfg(type, fallbackLabel) {
+    return SOCIAL_CFG[type?.toLowerCase()] || { label: fallbackLabel || ('🔗 ' + type), color: '#14F195', bg: 'rgba(20,241,149,0.07)', border: 'rgba(20,241,149,0.2)' };
+  }
+
+  function isDupe(url, label) {
+    return socialLinks.some(x => x.url === url || x.label === label);
+  }
+
+  // pump.fun socials
+  if (twitterUrl)  socialLinks.push({ ...SOCIAL_CFG.twitter,  url: twitterUrl  });
+  if (telegramUrl) socialLinks.push({ ...SOCIAL_CFG.telegram, url: telegramUrl });
+  if (websiteUrl)  socialLinks.push({ ...SOCIAL_CFG.website,  url: websiteUrl  });
+
+  // pump.fun extra fields
+  if (pump?.tiktok)    { const u = cleanWebUrl(pump.tiktok);    if (u && !isDupe(u, SOCIAL_CFG.tiktok.label))    socialLinks.push({ ...SOCIAL_CFG.tiktok,    url: u }); }
+  if (pump?.discord)   { const u = cleanWebUrl(pump.discord);   if (u && !isDupe(u, SOCIAL_CFG.discord.label))   socialLinks.push({ ...SOCIAL_CFG.discord,   url: u }); }
+  if (pump?.instagram) { const u = cleanWebUrl(pump.instagram); if (u && !isDupe(u, SOCIAL_CFG.instagram.label)) socialLinks.push({ ...SOCIAL_CFG.instagram,  url: u }); }
+  if (pump?.youtube)   { const u = cleanWebUrl(pump.youtube);   if (u && !isDupe(u, SOCIAL_CFG.youtube.label))   socialLinks.push({ ...SOCIAL_CFG.youtube,   url: u }); }
+
+  // DexScreener socials — all types
   dex?.socials?.forEach(s => {
     if (!s.url) return;
     const type = (s.type || '').toLowerCase();
-    if (type === 'twitter' && socialLinks.find(x => x.label.includes('Twitter'))) return;
-    if (type === 'telegram' && socialLinks.find(x => x.label.includes('Telegram'))) return;
-    const cfg = type === 'twitter'  ? { label: '𝕏 Twitter',   color: '#ffffff', bg: 'rgba(255,255,255,0.07)', border: 'rgba(255,255,255,0.18)' }
-              : type === 'telegram' ? { label: '✈ Telegram',  color: '#29b6f6', bg: 'rgba(41,182,246,0.1)',   border: 'rgba(41,182,246,0.3)'  }
-              : type === 'discord'  ? { label: '💬 Discord',   color: '#7289da', bg: 'rgba(114,137,218,0.1)', border: 'rgba(114,137,218,0.3)'  }
-              :                       { label: '🔗 ' + s.type, color: 'var(--accent)', bg: 'rgba(20,241,149,0.07)', border: 'rgba(20,241,149,0.2)' };
-    socialLinks.push({ ...cfg, url: s.url });
+    const cfg  = getSocialCfg(type, s.type);
+    if (!isDupe(s.url, cfg.label)) socialLinks.push({ ...cfg, url: s.url });
   });
+
+  // DexScreener websites
   dex?.websites?.forEach(w => {
-    if (w.url && !socialLinks.find(x => x.url === w.url))
-      socialLinks.push({ label: '🌐 Website', url: w.url, color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', border: 'rgba(167,139,250,0.3)' });
+    if (w.url && !isDupe(w.url, SOCIAL_CFG.website.label))
+      socialLinks.push({ ...SOCIAL_CFG.website, url: w.url });
   });
 
   const socialsHtml = socialLinks.length
