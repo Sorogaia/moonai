@@ -2646,7 +2646,13 @@ async function fetchBundleDetection(ca, devWallet) {
                       : b.stillHoldingPct >= 30 ? '#ff9f0a'
                       : '#14F195';
       const stillLine = b.stillHoldingPct != null
-        ? `<span style="font-size:10px;color:${bStillCol};margin-left:4px;">▸ ${b.stillHoldingPct}% still held</span>`
+        ? `<span style="font-size:10px;color:${bStillCol};margin-left:4px;">▸ ${
+            b.accumulatedMore
+              ? `still holding <span style="color:#ff9f0a;">(bought more since launch)</span>`
+              : b.stillHoldingPct === 0
+                ? 'fully dumped'
+                : `${b.stillHoldingPct}% still held`
+          }</span>`
         : '';
       const metaChips = [
         b.jitoConfirmed ? '<span class="badge-b-jito">JITO</span>' : '',
@@ -2686,11 +2692,19 @@ async function fetchBundleDetection(ca, devWallet) {
         </div>
         <div class="bstat" style="background:var(--bg-surface);border:1px solid var(--border2);">
           <div class="bstat-lbl">Still Holding</div>
-          <div class="bstat-val" style="color:${stillCol};">${stillHolding != null ? stillHolding + '%' : '—'}</div>
+          <div class="bstat-val" style="color:${stillCol};">${
+            stillHolding != null
+              ? (data.accumulatedMore ? '~100%' : stillHolding + '%')
+              : '—'
+          }</div>
         </div>
         <div class="bstat" style="background:var(--bg-surface);border:1px solid var(--border2);">
           <div class="bstat-lbl">Dumped</div>
-          <div class="bstat-val" style="color:${dumpedCol};">${data.dumpedPct != null ? data.dumpedPct + '%' : '—'}</div>
+          <div class="bstat-val" style="color:${dumpedCol};">${
+            data.dumpedPct != null
+              ? (data.accumulatedMore ? '—' : data.dumpedPct + '%')
+              : '—'
+          }</div>
         </div>
       </div>
 

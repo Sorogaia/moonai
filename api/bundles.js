@@ -335,10 +335,16 @@ module.exports = async (req, res) => {
     }
 
     // Overall still-holding metrics
-    const stillHoldingPct = totalBundledAmount > 0
-      ? parseFloat(((currentHoldingTotal / totalBundledAmount) * 100).toFixed(1))
+    // Cap at 100%: if current balance > detected launch buy, wallets accumulated more
+    // after launch (bought from secondary market or our detection missed some buys).
+    // > 100% is meaningless to show — "still holding" can only be 0–100%.
+    const rawStillPct = totalBundledAmount > 0
+      ? (currentHoldingTotal / totalBundledAmount) * 100
       : 0;
-    const dumpedPct = parseFloat((100 - stillHoldingPct).toFixed(1));
+    const stillHoldingPct    = parseFloat(Math.min(100, rawStillPct).toFixed(1));
+    const dumpedPct          = parseFloat(Math.max(0, 100 - stillHoldingPct).toFixed(1));
+    // Did bundle wallets accumulate MORE than they bought at launch?
+    const accumulatedMore    = rawStillPct > 105; // 5% buffer for rounding
     const stillHoldingSupplyPct = totalSupply > 0
       ? parseFloat(((currentHoldingTotal / totalSupply) * 100).toFixed(2))
       : 0;
@@ -347,11 +353,14 @@ module.exports = async (req, res) => {
     for (const bundle of bundleList) {
       const bundleCurrentBal = (bundle.fullWallets || [])
         .reduce((s, w) => s + (currentBalMap[w] || 0), 0);
-      bundle.stillHoldingPct = bundle.amount > 0
-        ? parseFloat(((bundleCurrentBal / bundle.amount) * 100).toFixed(1))
+      const rawBundlePct = bundle.amount > 0
+        ? (bundleCurrentBal / bundle.amount) * 100
         : 0;
-      bundle.dumpedPct = parseFloat((100 - bundle.stillHoldingPct).toFixed(1));
-      bundle.currentAmount = parseFloat(bundleCurrentBal.toFixed(0));
+      bundle.stillHoldingPct  = parseFloat(Math.min(100, rawBundlePct).toFixed(1));
+      bundle.dumpedPct        = parseFloat(Math.max(0, 100 - bundle.stillHoldingPct).toFixed(1));
+      bundle.currentAmount    = parseFloat(bundleCurrentBal.toFixed(0));
+      // Flag if they appear to have bought more since launch
+      bundle.accumulatedMore  = rawBundlePct > 105;
       delete bundle.fullWallets; // internal only — not sent to client
     }
 
@@ -364,6 +373,7 @@ module.exports = async (req, res) => {
       devBundled,
       stillHoldingPct,
       dumpedPct,
+      accumulatedMore,
       stillHoldingSupplyPct,
       bundles:              bundleList,
       _meta: {
