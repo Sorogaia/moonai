@@ -43,7 +43,10 @@ module.exports = async (req, res) => {
       amount: parseFloat(accounts[i].uiAmount) || 0,
     }));
 
-    const tokenCreatedAt = created ? parseInt(created) : Date.now() - 7 * 24 * 3600 * 1000;
+    const rawTs = created ? parseInt(created, 10) : 0;
+    const tokenCreatedAt = (rawTs > 0 && rawTs <= Date.now())
+      ? rawTs
+      : Date.now() - 7 * 24 * 3600 * 1000;
     const freshWindow    = 7 * 24 * 3600 * 1000;
 
     const walletChecks = await Promise.allSettled(

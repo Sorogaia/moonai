@@ -702,6 +702,9 @@ html, body {
 .stats-4  { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:10px; }
 .stats-5  { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:10px; }
 .stats-3  { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
+.vamp-bundle-grid          { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; align-items:stretch; }
+.vamp-bundle-grid > .card  { display:flex; flex-direction:column; height:100%; box-sizing:border-box; }
+.vamp-bundle-grid > .card .card-body { flex:1; }
 .ath-down { font-size:10px; color:var(--danger); margin-top:2px; }
 .launch-info-bar {
   display:flex; flex-wrap:wrap; gap:12px; align-items:center;
@@ -729,41 +732,56 @@ html, body {
 .card-desc         { font-size:13px; color:var(--text-muted); line-height:1.7; }
 
 /* ══════════════════════════════════════
-   MOON SCORE + BONDING CURVE CARD
+   RUG & RISK DETECTION STRIP (bottom)
 ══════════════════════════════════════ */
-.moon-bond-card  { margin-bottom:8px; }
-.moon-bond-grid  { display:grid; grid-template-columns:1fr 1px 1fr; }
-.moon-bond-divider { background:var(--border); }
+.risk-detect-strip  { margin-bottom:8px; }
+.risk-strip-row     { display:flex; align-items:center; padding:12px 14px; gap:14px; }
+.risk-half          { display:flex; align-items:center; gap:12px; flex:1; min-width:0; }
+.risk-vdivider      { width:1px; background:var(--border); align-self:stretch; flex-shrink:0; }
 
-/* Moon panel */
-.moon-panel      { padding:12px 14px; display:flex; flex-direction:column; gap:8px; }
-.moon-panel-top  { display:flex; align-items:center; gap:12px; }
-.moon-panel-lbl  { font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); }
-.moon-circle     { width:56px; height:56px; border-radius:50%; border:2px solid; flex-shrink:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-.moon-num        { font-size:1.05rem; font-weight:700; line-height:1; }
-.moon-sub        { font-size:8px; font-weight:700; letter-spacing:.05em; margin-top:1px; }
-.moon-info       { flex:1; min-width:0; }
-.moon-title      { font-size:1rem; font-weight:700; margin-bottom:5px; line-height:1; }
-.moon-bar-wrap   { height:4px; border-radius:2px; background:var(--border2); margin-bottom:6px; }
-.moon-bar-fill   { height:4px; border-radius:2px; transition:width .8s ease; }
-.moon-sigs       { display:flex; flex-wrap:wrap; gap:5px; }
-.moon-sig-pos    { font-size:10px; color:var(--accent); }
-.moon-sig-neg    { font-size:10px; color:var(--danger); }
+/* Circle */
+.risk-circle        { width:54px; height:54px; border-radius:50%; border:2px solid var(--border2); flex-shrink:0; display:flex; flex-direction:column; align-items:center; justify-content:center; transition:border-color .5s ease; }
+.risk-circle-val    { font-size:0.7rem; font-weight:800; line-height:1; letter-spacing:.04em; color:var(--text-faint); transition:color .5s ease; }
+.risk-circle-sub    { font-size:7px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--text-faint); margin-top:3px; }
 
-/* Bonding curve panel */
-.bond-panel      { padding:12px 14px; display:flex; flex-direction:column; gap:6px; justify-content:center; }
-.bond-label      { font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); }
-.bond-status-ok  { font-size:13px; font-weight:700; color:var(--accent); }
-.bond-pct        { font-size:1.05rem; font-weight:700; line-height:1; }
-.bond-bar-wrap   { height:6px; border-radius:3px; background:var(--border2); }
-.bond-bar-fill   { height:6px; border-radius:3px; transition:width .8s ease; }
-.bond-eta        { font-size:11px; color:var(--text-faint); }
-.bond-sub        { font-size:12px; color:var(--text-faint); }
+/* Body */
+.risk-half-body     { flex:1; min-width:0; }
+.risk-half-tag      { font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); margin-bottom:5px; }
+.risk-sigs          { display:flex; flex-direction:column; gap:3px; }
+.rsig               { font-size:10.5px; line-height:1.35; }
+.rsig-ok            { color:var(--accent); }
+.rsig-bad           { color:var(--danger); }
+.rsig-neu           { color:var(--text-faint); }
 
-@media (max-width: 520px) {
-  .moon-bond-grid { grid-template-columns:1fr; }
-  .moon-bond-divider { width:100%; height:1px; }
+@media (max-width:520px) {
+  .risk-strip-row   { flex-wrap:wrap; gap:10px; }
+  .risk-vdivider    { width:100%; height:1px; }
 }
+
+/* ══════════════════════════════════════
+   TOKEN INTEL GRID
+══════════════════════════════════════ */
+.tiq-card .card-body { padding:10px 12px; }
+.tiq-grid  {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.tiq {
+  background: var(--bg-surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 3px;
+  transition: border-color var(--transition);
+}
+.tiq:hover { border-color: var(--border); }
+.tiq-val   { font-size: 13px; font-weight: 700; line-height: 1; color: var(--text); }
+.tiq-lbl   { font-size: 9.5px; font-weight: 600; letter-spacing: .04em; color: var(--text-faint); text-transform: uppercase; }
 
 /* ══════════════════════════════════════
    ROI CALCULATOR
@@ -851,10 +869,20 @@ html, body {
 .bundle-row-bar     { margin-top:4px; height:3px; border-radius:2px; background:var(--border2); }
 .bundle-row-fill    { height:3px; border-radius:2px; }
 .bundle-verdict     { margin-top:10px; padding:8px 12px; border:1px solid; border-radius:var(--radius-sm); display:flex; align-items:center; gap:8px; }
-.bundle-clean       { display:flex; align-items:center; gap:10px; }
-.bundle-clean-icon  { font-size:1.3rem; }
-.bundle-clean-txt   { font-size:13px; font-weight:700; color:var(--accent); }
-.bundle-clean-sub   { font-size:11px; color:var(--text-faint); margin-top:2px; }
+/* Clean state — enhanced */
+.bundle-clean-top    { display:flex; align-items:center; gap:10px; }
+.bundle-clean-shield { font-size:1.6rem; line-height:1; flex-shrink:0; }
+.bundle-clean-title  { font-size:13px; font-weight:700; color:#14F195; }
+.bundle-clean-sub    { font-size:11px; color:var(--text-faint); margin-top:2px; }
+
+/* Checklist */
+.bundle-checklist   { display:flex; flex-direction:column; gap:6px; margin-top:12px; }
+.bcl-row            { display:flex; align-items:center; gap:7px; }
+.bcl-dot            { font-size:8px; flex-shrink:0; }
+.bcl-lbl            { font-size:11px; color:var(--text-muted); flex:1; }
+.bcl-badge          { font-size:9px; font-weight:700; letter-spacing:.07em; padding:2px 7px; border-radius:var(--radius-pill); flex-shrink:0; }
+.bcl-pass           { background:rgba(20,241,149,.1); color:#14F195; border:1px solid rgba(20,241,149,.25); }
+.bcl-fail           { background:rgba(255,59,48,.1);  color:#ff3b30; border:1px solid rgba(255,59,48,.25); }
 
 /* ══════════════════════════════════════
    DEV HISTORY
@@ -941,6 +969,7 @@ html, body {
   .stats-4         { grid-template-columns: repeat(2,1fr); }
   .stats-5         { grid-template-columns: repeat(2,1fr); }
   .stats-3         { grid-template-columns: repeat(1,1fr); } /* socials/kols/x each full width */
+  .vamp-bundle-grid { grid-template-columns: 1fr; }
   .roi-grid        { grid-template-columns: repeat(3,1fr); }
   .bundle-stats    { grid-template-columns: repeat(2,1fr); }
   .dev-hist-stats  { grid-template-columns: repeat(2,1fr); }

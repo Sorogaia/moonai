@@ -1,27 +1,53 @@
-# Dependencies
+# ── Dependencies ──────────────────────────────────────────────
 node_modules/
+.pnp
+.pnp.js
 
-# Legacy single-file dev reference — excluded from public repo
-moonai.html
-
-# Environment variables — never commit API keys
+# ── Environment variables — NEVER commit API keys ─────────────
 .env
 .env.local
 .env.production
+.env.development
+.env.staging
+.env*.local
+*.env
 
-# OS files
-.DS_Store
-Thumbs.db
-
-# Editor
-.vscode/
-.idea/
-
-# Logs
-*.log
-
-# Vercel
+# ── Vercel ────────────────────────────────────────────────────
 .vercel
 
-# Claude Code local settings
+# ── Legacy / internal dev files — NOT for public repo ─────────
+moonai.html
+*.backup
+*.bak
+_dev/
+_internal/
+_private/
+scratch/
+
+# ── OS files ──────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ── Editor / IDE ──────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Logs ──────────────────────────────────────────────────────
+*.log
+logs/
+npm-debug.log*
+
+# ── Build / cache ─────────────────────────────────────────────
+.cache/
+dist/
+build/
+
+# ── Claude Code local settings ────────────────────────────────
 .claude/

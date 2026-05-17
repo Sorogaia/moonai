@@ -1,4 +1,4 @@
-const { isValidCA, getIP } = require('./_validate');
+const { isValidCA, isValidSymbol, getIP } = require('./_validate');
 const { checkRateLimit }   = require('./_ratelimit');
 
 module.exports = async (req, res) => {
@@ -11,8 +11,8 @@ module.exports = async (req, res) => {
   if (!allowed) return res.status(429).json({ error: 'Rate limit exceeded.' });
 
   const { ca, symbol, name } = req.query;
-  if (!ca || !isValidCA(ca))           return res.status(400).json({ error: 'Invalid token address.' });
-  if (!symbol || symbol.length > 20)   return res.status(400).json({ error: 'Invalid symbol.' });
+  if (!ca || !isValidCA(ca))         return res.status(400).json({ error: 'Invalid token address.' });
+  if (!symbol || !isValidSymbol(symbol)) return res.status(400).json({ error: 'Invalid symbol.' });
 
   try {
     const r = await fetch(

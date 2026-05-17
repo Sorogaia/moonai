@@ -77,10 +77,14 @@ function buildChatSystem() {
     d.buys24h    != null ? `Buys 24h: ${d.buys24h} | Sells 24h: ${d.sells24h}` : '',
     d.buys1h     != null ? `Buys 1h: ${d.buys1h} | Sells 1h: ${d.sells1h}` : '',
     d.momentumLabel      ? `Momentum: ${d.momentumLabel}` : '',
-    d.athPrice           ? `All-time high price: $${d.athPrice.toPrecision(4)}${d.athDate ? ` (on ${d.athDate})` : ''}` : '',
-    d.downFromAth        ? `Down from ATH: -${d.downFromAth}%` : '',
-    d.launchPrice        ? `Launch price: $${d.launchPrice.toPrecision(4)}` : '',
-    d.changeSinceLaunch  ? `Change since launch: ${d.changeSinceLaunch}%` : '',
+    d.athMc              ? `All-time high MC: ${d.athMc}${d.athDate ? ` (on ${d.athDate})` : ''}` : '',
+    d.athPrice           ? `All-time high price: $${d.athPrice.toPrecision ? d.athPrice.toPrecision(4) : d.athPrice}` : '',
+    d.downFromAthMc      ? `Down from ATH MC: -${d.downFromAthMc}%` : '',
+    d.downFromAth        ? `Down from ATH price: -${d.downFromAth}%` : '',
+    d.launchMc           ? `Launch MC: ${d.launchMc}` : '',
+    d.launchPrice        ? `Launch price: $${d.launchPrice.toPrecision ? d.launchPrice.toPrecision(4) : d.launchPrice}` : '',
+    d.mcChangeSinceLaunch ? `MC change since launch: ${d.mcChangeSinceLaunch}%` : '',
+    d.changeSinceLaunch  ? `Price change since launch: ${d.changeSinceLaunch}%` : '',
     d.totalVolAllTime    ? `All-time volume: ${d.totalVolAllTime}` : '',
     d.daysSinceLaunch    != null ? `Days since launch: ${d.daysSinceLaunch}` : '',
     // Bonding
@@ -1011,61 +1015,6 @@ function renderTrencher(ca, dex, pump, solPrice) {
       <button onclick="runNarrativeAnalysis()" class="analysis-btn">✦ Analysis</button>
     </div>
 
-    <!-- ── MOON SCORE + BONDING CURVE ── -->
-    <div class="card moon-bond-card">
-      <div class="moon-bond-grid">
-        <div class="moon-panel">
-          <div class="moon-panel-top">
-            <div class="moon-circle" style="border-color:${moon.col};">
-              <div class="moon-num" style="color:${moon.col};">${moon.score}</div>
-              <div class="moon-sub" style="color:${moon.col};">/100</div>
-            </div>
-            <div class="moon-info">
-              <div class="moon-title" style="color:${moon.col};">${moon.label}</div>
-              <div class="moon-bar-wrap"><div class="moon-bar-fill" style="background:${moon.col};width:${moon.score}%;"></div></div>
-              <div class="moon-sigs">
-                ${moon.pos.slice(0,2).map(s=>`<span class="moon-sig-pos">✦ ${s}</span>`).join('')}
-                ${moon.neg.slice(0,1).map(s=>`<span class="moon-sig-neg">✕ ${s}</span>`).join('')}
-              </div>
-            </div>
-          </div>
-          <div class="moon-panel-lbl">Moon Score</div>
-        </div>
-        <div class="moon-bond-divider"></div>
-        <div class="bond-panel">
-          ${bondingCurveHtml}
-        </div>
-      </div>
-    </div>
-
-    <!-- ── SAFETY SCORE ── -->
-    <div class="card" id="safetyCard" style="display:none;">
-      <div class="card-head safety-toggle" onclick="toggleSafety()">
-        <div class="card-title"><div class="card-title-dot"></div>Safety Score</div>
-        <div class="safety-head-right">
-          <span class="card-badge badge-amber" id="safetyBadge">SCANNING</span>
-          <span class="safety-chevron" id="safetyChevron">▼</span>
-        </div>
-      </div>
-      <div class="card-body" id="safetyBody" style="display:none;">
-        <div class="card-muted">
-          <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
-          Running safety checks…
-        </div>
-      </div>
-    </div>
-
-    <!-- ── DEV HISTORY ── -->
-    <div class="card" id="devHistoryCard">
-      <div class="card-head">
-        <div class="card-title"><div class="card-title-dot" style="background:#a855f7"></div>Dev History</div>
-        <span class="card-badge badge-amber" id="devHistoryBadge">SCANNING</span>
-      </div>
-      <div class="card-body" id="devHistoryBody">
-        <div class="card-muted"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>Checking dev wallet history…</div>
-      </div>
-    </div>
-
     <!-- ── PRICE BAR ── -->
     <div class="card price-card">
       <div class="card-head price-bar-head">
@@ -1142,6 +1091,56 @@ function renderTrencher(ca, dex, pump, solPrice) {
       </div>
     </div>
 
+    <!-- ── TOKEN INTEL GRID ── -->
+    <div class="card tiq-card">
+      <div class="card-head">
+        <div class="card-title"><div class="card-title-dot"></div>Token Intel</div>
+        <span class="card-badge badge-green" style="font-size:9px;">LIVE</span>
+      </div>
+      <div class="card-body tiq-grid">
+
+        <div class="tiq">
+          <div class="tiq-val" id="tiq-top10">—</div>
+          <div class="tiq-lbl">Top 10 H.</div>
+        </div>
+        <div class="tiq">
+          <div class="tiq-val" id="tiq-dev">—</div>
+          <div class="tiq-lbl">Dev H.</div>
+        </div>
+        <div class="tiq">
+          <div class="tiq-val" id="tiq-bundlepct">—</div>
+          <div class="tiq-lbl">Bundled %</div>
+        </div>
+
+        <div class="tiq">
+          <div class="tiq-val" id="tiq-holders">${holders !== '—' ? holders : '—'}</div>
+          <div class="tiq-lbl">Holders</div>
+        </div>
+        <div class="tiq">
+          <div class="tiq-val" id="tiq-fresh">—</div>
+          <div class="tiq-lbl">Fresh W.</div>
+        </div>
+        <div class="tiq">
+          <div class="tiq-val" id="tiq-lp">${pump?.bonded === true ? '<span style="color:#14F195;">Burned</span>' : pump?.bonded === false ? '<span style="color:var(--text-faint);">No LP</span>' : '—'}</div>
+          <div class="tiq-lbl">LP Status</div>
+        </div>
+
+        <div class="tiq">
+          <div class="tiq-val" id="tiq-mint">—</div>
+          <div class="tiq-lbl">Mint Auth</div>
+        </div>
+        <div class="tiq">
+          <div class="tiq-val" id="tiq-freeze">—</div>
+          <div class="tiq-lbl">Freeze Auth</div>
+        </div>
+        <div class="tiq">
+          <div class="tiq-val" id="tiq-dexpaid">—</div>
+          <div class="tiq-lbl">Dex Paid</div>
+        </div>
+
+      </div>
+    </div>
+
     <!-- ── ROI CALCULATOR ── -->
     ${roiHtml}
 
@@ -1168,15 +1167,29 @@ function renderTrencher(ca, dex, pump, solPrice) {
 
     </div>
 
-    <!-- ── VAMP COINS ── -->
-    <div class="card" id="vampCard">
-      <div class="card-head">
-        <div class="card-title"><div class="card-title-dot" style="background:#a855f7"></div>Vamp Coins</div>
-        <span class="card-badge" id="vampBadge" style="background:rgba(168,85,247,.12);color:#a855f7;border:1px solid rgba(168,85,247,.28);">SCANNING</span>
+    <!-- ── VAMP + BUNDLE (50/50) ── -->
+    <div class="vamp-bundle-grid">
+
+      <div class="card" id="vampCard" style="margin-bottom:0;">
+        <div class="card-head">
+          <div class="card-title"><div class="card-title-dot" style="background:#a855f7"></div>Vamp Coins</div>
+          <span class="card-badge" id="vampBadge" style="background:rgba(168,85,247,.12);color:#a855f7;border:1px solid rgba(168,85,247,.28);">SCANNING</span>
+        </div>
+        <div class="card-body" id="vampBody">
+          <div class="card-muted"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>Scanning for vamp coins…</div>
+        </div>
       </div>
-      <div class="card-body" id="vampBody">
-        <div class="card-muted"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>Scanning for vamp coins…</div>
+
+      <div class="card" id="bundleCard" style="margin-bottom:0;">
+        <div class="card-head">
+          <div class="card-title"><div class="card-title-dot" style="background:#ff9f0a"></div>Bundle Detection</div>
+          <span class="card-badge badge-amber" id="bundleBadge">SCANNING</span>
+        </div>
+        <div class="card-body" id="bundleBody">
+          <div class="card-muted"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>Analysing launch transactions…</div>
+        </div>
       </div>
+
     </div>
 
     <!-- ── TOP HOLDERS ── -->
@@ -1190,23 +1203,75 @@ function renderTrencher(ca, dex, pump, solPrice) {
       </div>
     </div>
 
-    <!-- ── BUNDLE DETECTION ── -->
-    <div class="card" id="bundleCard">
-      <div class="card-head">
-        <div class="card-title"><div class="card-title-dot" style="background:#ff9f0a"></div>Bundle Detection</div>
-        <span class="card-badge badge-amber" id="bundleBadge">SCANNING</span>
-      </div>
-      <div class="card-body" id="bundleBody">
-        <div class="card-muted"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>Analysing launch transactions…</div>
-      </div>
-    </div>
-
     <!-- ── DESCRIPTION ── -->
     ${pump?.description ? `
     <div class="card">
       <div class="card-head"><div class="card-title"><div class="card-title-dot" style="background:var(--text-muted)"></div>Description</div></div>
       <div class="card-body card-desc">${escHtml(pump.description.slice(0,300))}${pump.description.length>300?'…':''}</div>
     </div>` : ''}
+
+    <!-- ── SAFETY SCORE ── -->
+    <div class="card" id="safetyCard" style="display:none;">
+      <div class="card-head safety-toggle" onclick="toggleSafety()">
+        <div class="card-title"><div class="card-title-dot"></div>Safety Score</div>
+        <div class="safety-head-right">
+          <span class="card-badge badge-amber" id="safetyBadge">SCANNING</span>
+          <span class="safety-chevron" id="safetyChevron">▼</span>
+        </div>
+      </div>
+      <div class="card-body" id="safetyBody" style="display:none;">
+        <div class="card-muted">
+          <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+          Running safety checks…
+        </div>
+      </div>
+    </div>
+
+    <!-- ── RUG & RISK DETECTION STRIP ── -->
+    <div class="card risk-detect-strip">
+      <div class="risk-strip-row">
+
+        <div class="risk-half">
+          <div class="risk-circle" id="rugRiskCircle">
+            <div class="risk-circle-val" id="rugRiskVal">—</div>
+            <div class="risk-circle-sub">RUG</div>
+          </div>
+          <div class="risk-half-body">
+            <div class="risk-half-tag">Rug Detection</div>
+            <div class="risk-sigs" id="rugRiskSignals">
+              <span class="rsig rsig-neu">· Scanning…</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="risk-vdivider"></div>
+
+        <div class="risk-half">
+          <div class="risk-circle" id="mktRiskCircle">
+            <div class="risk-circle-val" id="mktRiskVal">—</div>
+            <div class="risk-circle-sub">RISK</div>
+          </div>
+          <div class="risk-half-body">
+            <div class="risk-half-tag">Market Risk</div>
+            <div class="risk-sigs" id="mktRiskSignals">
+              <span class="rsig rsig-neu">· Scanning…</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── DEV HISTORY ── -->
+    <div class="card" id="devHistoryCard">
+      <div class="card-head">
+        <div class="card-title"><div class="card-title-dot" style="background:#a855f7"></div>Dev History</div>
+        <span class="card-badge badge-amber" id="devHistoryBadge">SCANNING</span>
+      </div>
+      <div class="card-body" id="devHistoryBody">
+        <div class="card-muted"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>Checking dev wallet history…</div>
+      </div>
+    </div>
 
   </div>`;
 
@@ -1224,6 +1289,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
   fetchDevHistory(pump?.dev || null);
   fetchVampCoins(ca, symbol, name);
   fetchTokenHistory(ca, dex?.pairAddress || null);
+  fetchDexPaid(ca);
 
   // Inject token image safely after HTML is in the DOM
   if (imgSrc) {
@@ -1243,6 +1309,136 @@ function renderTrencher(ca, dex, pump, solPrice) {
   }
 
   scrollTop();
+}
+
+/* ══════════════════════════════════════
+   TOKEN INTEL GRID — live update
+══════════════════════════════════════ */
+function updateTokenIntel() {
+  const d = _liveData;
+
+  const set = (id, html) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+  };
+
+  // Top 10 holders %
+  if (d.top10pct != null) {
+    const v = parseFloat(d.top10pct);
+    const col = v > 60 ? '#ff3b30' : v > 40 ? '#ff9f0a' : '#14F195';
+    set('tiq-top10', `<span style="color:${col};">${d.top10pct}%</span>`);
+  }
+
+  // Dev holdings
+  if (d.devSold === true) {
+    set('tiq-dev', `<span style="color:#ff3b30;">Sold</span>`);
+  } else if (d.devPct != null) {
+    const v = parseFloat(d.devPct);
+    const col = v > 10 ? '#ff3b30' : v > 5 ? '#ff9f0a' : '#14F195';
+    set('tiq-dev', `<span style="color:${col};">${d.devPct}%</span>`);
+  }
+
+  // Bundled %
+  if (d.bundlePct != null) {
+    const v = parseFloat(d.bundlePct);
+    const col = v >= 20 ? '#ff3b30' : v >= 5 ? '#ff9f0a' : '#14F195';
+    set('tiq-bundlepct', `<span style="color:${col};">${v > 0 ? v + '%' : '0%'}</span>`);
+  }
+
+  // Fresh wallets %
+  if (d.freshWalletPct != null) {
+    const v = parseFloat(d.freshWalletPct);
+    const col = v >= 50 ? '#ff3b30' : v >= 25 ? '#ff9f0a' : '#14F195';
+    set('tiq-fresh', `<span style="color:${col};">${v.toFixed(0)}%</span>`);
+  }
+
+  // Mint authority
+  if (d.mintRevoked === true)  set('tiq-mint',   `<span style="color:#14F195;">Revoked</span>`);
+  else if (d.mintRevoked === false) set('tiq-mint', `<span style="color:#ff3b30;">Active</span>`);
+
+  // Freeze authority
+  if (d.freezeRevoked === true)  set('tiq-freeze', `<span style="color:#14F195;">Revoked</span>`);
+  else if (d.freezeRevoked === false) set('tiq-freeze', `<span style="color:#ff3b30;">Active</span>`);
+
+  // Dex Paid — updated by fetchDexPaid directly
+}
+
+/* ══════════════════════════════════════
+   RUG & RISK DETECTION STRIP — live update
+══════════════════════════════════════ */
+function updateRiskStrip() {
+  const d = _liveData;
+
+  // ── RUG DETECTION ──────────────────────────────────────────
+  let rugScore = 0;
+  const rugSigs = [];
+
+  if      (d.mintRevoked === true)  rugSigs.push({ ok: true,  txt: 'Mint revoked' });
+  else if (d.mintRevoked === false) { rugScore += 2; rugSigs.push({ ok: false, txt: 'Mint auth active' }); }
+
+  if      (d.freezeRevoked === true)  rugSigs.push({ ok: true,  txt: 'Freeze revoked' });
+  else if (d.freezeRevoked === false) { rugScore += 2; rugSigs.push({ ok: false, txt: 'Freeze auth active' }); }
+
+  if      (d.devSold === true)  { rugScore += 2; rugSigs.push({ ok: false, txt: 'Dev sold' }); }
+  else if (d.devSold === false) rugSigs.push({ ok: true, txt: 'Dev still holding' });
+
+  if (d.jitoConfirmed)        { rugScore += 2; rugSigs.push({ ok: false, txt: 'Jito bundle' }); }
+  else if (d.bundled === false) rugSigs.push({ ok: true, txt: 'No bundles' });
+
+  if (d.devBundled) { rugScore += 2; rugSigs.push({ ok: false, txt: 'Dev bundled at launch' }); }
+
+  const rugLevel = rugScore <= 2 ? 'LOW' : rugScore <= 5 ? 'MED' : 'HIGH';
+  const rugCol   = rugScore <= 2 ? '#14F195' : rugScore <= 5 ? '#ff9f0a' : '#ff3b30';
+
+  // ── MARKET RISK ────────────────────────────────────────────
+  let mktScore = 0;
+  const mktSigs = [];
+
+  const top10 = parseFloat(d.top10pct) || 0;
+  if (top10 > 0) {
+    if      (top10 > 60) { mktScore += 3; mktSigs.push({ ok: false, txt: `Top 10 hold ${top10}%` }); }
+    else if (top10 > 40) { mktScore += 1; mktSigs.push({ ok: null,  txt: `Top 10 hold ${top10}%` }); }
+    else                               mktSigs.push({ ok: true,  txt: `Top 10 hold ${top10}%` });
+  }
+
+  const fresh = parseFloat(d.freshWalletPct) || 0;
+  if (fresh > 0) {
+    if      (fresh >= 50) { mktScore += 2; mktSigs.push({ ok: false, txt: `${fresh.toFixed(0)}% fresh wallets` }); }
+    else if (fresh >= 25) { mktScore += 1; mktSigs.push({ ok: null,  txt: `${fresh.toFixed(0)}% fresh wallets` }); }
+    else                               mktSigs.push({ ok: true,  txt: `${fresh.toFixed(0)}% fresh wallets` });
+  }
+
+  const bPct = parseFloat(d.bundlePct) || 0;
+  if (d.bundled !== undefined) {
+    if      (bPct >= 20) { mktScore += 2; mktSigs.push({ ok: false, txt: `${bPct}% supply bundled` }); }
+    else if (bPct >= 5)  { mktScore += 1; mktSigs.push({ ok: null,  txt: `${bPct}% bundled` }); }
+    else                               mktSigs.push({ ok: true,  txt: 'Clean launch' });
+  }
+
+  const mktLevel = mktScore <= 2 ? 'LOW' : mktScore <= 5 ? 'MED' : 'HIGH';
+  const mktCol   = mktScore <= 2 ? '#14F195' : mktScore <= 5 ? '#ff9f0a' : '#ff3b30';
+
+  // ── Update DOM ─────────────────────────────────────────────
+  const sigHtml = (sigs) => sigs.slice(0, 4).map(s => {
+    const cls = s.ok === true ? 'rsig-ok' : s.ok === false ? 'rsig-bad' : 'rsig-neu';
+    const icon = s.ok === true ? '✦' : s.ok === false ? '✕' : '·';
+    return `<span class="rsig ${cls}">${icon} ${s.txt}</span>`;
+  }).join('');
+
+  const rugCircleEl = document.getElementById('rugRiskCircle');
+  const rugValEl    = document.getElementById('rugRiskVal');
+  const rugSigsEl   = document.getElementById('rugRiskSignals');
+  const mktCircleEl = document.getElementById('mktRiskCircle');
+  const mktValEl    = document.getElementById('mktRiskVal');
+  const mktSigsEl   = document.getElementById('mktRiskSignals');
+
+  if (rugCircleEl) rugCircleEl.style.borderColor = rugCol;
+  if (rugValEl)    { rugValEl.textContent = rugLevel; rugValEl.style.color = rugCol; }
+  if (rugSigsEl && rugSigs.length) rugSigsEl.innerHTML = sigHtml(rugSigs);
+
+  if (mktCircleEl) mktCircleEl.style.borderColor = mktCol;
+  if (mktValEl)    { mktValEl.textContent = mktLevel; mktValEl.style.color = mktCol; }
+  if (mktSigsEl && mktSigs.length) mktSigsEl.innerHTML = sigHtml(mktSigs);
 }
 
 function statCard(label, value, colorClass) {
@@ -1781,29 +1977,31 @@ async function fetchTopHolders(ca, devWallet, solPrice, mcRaw) {
         const boughtFmt = fmtSupply(h.totalBought);
         if (h.solSpent > 0) {
           const spentUsd = sol > 0 ? ` ($${(h.solSpent * sol).toFixed(0)})` : '';
-          buyLine = `Bought <b>${boughtFmt}</b> tokens · spent <b>${h.solSpent.toFixed(2)} SOL${spentUsd}</b>`;
+          buyLine = `Bought <b>${boughtFmt}</b> · spent <b>${h.solSpent.toFixed(2)} SOL${spentUsd}</b>`;
         } else {
-          buyLine = `Bought <b>${boughtFmt}</b> tokens`;
+          buyLine = `Bought <b>${boughtFmt}</b>`;
         }
       }
 
-      // Sell info
+      // Sell info — show actual amounts, not confusing "% of position"
       let sellLine = '';
       if (h.hasSold === true && h.totalSold > 0) {
         const soldFmt = fmtSupply(h.totalSold);
         let receivedStr = '';
         if (h.solReceived > 0) {
           const recvUsd = sol > 0 ? ` ($${(h.solReceived * sol).toFixed(0)})` : '';
-          receivedStr = ` · received <b>${h.solReceived.toFixed(2)} SOL${recvUsd}</b>`;
+          receivedStr = ` · got back <b>${h.solReceived.toFixed(2)} SOL${recvUsd}</b>`;
         }
-        sellLine = `<span class="holder-sold">⚠ Sold ${h.soldPct}% of position (${soldFmt} tokens)${receivedStr}</span>`;
+        // soldPct > 100 means they traded multiple rounds — say so instead of a confusing number
+        const flipNote = h.soldPct > 100 ? ` <span style="font-size:10px;opacity:0.6;">(flipped)</span>` : '';
+        sellLine = `<span class="holder-sold">⚠ Sold <b>${soldFmt}</b>${receivedStr}${flipNote}</span>`;
       } else if (h.hasSold === false) {
-        sellLine = `<span class="holder-clean">✅ No sells detected</span>`;
+        sellLine = `<span class="holder-clean">✅ Hasn't sold</span>`;
       }
 
       // Wallet age line
       const ageLine = h.walletAge !== null
-        ? `Wallet active ${h.walletAge < 1 ? 'today' : h.walletAge + 'd ago'}`
+        ? `Wallet age: <b>${h.walletAge < 1 ? 'new today' : h.walletAge + ' days'}</b>`
         : '';
 
       const detailLines = [buyLine, sellLine, holdLine, ageLine].filter(Boolean);
@@ -1864,6 +2062,8 @@ async function fetchTopHolders(ca, devWallet, solPrice, mcRaw) {
     _liveData.top10pct    = data.holders.reduce((s,h)=>s+h.pct,0).toFixed(1);
     _liveData.holderRows  = holderLines;
     _liveData.devHolderCtx = devCtx;
+    updateRiskStrip();
+    updateTokenIntel();
 
   } catch {
     bodyEl.textContent = 'Holder data unavailable.';
@@ -1953,6 +2153,8 @@ async function fetchFreshWallets(ca, tokenCreatedAt) {
     _liveData.freshWalletPct   = pct;
     _liveData.freshWalletCount = data.freshCount;
     _liveData.freshWalletTotal = data.total;
+    updateRiskStrip();
+    updateTokenIntel();
   } catch {}
 }
 
@@ -2123,6 +2325,8 @@ function renderSafetyScore({ score, flags, good }, info) {
   _liveData.mintRevoked   = info.mintRevoked;
   _liveData.freezeRevoked = info.freezeRevoked;
   _liveData.devSold       = info.devSold;
+  updateRiskStrip();
+  updateTokenIntel();
   _liveData.devPct        = info.devPct;
   _liveData.safetyFlags   = flags.map(f => f.label);
   _liveData.safetyGood    = good;
@@ -2154,12 +2358,55 @@ async function fetchBundleDetection(ca, devWallet) {
     const riskBd  = pct >= 20 ? 'rgba(255,59,48,0.25)' : pct >= 5 ? 'rgba(255,159,10,0.25)' : 'rgba(20,241,149,0.25)';
 
     if (!data.bundled) {
+      const devOk = !data.devBundled;
       bodyEl.innerHTML = `
-        <div class="bundle-clean">
-          <span class="bundle-clean-icon">✅</span>
+        <div class="bundle-clean-top">
+          <div class="bundle-clean-shield">🛡️</div>
           <div>
-            <div class="bundle-clean-txt">No bundles detected</div>
-            <div class="bundle-clean-sub">No coordinated launch buys found in the launch window</div>
+            <div class="bundle-clean-title">Clean Launch</div>
+            <div class="bundle-clean-sub">No coordinated buys in launch window</div>
+          </div>
+        </div>
+
+        <div class="bundle-stats" style="margin-top:10px;">
+          <div class="bstat" style="background:rgba(20,241,149,0.06);border:1px solid rgba(20,241,149,0.22);">
+            <div class="bstat-lbl">Bundles</div>
+            <div class="bstat-val" style="color:#14F195;">0</div>
+          </div>
+          <div class="bstat" style="background:rgba(20,241,149,0.06);border:1px solid rgba(20,241,149,0.22);">
+            <div class="bstat-lbl">Bundled %</div>
+            <div class="bstat-val" style="color:#14F195;">0%</div>
+          </div>
+          <div class="bstat" style="background:var(--bg-surface);border:1px solid var(--border2);">
+            <div class="bstat-lbl">Jito</div>
+            <div class="bstat-val" style="color:#14F195;">None</div>
+          </div>
+          <div class="bstat" style="background:var(--bg-surface);border:1px solid var(--border2);">
+            <div class="bstat-lbl">New Wallets</div>
+            <div class="bstat-val">${data.newWallets ?? '—'}</div>
+          </div>
+        </div>
+
+        <div class="bundle-checklist">
+          <div class="bcl-row">
+            <span class="bcl-dot" style="color:#14F195;">●</span>
+            <span class="bcl-lbl">No Jito bundles detected</span>
+            <span class="bcl-badge bcl-pass">PASS</span>
+          </div>
+          <div class="bcl-row">
+            <span class="bcl-dot" style="color:#14F195;">●</span>
+            <span class="bcl-lbl">No same-funder wallets</span>
+            <span class="bcl-badge bcl-pass">PASS</span>
+          </div>
+          <div class="bcl-row">
+            <span class="bcl-dot" style="color:#14F195;">●</span>
+            <span class="bcl-lbl">No same-slot sniping</span>
+            <span class="bcl-badge bcl-pass">PASS</span>
+          </div>
+          <div class="bcl-row">
+            <span class="bcl-dot" style="color:${devOk ? '#14F195' : '#ff3b30'};">●</span>
+            <span class="bcl-lbl">Dev wallet not bundled</span>
+            <span class="bcl-badge ${devOk ? 'bcl-pass' : 'bcl-fail'}">${devOk ? 'PASS' : 'FAIL'}</span>
           </div>
         </div>`;
       if (badgeEl) { badgeEl.textContent = 'CLEAN'; badgeEl.className = 'card-badge badge-green'; }
@@ -2240,6 +2487,8 @@ async function fetchBundleDetection(ca, devWallet) {
     _liveData.bundled       = data.bundled;
     _liveData.bundlePct     = pct;
     _liveData.bundleRisk    = risk;
+    updateRiskStrip();
+    updateTokenIntel();
     _liveData.bundleCount   = data.bundleCount;
     _liveData.bundleWallets = data.wallets;
     _liveData.jitoConfirmed = data.jitoConfirmed;
@@ -2416,27 +2665,29 @@ async function fetchTokenHistory(ca, pairAddress) {
     const athCard  = athEl?.closest('.metric-card');
 
     if (athEl) {
-      // Convert ATH price to MC (ATH price × 1B supply for pump.fun, or use ratio)
-      // We show ATH price since we may not have exact supply
+      // Primary display: ATH Market Cap (people look at MC more than price)
+      const athMcStr = data.athMc > 0 ? fmtNum(data.athMc) : null;
       const athPriceStr = data.athPrice >= 1
         ? '$' + data.athPrice.toFixed(4)
         : '$' + data.athPrice.toPrecision(4);
 
-      // Try to get MC equivalent — if we have current price and MC, we can scale
-      const currentMcEl = document.getElementById('liveMc');
-      const currentMcTxt = currentMcEl?.textContent || '';
+      // Show ATH MC as main value, price as secondary
+      if (athMcStr) {
+        athEl.innerHTML = `${athMcStr} <span style="font-size:11px;opacity:0.55;font-weight:400;">(${athPriceStr})</span>`;
+      } else {
+        athEl.textContent = athPriceStr;
+      }
 
-      athEl.textContent = athPriceStr + ' price';
-
-      // Show down from ATH
-      if (data.downFromAth && athCard) {
+      // Show % down from ATH (prefer MC-based, fall back to price-based)
+      const downPct = data.downFromAthMc || data.downFromAth;
+      if (downPct && athCard) {
         let downEl = athCard.querySelector('.ath-down');
         if (!downEl) {
           downEl = document.createElement('div');
           downEl.className = 'ath-down';
           athCard.appendChild(downEl);
         }
-        downEl.textContent = `-${data.downFromAth}% from ATH`;
+        downEl.textContent = `-${downPct}% from ATH`;
       }
 
       // Update label
@@ -2452,24 +2703,33 @@ async function fetchTokenHistory(ca, pairAddress) {
         launchBar.id = 'launchInfoBar';
         launchBar.className = 'launch-info-bar';
 
-        const changeStr = data.changeSinceLaunch !== null
-          ? `<span class="${parseFloat(data.changeSinceLaunch) >= 0 ? 'c-green' : 'c-red'}">${parseFloat(data.changeSinceLaunch) >= 0 ? '+' : ''}${data.changeSinceLaunch}% since launch</span>`
+        const launchPriceStr = data.launchPrice >= 1
+          ? '$' + data.launchPrice.toFixed(4)
+          : '$' + data.launchPrice.toPrecision(4);
+
+        const launchMcStr = data.launchMc > 0 ? fmtNum(data.launchMc) : null;
+
+        // Use MC change if available, otherwise price change
+        const changeVal = data.mcChangeSinceLaunch || data.changeSinceLaunch;
+        const changeLabel = data.mcChangeSinceLaunch ? 'MC since launch' : 'since launch';
+        const changeStr = changeVal !== null && changeVal !== undefined
+          ? `<span class="${parseFloat(changeVal) >= 0 ? 'c-green' : 'c-red'}">${parseFloat(changeVal) >= 0 ? '+' : ''}${changeVal}% ${changeLabel}</span>`
           : '';
 
         const volStr = data.totalVol > 0
           ? `<span>All-time vol: <b>${fmtNum(data.totalVol)}</b></span>`
           : '';
 
-        const launchPriceStr = data.launchPrice >= 1
-          ? '$' + data.launchPrice.toFixed(4)
-          : '$' + data.launchPrice.toPrecision(4);
-
         const athDateStr = data.athTs
           ? new Date(data.athTs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
           : '';
 
+        const launchLabel = launchMcStr
+          ? `Launch MC: <b>${launchMcStr}</b> <span style="opacity:0.6;">(${launchPriceStr})</span>`
+          : `Launch price: <b>${launchPriceStr}</b>`;
+
         launchBar.innerHTML = `
-          <span>Launch price: <b>${launchPriceStr}</b></span>
+          <span>${launchLabel}</span>
           ${changeStr}
           ${volStr}
           ${athDateStr ? `<span>ATH on ${athDateStr}</span>` : ''}
@@ -2479,15 +2739,45 @@ async function fetchTokenHistory(ca, pairAddress) {
     }
 
     // Update chat context with historical data
-    _liveData.athPrice          = data.athPrice;
-    _liveData.downFromAth       = data.downFromAth;
-    _liveData.launchPrice       = data.launchPrice;
-    _liveData.changeSinceLaunch = data.changeSinceLaunch;
-    _liveData.totalVolAllTime   = fmtNum(data.totalVol);
-    _liveData.daysSinceLaunch   = data.daysSinceLaunch;
-    _liveData.athDate           = data.athTs ? new Date(data.athTs).toLocaleDateString() : null;
+    _liveData.athPrice            = data.athPrice;
+    _liveData.athMc               = data.athMc ? fmtNum(data.athMc) : null;
+    _liveData.downFromAth         = data.downFromAth;
+    _liveData.downFromAthMc       = data.downFromAthMc;
+    _liveData.launchPrice         = data.launchPrice;
+    _liveData.launchMc            = data.launchMc ? fmtNum(data.launchMc) : null;
+    _liveData.changeSinceLaunch   = data.changeSinceLaunch;
+    _liveData.mcChangeSinceLaunch = data.mcChangeSinceLaunch;
+    _liveData.totalVolAllTime     = fmtNum(data.totalVol);
+    _liveData.daysSinceLaunch     = data.daysSinceLaunch;
+    _liveData.athDate             = data.athTs ? new Date(data.athTs).toLocaleDateString() : null;
 
   } catch {}
+}
+
+/* ══════════════════════════════════════
+   DEX PAID — DexScreener orders API
+══════════════════════════════════════ */
+async function fetchDexPaid(ca) {
+  const el = document.getElementById('tiq-dexpaid');
+  if (!el) return;
+  try {
+    const res  = await fetch(`https://api.dexscreener.com/orders/v1/solana/${ca}`);
+    if (!res.ok) { el.innerHTML = `<span style="color:var(--text-faint);">—</span>`; return; }
+    const orders = await res.json();
+    // Look for an approved tokenProfile or tokenAd order
+    const paid = Array.isArray(orders) && orders.some(o =>
+      o.status === 'approved' &&
+      (o.type === 'tokenProfile' || o.type === 'tokenAd' || o.type === 'communityTakeover')
+    );
+    if (paid) {
+      el.innerHTML = `<span style="color:#14F195;font-weight:800;">✓ Paid</span>`;
+    } else {
+      el.innerHTML = `<span style="color:#ff3b30;font-weight:800;">✕ Unpaid</span>`;
+    }
+    _liveData.dexPaid = paid;
+  } catch {
+    el.innerHTML = `<span style="color:var(--text-faint);">—</span>`;
+  }
 }
 
 async function runNarrativeAnalysis() {
