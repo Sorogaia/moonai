@@ -1024,17 +1024,44 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
           <span class="tok-meta">· #SOL</span>
           ${age !== '—' ? `<span class="tok-meta">· 🕐 ${age}</span>` : ''}
           ${holders !== '—' ? `<span class="tok-meta">· 👥 ${holders} holders</span>` : ''}
+          ${pump?.replies > 0 ? `<span class="tok-meta">· 💬 ${pump.replies.toLocaleString()} replies</span>` : ''}
+          ${pump?.kingOfHill ? `<span class="king-badge" style="background:rgba(245,158,11,0.18);color:#f59e0b;border:1px solid rgba(245,158,11,0.4);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;margin-left:4px;">👑 KING OF HILL</span>` : ''}
           ${pairLink}
         </div>
       </div>
     </div>
 
+    <!-- ── VERDICT STRIP ── -->
+    <div class="verdict-strip" id="verdictStrip">
+      <div class="verdict-left">
+        <span class="verdict-icon" id="verdictIcon">⏳</span>
+        <div>
+          <div class="verdict-main" id="verdictText">SCANNING…</div>
+          <div class="verdict-signals" id="verdictSub">Checking on-chain signals…</div>
+        </div>
+      </div>
+      <div class="verdict-right">
+        <div id="rugcheckBadge" class="rugcheck-badge" style="display:none;"></div>
+      </div>
+    </div>
+
     <!-- ── TRADE & EXPLORE ── -->
-    <div class="card-flex" style="gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+    <div class="card-flex" style="gap:8px;margin-bottom:6px;flex-wrap:wrap;align-items:center;">
       ${tradeLinksHtml}
       <a href="https://solscan.io/token/${ca}" target="_blank" rel="noopener" class="trade-link" style="color:#9945ff;background:#9945ff18;border:1px solid #9945ff44;">Solscan ↗</a>
       <a href="https://www.geckoterminal.com/solana/pools/${ca}" target="_blank" rel="noopener" class="trade-link" style="color:#86efac;background:#86efac18;border:1px solid #86efac44;">GeckoTerminal ↗</a>
       <a href="https://pump.fun/${ca}" target="_blank" rel="noopener" class="trade-link" style="color:#a78bfa;background:#a78bfa18;border:1px solid #a78bfa44;">pump.fun ↗</a>
+      <button class="chart-toggle-btn" onclick="toggleChart()" id="chartToggleBtn">📈 Chart</button>
+    </div>
+
+    <!-- ── CHART (collapsible) ── -->
+    <div class="chart-section" id="chartSection" style="display:none;margin-bottom:8px;">
+      <iframe
+        id="dexChart"
+        src="https://dexscreener.com/solana/${dex?.pairAddress || ca}?embed=1&theme=dark&trades=0&info=0"
+        style="width:100%;height:460px;border:none;border-radius:var(--radius-md);display:block;"
+        allowfullscreen
+      ></iframe>
     </div>
 
     <!-- ── LORE BUBBLE ── -->
@@ -1298,6 +1325,7 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
   fetchVampCoins(ca, symbol, name);
   fetchTokenHistory(ca, dex?.pairAddress || null);
   fetchDexPaid(ca);
+  fetchRugcheck(ca);
 
   // Inject token image safely after HTML is in the DOM
   if (imgSrc) {
@@ -1317,6 +1345,114 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
   }
 
   scrollTop();
+}
+
+/* ══════════════════════════════════════
+   CHART TOGGLE
+══════════════════════════════════════ */
+function toggleChart() {
+  const section = document.getElementById('chartSection');
+  const btn     = document.getElementById('chartToggleBtn');
+  if (!section) return;
+  const isOpen = section.style.display === 'block';
+  section.style.display = isOpen ? 'none' : 'block';
+  if (btn) btn.textContent = isOpen ? '📈 Chart' : '📉 Hide Chart';
+}
+
+/* ══════════════════════════════════════
+   VERDICT BADGE — live update
+   Calculated from all async scan results
+══════════════════════════════════════ */
+function updateVerdictBadge() {
+  const d = _liveData;
+  let risk = 0;
+  const flags = [], passes = [];
+
+  // Mint / freeze authority
+  if (d.mintRevoked   === false) { risk += 18; flags.push('Mint active'); }
+  else if (d.mintRevoked  === true) passes.push('Mint revoked');
+  if (d.freezeRevoked === false) { risk += 12; flags.push('Freeze active'); }
+  else if (d.freezeRevoked === true) passes.push('Freeze revoked');
+
+  // Dev sold
+  if (d.devSold === true)        { risk += 20; flags.push('Dev sold'); }
+  else if (d.devSold === false)  passes.push('Dev holding');
+
+  // Bundles
+  const bPct = parseFloat(d.bundlePct) || 0;
+  if      (bPct >= 20) { risk += 25; flags.push(`${bPct}% bundled`); }
+  else if (bPct >= 5)  { risk += 12; flags.push(`${bPct}% bundled`); }
+  else if (d.bundled === false) passes.push('Clean launch');
+  if (d.jitoConfirmed) { risk += 10; flags.push('Jito bundle'); }
+
+  // Holder concentration
+  const top10 = parseFloat(d.top10pct) || 0;
+  if      (top10 >= 60) { risk += 20; flags.push(`Top 10 hold ${top10}%`); }
+  else if (top10 >= 40) { risk += 10; flags.push(`Top 10 hold ${top10}%`); }
+  else if (top10 > 0)   passes.push(`Top 10 hold ${top10}%`);
+
+  // Rugcheck score (if available)
+  const rcScore = d.rugcheckScore;
+  if (rcScore != null) {
+    if (rcScore >= 70) risk += 15;
+  }
+
+  // Determine verdict
+  let icon, verdict, col, bg, border;
+  if (risk <= 15) {
+    icon = '🟢'; verdict = 'LOOKS CLEAN';           col = '#14F195'; bg = 'rgba(20,241,149,0.07)';  border = 'rgba(20,241,149,0.25)';
+  } else if (risk <= 40) {
+    icon = '🟡'; verdict = 'PROCEED WITH CAUTION';  col = '#ff9f0a'; bg = 'rgba(255,159,10,0.07)'; border = 'rgba(255,159,10,0.25)';
+  } else {
+    icon = '🔴'; verdict = 'HIGH RISK';             col = '#ff3b30'; bg = 'rgba(255,59,48,0.07)';  border = 'rgba(255,59,48,0.25)';
+  }
+
+  const signals = flags.length
+    ? flags.join(' · ')
+    : passes.length ? passes.slice(0, 3).join(' · ') : 'Scanning…';
+
+  const stripEl = document.getElementById('verdictStrip');
+  const iconEl  = document.getElementById('verdictIcon');
+  const textEl  = document.getElementById('verdictText');
+  const subEl   = document.getElementById('verdictSub');
+
+  if (stripEl) { stripEl.style.background = bg; stripEl.style.borderColor = border; }
+  if (iconEl)  iconEl.textContent = icon;
+  if (textEl)  { textEl.textContent = verdict; textEl.style.color = col; }
+  if (subEl)   subEl.textContent = signals;
+}
+
+/* ══════════════════════════════════════
+   RUGCHECK — free public API
+══════════════════════════════════════ */
+async function fetchRugcheck(ca) {
+  const el = document.getElementById('rugcheckBadge');
+  if (!el) return;
+  try {
+    const res = await fetch(`https://api.rugcheck.xyz/v1/tokens/${encodeURIComponent(ca)}/report/summary`);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    const score   = data.score_normalised ?? Math.min(100, Math.round((data.score || 0) / 10));
+    const rugged  = data.rugged === true;
+
+    let label, col, bg;
+    if (rugged || score >= 70) {
+      label = `${score} DANGER`; col = '#ff3b30'; bg = 'rgba(255,59,48,0.1)';
+    } else if (score >= 30) {
+      label = `${score} WARN`;   col = '#ff9f0a'; bg = 'rgba(255,159,10,0.1)';
+    } else {
+      label = `${score} GOOD`;   col = '#14F195'; bg = 'rgba(20,241,149,0.1)';
+    }
+
+    el.style.display  = 'flex';
+    el.style.cssText  = `display:flex;align-items:center;gap:5px;color:${col};background:${bg};border:1px solid ${col}33;padding:3px 10px;border-radius:var(--radius-pill);font-size:11px;font-weight:700;`;
+    el.innerHTML      = `<span style="font-size:9px;opacity:0.55;font-weight:600;letter-spacing:.06em;">RUGCHECK</span> ${label}`;
+
+    _liveData.rugcheckScore  = score;
+    _liveData.rugcheckRugged = rugged;
+    updateVerdictBadge(); // refresh with rugcheck data
+  } catch { /* non-fatal */ }
 }
 
 /* ══════════════════════════════════════
@@ -2073,6 +2209,7 @@ async function fetchTopHolders(ca, devWallet, solPrice, mcRaw) {
     _liveData.devHolderCtx = devCtx;
     updateRiskStrip();
     updateTokenIntel();
+    updateVerdictBadge();
 
   } catch {
     bodyEl.textContent = 'Holder data unavailable.';
@@ -2164,6 +2301,7 @@ async function fetchFreshWallets(ca, tokenCreatedAt) {
     _liveData.freshWalletTotal = data.total;
     updateRiskStrip();
     updateTokenIntel();
+    updateVerdictBadge();
   } catch {}
 }
 
@@ -2512,6 +2650,7 @@ async function fetchBundleDetection(ca, devWallet) {
     _liveData.bundleRisk    = risk;
     updateRiskStrip();
     updateTokenIntel();
+    updateVerdictBadge();
     _liveData.bundleCount   = data.bundleCount;
     _liveData.bundleWallets = data.wallets;
     _liveData.jitoConfirmed = data.jitoConfirmed;

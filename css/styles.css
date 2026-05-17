@@ -659,6 +659,41 @@ html, body {
 .tok-warn     { color:var(--amber); font-size:10px; }
 
 /* ══════════════════════════════════════
+   VERDICT STRIP
+══════════════════════════════════════ */
+.verdict-strip   {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 10px 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-md);
+  margin-bottom: 8px;
+  transition: background .5s ease, border-color .5s ease;
+}
+.verdict-left    { display:flex; align-items:center; gap:10px; min-width:0; }
+.verdict-icon    { font-size:1.1rem; flex-shrink:0; }
+.verdict-main    { font-size:13px; font-weight:800; letter-spacing:.03em; line-height:1; transition:color .5s ease; }
+.verdict-signals { font-size:10px; color:var(--text-faint); margin-top:3px; line-height:1; }
+.verdict-right   { flex-shrink:0; }
+.rugcheck-badge  { flex-shrink:0; }
+
+/* ══════════════════════════════════════
+   CHART TOGGLE + SECTION
+══════════════════════════════════════ */
+.chart-toggle-btn {
+  font-family: var(--font);
+  font-size: 11px; font-weight: 700;
+  color: var(--text-faint);
+  background: var(--bg-surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-pill);
+  padding: 4px 12px; cursor: pointer;
+  margin-left: auto; flex-shrink:0;
+  transition: color var(--transition), border-color var(--transition);
+}
+.chart-toggle-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ══════════════════════════════════════
    LORE BUBBLE
 ══════════════════════════════════════ */
 .lore-bubble  { margin-bottom:10px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.32); border-radius:var(--radius-md); padding:10px 14px; font-size:12.5px; line-height:1.7; display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:42px; box-shadow:0 0 20px rgba(255,255,255,0.07), 0 0 6px rgba(255,255,255,0.04); animation:glowPulse 3s ease-in-out infinite; }
