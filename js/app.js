@@ -167,6 +167,13 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('v2Modal').addEventListener('click', function(e) {
     if (e.target === this) closeV2Modal();
   });
+
+  // If the URL has a CA hash (e.g. from a refresh or shared link), auto-run analysis
+  const hashCA = window.location.hash.slice(1).trim();
+  if (hashCA && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(hashCA)) {
+    // Small delay so the page finishes rendering before analysis fires
+    setTimeout(() => runAnalysis(hashCA), 120);
+  }
 });
 
 /* ══════════════════════════════════════
@@ -1615,6 +1622,11 @@ async function runAnalysis(raw) {
   currentCA    = extractCA(raw);
   chatMessages = [];
   _liveData    = {};
+
+  // Persist CA in URL hash so browser refresh re-runs the same analysis
+  if (currentCA) {
+    history.replaceState(null, '', '#' + currentCA);
+  }
 
   showFeed();
   document.getElementById('chatFeed').innerHTML = '';
