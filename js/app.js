@@ -1016,74 +1016,43 @@ function renderTrencher(ca, dex, pump, solPrice) {
     </div>
 
     <!-- ── PRICE BAR ── -->
-    <div class="card price-card">
-      <div class="card-head price-bar-head">
-        <span class="price-bar-lbl">Live Prices</span>
-        <span id="refreshTimer" class="price-bar-timer">LIVE</span>
+    <!-- ── PRICE STRIP ── -->
+    <div class="price-strip">
+      <div class="price-strip-main">
+        <span class="ps-lbl">PRICE</span>
+        <span class="ps-price" id="livePrice">${price}</span>
       </div>
-      <div class="card-body price-bar-body">
-        <div class="price-item">
-          <div class="price-lbl">Price</div>
-          <div class="price-val-main" id="livePrice">${price}</div>
-        </div>
-        <div class="price-divider"></div>
-        <div class="price-item">
-          <div class="price-lbl">1H</div>
-          <div id="live1h" class="price-val" style="color:${ch1 ? (ch1.up ? 'var(--accent)' : 'var(--danger)') : 'var(--text-faint)'};">
-            ${ch1 ? ch1.str : '—'}${(buys1 || sells1) ? `<span class="price-txns">🟢${buys1} 🔴${sells1}</span>` : ''}
-          </div>
-        </div>
-        <div class="price-divider"></div>
-        <div class="price-item">
-          <div class="price-lbl">24H</div>
-          <div id="live24h" class="price-val" style="color:${ch24 ? (ch24.up ? 'var(--accent)' : 'var(--danger)') : 'var(--text-faint)'};">
-            ${ch24 ? ch24.str : '—'}${(buys24 || sells24) ? `<span class="price-txns">🟢${buys24} 🔴${sells24}</span>` : ''}
-          </div>
-        </div>
-        ${vol1 && vol1 !== '—' ? `
-        <div class="price-divider"></div>
-        <div class="price-item">
-          <div class="price-lbl">Vol 1H</div>
-          <div class="price-val c-cyan">${vol1}</div>
-        </div>` : ''}
-        ${ch5m ? `
-        <div class="price-divider"></div>
-        <div class="price-item">
-          <div class="price-lbl">5M</div>
-          <div id="live5m" class="price-val" style="color:${ch5m.up ? 'var(--accent)' : 'var(--danger)'};">${ch5m.str}</div>
-        </div>` : ''}
-        ${momentumScore !== null ? `
-        <div class="price-divider"></div>
-        <div class="price-item">
-          <div class="price-lbl">Momentum</div>
-          <div class="price-val" style="font-size:0.9rem;color:${momentumCol};">${momentumLabel}</div>
-        </div>` : ''}
+      <div class="ps-div"></div>
+      <div class="price-strip-item">
+        <span class="ps-lbl">1H</span>
+        <span id="live1h" class="ps-val" style="color:${ch1 ? (ch1.up ? 'var(--accent)' : 'var(--danger)') : 'var(--text-faint)'};">${ch1 ? ch1.str : '—'}${(buys1||sells1) ? `<span class="ps-txns"> ${buys1}↑${sells1}↓</span>` : ''}</span>
       </div>
+      <div class="ps-div"></div>
+      <div class="price-strip-item">
+        <span class="ps-lbl">24H</span>
+        <span id="live24h" class="ps-val" style="color:${ch24 ? (ch24.up ? 'var(--accent)' : 'var(--danger)') : 'var(--text-faint)'};">${ch24 ? ch24.str : '—'}${(buys24||sells24) ? `<span class="ps-txns"> ${buys24}↑${sells24}↓</span>` : ''}</span>
+      </div>
+      ${ch5m ? `<div class="ps-div"></div><div class="price-strip-item"><span class="ps-lbl">5M</span><span id="live5m" class="ps-val" style="color:${ch5m.up ? 'var(--accent)' : 'var(--danger)'};">${ch5m.str}</span></div>` : ''}
+      ${vol1 && vol1 !== '—' ? `<div class="ps-div"></div><div class="price-strip-item"><span class="ps-lbl">VOL 1H</span><span class="ps-val c-cyan">${vol1}</span></div>` : ''}
+      ${momentumScore !== null ? `<div class="ps-div"></div><div class="price-strip-item"><span class="ps-lbl">MOMENTUM</span><span class="ps-val" style="color:${momentumCol};">${momentumLabel}</span></div>` : ''}
+      <div class="ps-timer" id="refreshTimer">LIVE</div>
     </div>
 
-    <!-- ── MAIN STATS ── -->
-    <div class="stats-4">
+    <!-- ── STATS GRID (merged, priority order) ── -->
+    <div class="stats-8">
       <div class="metric-card"><div class="metric-lbl">MC</div><div class="metric-val c-cyan" id="liveMc">${mc}</div></div>
       <div class="metric-card"><div class="metric-lbl">VOL 24H</div><div class="metric-val c-cyan" id="liveVol">${vol24}</div></div>
       <div class="metric-card"><div class="metric-lbl">LIQUIDITY</div><div class="metric-val c-cyan" id="liveLiq">${liq}</div></div>
       <div class="metric-card">
-        <div class="metric-lbl">SESSION HIGH</div>
+        <div class="metric-lbl">ALL-TIME HIGH</div>
         <div class="metric-val c-cyan" id="athMcVal">${athMc}</div>
         ${athDownPct ? `<div class="ath-down">${athDownPct} this session</div>` : ''}
       </div>
-    </div>
-
-    <!-- ── TOKEN DETAILS ── -->
-    <div class="stats-5">
+      ${statCard('AGE', age, '')}
       ${statCard('BONDED', bondPct ? `${bonded} (${bondPct})` : bonded, pump?.bonded ? 'c-green' : pump?.bonded === false ? 'c-amber' : '')}
       <div class="metric-card">
-        <div class="metric-lbl">DEV WALLET</div>
-        <div class="metric-val c-amber" id="devWalletVal">${dev}</div>
-      </div>
-      ${statCard('AGE', age, '')}
-      <div class="metric-card">
         <div class="metric-lbl">HOLDERS</div>
-        <div class="metric-val c-amber" id="holdersStatVal">${holders !== '—' ? holders : 'Loading…'}</div>
+        <div class="metric-val c-amber" id="holdersStatVal">${holders !== '—' ? holders : '—'}</div>
       </div>
       <div class="metric-card">
         <div class="metric-lbl">FRESH WALLETS</div>
