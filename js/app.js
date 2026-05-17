@@ -3009,15 +3009,23 @@ async function fetchDexPaid(ca) {
     const res  = await fetch(`https://api.dexscreener.com/orders/v1/solana/${ca}`);
     if (!res.ok) { el.innerHTML = `<span style="color:var(--text-faint);">—</span>`; return; }
     const orders = await res.json();
-    // Look for an approved tokenProfile or tokenAd order
-    const paid = Array.isArray(orders) && orders.some(o =>
-      o.status === 'approved' &&
-      (o.type === 'tokenProfile' || o.type === 'tokenAd' || o.type === 'communityTakeover')
-    );
+    if (!Array.isArray(orders)) { el.innerHTML = `<span style="color:var(--text-faint);">—</span>`; return; }
+
+    // "Dex Paid" = any order that has been paid for and not rejected/cancelled.
+    // DexScreener statuses: approved | processing | rejected | cancelled
+    // We count 'approved' (live) AND 'processing' (paid, in review) — Axiom does the same.
+    // Order types include: tokenProfile, tokenAd, communityTakeover, trendingBarAd, bannerAd, etc.
+    const paid = orders.some(o => o.status === 'approved' || o.status === 'processing');
+
     if (paid) {
-      el.innerHTML = `<span style="color:#14F195;font-weight:800;">✓ Paid</span>`;
+      // Show what kind of order it is
+      const hasProfile  = orders.some(o => o.type === 'tokenProfile'  && (o.status === 'approved' || o.status === 'processing'));
+      const hasAd       = orders.some(o => (o.type === 'tokenAd' || o.type === 'trendingBarAd' || o.type === 'bannerAd') && (o.status === 'approved' || o.status === 'processing'));
+      const hasTakeover = orders.some(o => o.type === 'communityTakeover' && (o.status === 'approved' || o.status === 'processing'));
+      const label = hasTakeover ? '✓ Takeover' : hasAd ? '✓ Boosted' : '✓ Paid';
+      el.innerHTML = `<span style="color:#14F195;font-weight:800;">${label}</span>`;
     } else {
-      el.innerHTML = `<span style="color:#ff3b30;font-weight:800;">✕ Unpaid</span>`;
+      el.innerHTML = `<span style="color:var(--text-faint);font-weight:700;">✕ Unpaid</span>`;
     }
     _liveData.dexPaid = paid;
   } catch {
