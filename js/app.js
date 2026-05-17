@@ -1152,9 +1152,10 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
         </div>
         <div class="tiq">
           <div class="tiq-val" id="tiq-lp">${
-            pump?.bonded === true  ? '<span style="color:#14F195;">Burned</span>'
-          : pump?.bonded === false ? '<span style="color:var(--text-faint);">Bonding</span>'
-          : dex?.dex === 'raydium' ? '<span style="color:#ff9f0a;">Raydium</span>'
+            pump?.bonded === true                         ? '<span style="color:#14F195;">Burned</span>'
+          : pump?.bonded === false                        ? '<span style="color:#ff9f0a;">Bonding</span>'
+          : pump && pump.bonded == null                   ? '<span style="color:#ff9f0a;">Bonding</span>'
+          : dex?.dex === 'raydium'                        ? '<span style="color:#ff9f0a;">Raydium</span>'
           : '—'
           }</div>
           <div class="tiq-lbl">LP Status</div>
@@ -2057,7 +2058,12 @@ async function fetchLoreBubble(name, symbol, description, mc, ch24, bonded) {
       }),
     });
     const data = await res.json();
-    const text = data?.content?.[0]?.text?.trim().replace(/^["']|["']$/g, '');
+    const raw  = data?.content?.[0]?.text?.trim() || '';
+    const text = raw
+      .replace(/\*\*([^*]+)\*\*/g, '$1')   // **bold**
+      .replace(/\*([^*]+)\*/g, '$1')        // *italic*
+      .replace(/^["']|["']$/g, '')          // surrounding quotes
+      .trim();
     if (text && loreEl) {
       loreEl.style.fontStyle = 'normal';
       loreEl.style.color = 'var(--text-muted)';

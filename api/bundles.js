@@ -188,35 +188,11 @@ module.exports = async (req, res) => {
       }
     }
 
-    // ── Step 5: If still no token amounts, estimate from supply proportion ─
-    // Some pump.fun tokens parsed only via nativeTransfers won't have amounts.
-    // Estimate proportionally from SOL spent vs total SOL in launch window.
-    const missingAmounts = Object.values(buyerMap).filter(b => b.amount === 0);
-    if (missingAmounts.length > 0 && bondingCurve) {
-      // Collect SOL spent per buyer
-      const solSpent = {};
-      let totalSolInWindow = 0;
-      for (const tx of enhanced) {
-        if (!tx.slot || tx.transactionError) continue;
-        if (tx.slot > creationSlot + LAUNCH_WINDOW) continue;
-        for (const nt of (tx.nativeTransfers || [])) {
-          if (nt.toUserAccount !== bondingCurve || !nt.fromUserAccount) continue;
-          if (EXCLUDED_ACCOUNTS.has(nt.fromUserAccount)) continue;
-          solSpent[nt.fromUserAccount] = (solSpent[nt.fromUserAccount] || 0) + nt.amount;
-          totalSolInWindow += nt.amount;
-        }
-      }
-      // Estimate token amounts proportional to SOL spent
-      if (totalSolInWindow > 0) {
-        // Rough estimate: early pump.fun buyers get ~80% of supply in bonding curve window
-        const estimatedTokensInWindow = totalSupply * 0.8;
-        for (const [wallet, data] of Object.entries(buyerMap)) {
-          if (data.amount === 0 && solSpent[wallet]) {
-            data.amount = (solSpent[wallet] / totalSolInWindow) * estimatedTokensInWindow;
-          }
-        }
-      }
-    }
+    // ── Step 5: Wallets detected via nativeTransfers only have amount=0.
+    // Do NOT estimate token amounts from SOL — pump.fun bonding curve pricing
+    // is non-linear and any estimate is wildly inaccurate (was inflating % by 20x).
+    // These wallets still contribute to slot/funder grouping detection.
+    // % will only reflect wallets with confirmed tokenTransfer amounts.
 
     const launchBuyers = Object.entries(buyerMap);
     if (!launchBuyers.length) {

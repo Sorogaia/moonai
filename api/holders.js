@@ -116,12 +116,26 @@ module.exports = async (req, res) => {
     ]);
     const infos = infoData.result?.value || [];
 
-    const holders = accounts.map((acct, i) => {
-      const owner  = infos[i]?.data?.parsed?.info?.owner || acct.address;
-      const amount = parseFloat(acct.uiAmount) || 0;
-      const pct    = totalSupply > 0 ? (amount / totalSupply) * 100 : 0;
-      return { owner, tokenAccount: acct.address, amount, pct };
-    });
+    // Resolve token account → owner, then DEDUPLICATE by wallet.
+    // A wallet can have multiple token accounts — merge their amounts.
+    const rawHolders = accounts.map((acct, i) => ({
+      owner:  infos[i]?.data?.parsed?.info?.owner || acct.address,
+      amount: parseFloat(acct.uiAmount) || 0,
+    }));
+
+    const ownerMap = {};
+    for (const { owner, amount } of rawHolders) {
+      ownerMap[owner] = (ownerMap[owner] || 0) + amount;
+    }
+    const holders = Object.entries(ownerMap)
+      .map(([owner, amount]) => ({
+        owner,
+        tokenAccount: owner, // best proxy when deduplicated
+        amount,
+        pct: totalSupply > 0 ? (amount / totalSupply) * 100 : 0,
+      }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 10);
 
     // Step 3: enrich each holder with wallet activity (all in parallel)
     const activityResults = await Promise.allSettled(
