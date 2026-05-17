@@ -693,11 +693,40 @@ function calculateMoonScore(dex, pump, momentumScore) {
 }
 
 /* ══════════════════════════════════════
+   JUPITER TOKEN META — non-pump.fun fallback
+   Free public API, no key required.
+   Covers BONK, RAY, BAGS, and any verified Solana token.
+══════════════════════════════════════ */
+async function fetchJupiterMeta(ca) {
+  try {
+    const res = await fetch(`https://tokens.jup.ag/token/${encodeURIComponent(ca)}`);
+    if (!res.ok) return null;
+    const d = await res.json();
+    if (!d || !d.address) return null;
+    const ext = d.extensions || {};
+    return {
+      name:        d.name        || null,
+      symbol:      d.symbol      || null,
+      image:       d.logoURI     || null,
+      description: ext.description || null,
+      twitter:     ext.twitter     || null,
+      telegram:    ext.telegram    || null,
+      discord:     ext.discord     || null,
+      website:     ext.website     || null,
+      coingeckoId: ext.coingeckoId || null,
+      tags:        d.tags          || [],
+    };
+  } catch { return null; }
+}
+
+/* ══════════════════════════════════════
    TRENCHER RENDER — live data card
 ══════════════════════════════════════ */
-function renderTrencher(ca, dex, pump, solPrice) {
-  const name    = pump?.name   || dex?.name   || '—';
-  const symbol  = pump?.symbol || dex?.symbol || '—';
+function renderTrencher(ca, dex, pump, solPrice, jup = null) {
+  // Merge Jupiter metadata as fallback for non-pump.fun tokens
+  const name    = pump?.name        || jup?.name        || dex?.name   || '—';
+  const symbol  = pump?.symbol      || jup?.symbol      || dex?.symbol || '—';
+  const tokenDescription = pump?.description || jup?.description || null;
   const mc      = fmtNum(dex?.mc   || pump?.mc);
   const vol24   = fmtNum(dex?.vol24h);
   const vol1    = fmtNum(dex?.vol1h);
@@ -777,7 +806,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
     twitter:        pump?.twitter,
     telegram:       pump?.telegram,
     website:        pump?.website,
-    description:    pump?.description?.slice(0, 300),
+    description:    tokenDescription?.slice(0, 300),
     momentumLabel,
     athMc:          fmtNum(sessionATH[ca]?.mc),
   };
@@ -866,10 +895,11 @@ function renderTrencher(ca, dex, pump, solPrice) {
     return val;
   }
 
-  const twitterUrl    = cleanTwitterUrl(pump?.twitter);
-  const twitterHandle = getTwitterHandle(pump?.twitter);
-  const telegramUrl   = cleanTelegramUrl(pump?.telegram);
-  const websiteUrl    = cleanWebUrl(pump?.website);
+  // Socials: pump.fun → Jupiter → DexScreener (handled below)
+  const twitterUrl    = cleanTwitterUrl(pump?.twitter  || jup?.twitter);
+  const twitterHandle = getTwitterHandle(pump?.twitter || jup?.twitter);
+  const telegramUrl   = cleanTelegramUrl(pump?.telegram || jup?.telegram);
+  const websiteUrl    = cleanWebUrl(pump?.website || jup?.website);
 
   // X posts section — clean search links, full tweet embed in V2
   const symEnc = encodeURIComponent('$' + symbol);
@@ -919,6 +949,10 @@ function renderTrencher(ca, dex, pump, solPrice) {
   if (pump?.instagram) { const u = cleanWebUrl(pump.instagram); if (u && !isDupe(u, SOCIAL_CFG.instagram.label)) socialLinks.push({ ...SOCIAL_CFG.instagram,  url: u }); }
   if (pump?.youtube)   { const u = cleanWebUrl(pump.youtube);   if (u && !isDupe(u, SOCIAL_CFG.youtube.label))   socialLinks.push({ ...SOCIAL_CFG.youtube,   url: u }); }
 
+  // Jupiter extra socials (non-pump.fun tokens)
+  if (jup?.discord)   { const u = cleanWebUrl(jup.discord);   if (u && !isDupe(u, SOCIAL_CFG.discord.label))   socialLinks.push({ ...SOCIAL_CFG.discord,   url: u }); }
+  if (jup?.instagram) { const u = cleanWebUrl(jup.instagram); if (u && !isDupe(u, SOCIAL_CFG.instagram.label)) socialLinks.push({ ...SOCIAL_CFG.instagram,  url: u }); }
+
   // DexScreener socials — all types
   dex?.socials?.forEach(s => {
     if (!s.url) return;
@@ -949,8 +983,8 @@ function renderTrencher(ca, dex, pump, solPrice) {
     ? `<span class="tok-live">● LIVE</span>`
     : `<span class="tok-warn">⚠ Token not found on DexScreener/pump.fun</span>`;
 
-  // Token image — DexScreener CDN first, pump.fun IPFS as fallback
-  const imgSrc  = dex?.imageUrl || pump?.image || null;
+  // Token image — DexScreener first, then pump.fun, then Jupiter
+  const imgSrc  = dex?.imageUrl || pump?.image || jup?.image || null;
   const tokenImg = `<div id="tokenImgWrap" class="tok-img-ph">🪙</div>`;
 
   // Trading platform ref links
@@ -1090,7 +1124,12 @@ function renderTrencher(ca, dex, pump, solPrice) {
           <div class="tiq-lbl">Fresh W.</div>
         </div>
         <div class="tiq">
-          <div class="tiq-val" id="tiq-lp">${pump?.bonded === true ? '<span style="color:#14F195;">Burned</span>' : pump?.bonded === false ? '<span style="color:var(--text-faint);">No LP</span>' : '—'}</div>
+          <div class="tiq-val" id="tiq-lp">${
+            pump?.bonded === true  ? '<span style="color:#14F195;">Burned</span>'
+          : pump?.bonded === false ? '<span style="color:var(--text-faint);">Bonding</span>'
+          : dex?.dex === 'raydium' ? '<span style="color:#ff9f0a;">Raydium</span>'
+          : '—'
+          }</div>
           <div class="tiq-lbl">LP Status</div>
         </div>
 
@@ -1173,10 +1212,10 @@ function renderTrencher(ca, dex, pump, solPrice) {
     </div>
 
     <!-- ── DESCRIPTION ── -->
-    ${pump?.description ? `
+    ${tokenDescription ? `
     <div class="card">
       <div class="card-head"><div class="card-title"><div class="card-title-dot" style="background:var(--text-muted)"></div>Description</div></div>
-      <div class="card-body card-desc">${escHtml(pump.description.slice(0,300))}${pump.description.length>300?'…':''}</div>
+      <div class="card-body card-desc">${escHtml(tokenDescription.slice(0,300))}${tokenDescription.length>300?'…':''}</div>
     </div>` : ''}
 
     <!-- ── SAFETY SCORE ── -->
@@ -1250,7 +1289,7 @@ function renderTrencher(ca, dex, pump, solPrice) {
   if (analysisMode === 'trencher') startAutoRefresh(ca);
 
   // Fire async enrichment — none of these block the card render
-  fetchLoreBubble(name, symbol, pump?.description || '', mc, ch24, pump?.bonded);
+  fetchLoreBubble(name, symbol, tokenDescription || '', mc, ch24, pump?.bonded);
   fetchTopHolders(ca, pump?.dev || null, solPrice, mcRaw);
   fetchBundleDetection(ca, pump?.dev || null);
   fetchTokenInfo(ca, pump?.dev || null, dex, pump);
@@ -1453,9 +1492,10 @@ async function runAnalysis(raw) {
       </div>`;
     scrollBottom();
 
-    const [dex, pump, solPrice] = await Promise.all([
+    const [dex, pump, jup, solPrice] = await Promise.all([
       fetchDexScreener(currentCA),
       fetchPumpFun(currentCA),
+      fetchJupiterMeta(currentCA),
       fetchSolPrice(),
     ]);
 
@@ -1465,7 +1505,7 @@ async function runAnalysis(raw) {
     document.getElementById('ls1').querySelector('.lstep-icon').textContent = '✓';
 
     await new Promise(r => setTimeout(r, 300));
-    renderTrencher(currentCA, dex, pump, solPrice);
+    renderTrencher(currentCA, dex, pump, solPrice, jup);
 
     // seed chat context with everything we know
     const devWalletShort = pump?.dev ? pump.dev.slice(0,8)+'…' : 'unknown';
@@ -2146,14 +2186,28 @@ async function fetchTokenInfo(ca, devWallet, dex, pump) {
       return;
     }
 
-    // Update DEV WALLET card with sold status
+    // Update DEV WALLET card
     const devEl = document.getElementById('devWalletVal');
-    if (devEl && devWallet) {
-      const short = devWallet.slice(0,4) + '…' + devWallet.slice(-4);
-      if (info.devSold) {
-        devEl.innerHTML = `${short} <span style="background:rgba(255,59,48,.15);color:#ff3b30;border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">SOLD</span>`;
-      } else if (info.devPct > 0) {
-        devEl.innerHTML = `${short} <span style="background:rgba(255,159,10,.12);color:#ff9f0a;border:1px solid rgba(255,159,10,.3);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">HOLDS ${info.devPct}%</span>`;
+    if (devEl) {
+      if (devWallet) {
+        // pump.fun token — show dev wallet with sold/holds status
+        const short = devWallet.slice(0,4) + '…' + devWallet.slice(-4);
+        if (info.devSold) {
+          devEl.innerHTML = `${short} <span style="background:rgba(255,59,48,.15);color:#ff3b30;border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">SOLD</span>`;
+        } else if (info.devPct > 0) {
+          devEl.innerHTML = `${short} <span style="background:rgba(255,159,10,.12);color:#ff9f0a;border:1px solid rgba(255,159,10,.3);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">HOLDS ${info.devPct}%</span>`;
+        }
+      } else if (info.mintAuthority) {
+        // Non-pump.fun token — show mint authority as creator
+        const short = info.mintAuthority.slice(0,4) + '…' + info.mintAuthority.slice(-4);
+        const tag   = info.mintRevoked
+          ? `<span style="background:rgba(20,241,149,.1);color:#14F195;border:1px solid rgba(20,241,149,.25);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">REVOKED</span>`
+          : `<span style="background:rgba(100,100,100,.12);color:#999;border:1px solid rgba(100,100,100,.25);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">CREATOR</span>`;
+        devEl.innerHTML = `${short}${tag}`;
+        // Also trigger dev history for this creator address
+        fetchDevHistory(info.mintAuthority);
+      } else if (info.mintRevoked) {
+        devEl.innerHTML = `<span style="color:#14F195;font-size:11px;">Mint revoked — no authority</span>`;
       }
     }
 

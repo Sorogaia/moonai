@@ -2,81 +2,90 @@
 
 ---
 
+## [2.3.0] — 2026-05-17
+
+### Added
+- **Jupiter Token API** — fetched in parallel for every token scan (no API key, free public API)
+  - Covers BONK, RAY, WIF, POPCAT, BAGS, and all Jupiter-verified Solana tokens
+  - Fills in: token name, symbol, logo, description, Twitter, Telegram, Discord, Website
+  - Description card now shows Jupiter descriptions for major tokens
+  - Narrative AI receives Jupiter description as context for non-pump.fun tokens
+  - Logo image falls back to Jupiter `logoURI` if DexScreener has none
+
+- **Non-pump.fun dev wallet display** — when no pump.fun dev address exists, shows mint authority address tagged as `CREATOR` with revoked/active status; automatically triggers Dev History scan on that creator
+
+- **LP Status improved** — shows `Raydium` (amber) for non-pump.fun tokens on Raydium instead of `—`
+
+- **Social links now fully merged** — pump.fun → Jupiter extensions → DexScreener, in that priority order; covers Discord, Instagram as Jupiter-sourced extras
+
+---
+
+## [2.2.0] — 2026-05-17
+
+### Fixed — Bundle Detection (major accuracy overhaul)
+- **Root cause**: was fetching only 100 most-recent transactions then taking the oldest 30 of those. For active tokens with 700+ holders the actual launch buys were hundreds of transactions further back — we never saw them.
+- Now paginates `getSignaturesForAddress` up to 4 pages × 1000 sigs = 4000 signatures until it reaches the token's very first transaction
+- Launch window widened: 15 slots (~6 sec) → **300 slots (~2 min)** — catches coordinated multi-wave buys
+- Launch transactions analyzed: 30 → **100**
+- Funding wallet traced for top 20 buyers (was top 10)
+- Slot grouping: exact same-slot only → **2-slot buckets (~800ms)** to catch split bundles
+- Token supply: hardcoded 1B → **real on-chain supply from Helius `getTokenSupply`**
+- Response now includes `_meta` debug field: `totalSigsScanned`, `launchTxnsAnalyzed`, `creationSlot`, `launchWindowSlots`, `totalSupply`
+
+---
+
 ## [2.1.0] — 2026-05-17
 
 ### Changed
-- **Layout: wider shell** — max-width increased from 860px to 1100px
-- **Layout: compact stats** — price bar + stats-4 + stats-5 merged into:
-  - Slim `price-strip` (borderless, one line: Price | 1H | 24H | 5M | Vol 1H | Momentum | timer)
-  - Single `stats-8` grid (8 compact metric cards, priority order: MC → Vol → Liq → ATH → Age → Bonded → Holders → Fresh W.)
-- **Base font size** reduced 15px → 14px (scales entire type system proportionally)
-- **Card padding** tightened across all cards and metric cards
-- **Grid gaps** reduced from 8px → 6px
+- Shell max-width: 860px → 1100px (25% wider)
+- Base font: 15px → 14px (scales entire type system)
+- Price card replaced with slim borderless `price-strip` (one line: Price | 1H | 24H | 5M | Vol 1H | Momentum | timer)
+- `stats-4` + `stats-5` merged into single `stats-8` grid (priority order: MC → Vol → Liq → ATH → Age → Bonded → Holders → Fresh W.)
+- Card padding, metric card padding, and grid gaps all tightened
+- Removes one full row of vertical scroll
 
 ---
 
 ## [2.0.0] — 2026-05-17
 
-### Security (full audit)
-- `chat.js`: prompt injection patterns stripped from client context before forwarding to Anthropic
-- `_validate.js`: IP extraction switched from spoofable `x-forwarded-for` → `x-vercel-forwarded-for`; added `isValidSymbol()` with alphanumeric regex
-- `_ratelimit.js`: added in-memory Map fallback — no longer silently allows all requests when Redis is unavailable
-- `vamps.js`: symbol validation now uses `isValidSymbol()` (regex) instead of length-only check
-- `fresh-wallets.js`: timestamp input validated against `Date.now()` to prevent overflow/future-date abuse
-- `token-history.js`: OHLCV timestamp validated with `parseInt` + `isNaN` guard before processing
-- `vercel.json`: added full Content-Security-Policy header; expanded Permissions-Policy
-
-### Added
-- `Token Intel` card — 3×3 live-updating grid: Top 10 H. · Dev H. · Bundled % · Holders · Fresh W. · LP Status · Mint Auth · Freeze Auth · Dex Paid
-- `Rug Detection + Market Risk` strip — two circles (LOW/MED/HIGH) updating progressively as async scans complete
-- `Dex Paid` — DexScreener orders API (`/orders/v1/solana/{ca}`) — ✓ Paid / ✕ Unpaid
-- `Bundle Detection CLEAN state` — full PASS/FAIL checklist (Jito, same-funder, same-slot, dev bundled)
-- `Vamp Coins + Bundle Detection` 50/50 side-by-side layout
-- `updateTokenIntel()` and `updateRiskStrip()` functions — progressively update from `_liveData` as each async call resolves
-- `.env.example` — documents all required secrets with placeholders
-- In-memory rate limit fallback in `_ratelimit.js`
-
-### Changed
-- Moon Score removed from layout (replaced by Rug/Risk Detection strip)
-- Safety Score + Dev History moved to bottom of result area
-- Top Holders sell line: removed confusing "Sold X% of position" — now shows "Sold Xk · got back Y SOL"
-- V2 modal completely rewritten — hype copy, V1 preview framing, TG/Discord IN DEV status, ecosystem section
-
-### Documentation
-- `CLAUDE.md` updated with full API table, layout order, security notes, function reference
-- `.gitignore` expanded — covers all env files, OS junk, editors, build artifacts, internal folders
-- `CONTRIBUTING.md` updated — correct repo URL, multi-file project structure, new rules
+### Security audit + major feature release
+- Prompt injection hardening in `chat.js`
+- IP spoofing fix: `x-forwarded-for` → `x-vercel-forwarded-for`
+- Rate limit in-memory fallback when Redis unavailable
+- Symbol validation: length-only → alphanumeric regex
+- Timestamp input validation in `fresh-wallets.js`
+- OHLCV timestamp NaN guard in `token-history.js`
+- Content-Security-Policy added to `vercel.json`
+- Token Intel 3×3 grid (Top 10 H. · Dev H. · Bundled % · Holders · Fresh W. · LP Status · Mint Auth · Freeze Auth · Dex Paid)
+- Rug Detection + Market Risk circles (live-updating, LOW/MED/HIGH)
+- Vamp Coins + Bundle Detection 50/50 side-by-side
+- Bundle Detection CLEAN state with PASS/FAIL checklist
+- Dex Paid via DexScreener orders API
+- `.env.example` added
+- All docs rewritten
 
 ---
 
 ## [1.10.0] — 2026-05-17
 
 ### Added
-- Real ATH MC shown as primary value in ALL-TIME HIGH stat card (price as secondary)
-- `api/token-history.js` rewritten: uses Helius `getTokenSupply` for exact on-chain supply, scans top-3 pools for highest ATH across all historical data
-- `downFromAthMc`, `launchMc`, `mcChangeSinceLaunch` added to API response and `_liveData`
-- All historical data seeded into AI chat context (athMc, launchMc, downFromAthMc, mcChangeSinceLaunch)
+- Real ATH MC as primary value — Helius `getTokenSupply` + top-3 pool OHLCV scan
+- `downFromAthMc`, `launchMc`, `mcChangeSinceLaunch` in API + AI context
 
 ---
 
 ## [1.9.0] — 2026-05-14
 
 ### Added
-- Top Holders deep intel — buy/sell history per holder via Helius Enhanced Transactions
-- Tokens bought + SOL spent (USD value), sell detection, current holding value
-- 🆕 FRESH · 👴 VETERAN badges
-
-### Fixed
-- Dead ticker code removed (was fetching 10 tokens every 60s wastefully)
-- Bonding curve ETA uses live SOL price (was hardcoded)
+- Top Holders deep intel via Helius Enhanced Transactions
+- FRESH · VETERAN badges, buy/sell history, wallet age
 
 ---
 
 ## [1.8.0] — 2026-05-14
 
 ### Added
-- Vamp Coins — copycat token scanner via DexScreener
-- Dev History — previous token launches, reputation badge, per-token status
+- Vamp Coins scanner, Dev History with reputation badge
 - `/api/vamps.js`, `/api/dev-history.js`
 
 ---
@@ -84,59 +93,49 @@
 ## [1.7.0] — 2026-05-14
 
 ### Added
-- Moon Score (0–100) — COLD / WARMING / HEATING / HOT / MOON
-- Bonding Curve progress + ETA
-- Quick ROI Calculator
+- Moon Score (0–100), Bonding Curve progress + ETA, ROI Calculator
 
 ---
 
 ## [1.6.0] — 2026-05-14
 
 ### Changed
-- Full UI cleanup — all inline styles moved to CSS classes
-- Consistent spacing, animations, hover states
+- Full CSS refactor — all inline styles moved to classes
 
 ---
 
 ## [1.5.0] — 2026-05-14
 
 ### Added
-- Auto-refresh every 60s with countdown
-- Momentum Score (5M/1H/6H/24H weighted)
-- Fresh Wallets % detection
-- ATH MC session tracking
+- Auto-refresh 60s, Momentum Score, Fresh Wallets %, session ATH
 
 ---
 
 ## [1.4.0] — 2026-05-14
 
 ### Added
-- Safety Score (0–100)
-- Dev sold tracker, mint/freeze authority checks
-- Copy CA button
+- Safety Score (0–100), dev sold tracker, mint/freeze auth checks
 
 ---
 
 ## [1.3.0] — 2026-05-14
 
 ### Added
-- Bundle detection (risk scoring, dev bundle flag, new wallet signal)
+- Bundle detection with Jito/same-funder/same-slot detection
 
 ---
 
 ## [1.2.0] — 2026-05-14
 
 ### Added
-- Top Holders — progress bars, DEV/WHALE badges, expandable list
+- Top Holders, DEV/WHALE badges, expandable list
 
 ---
 
 ## [1.1.0] — 2026-05-13
 
 ### Added
-- Vercel backend proxy — API keys never in browser
-- Real holder data via Helius
-- Rate limiting via Upstash Redis
+- Vercel backend proxy, real Helius holder data, Upstash rate limiting
 
 ---
 

@@ -13,72 +13,63 @@ Paste any Solana CA or pump.fun link. Get real on-chain data, AI analysis, bundl
 
 ### Token Overview
 - Token image, name, ticker, full CA + one-click copy
-- LIVE badge, age, DexScreener link, holders count
+- LIVE badge, age, DexScreener link
 - Trade links: Axiom · Photon · BullX · Trojan · GMGN · Solscan · GeckoTerminal · pump.fun
 
-### 📊 Live Price Strip
-Price · 1H% (buys/sells) · 24H% (buys/sells) · 5M · Vol 1H · Momentum · auto-refresh countdown
+### Works on ALL Solana tokens
+- pump.fun tokens — full bonding curve, dev wallet, socials
+- Major tokens (BONK, RAY, WIF, etc.) — metadata from Jupiter Token API (name, logo, description, socials)
+- Any verified Solana SPL token — DexScreener + Helius on-chain data
 
-### 📈 Stats Grid (8 metrics, priority order)
+### 📊 Live Price Strip
+Price · 1H% (buys/sells) · 24H% · 5M · Vol 1H · Momentum · auto-refresh
+
+### 📈 Stats Grid — 8 metrics, priority order
 MC · Vol 24H · Liquidity · All-Time High MC · Age · Bonded · Holders · Fresh Wallets
 
 ### 🕐 Historical Data — From Day 1
-Real ATH price + MC (GeckoTerminal OHLCV, top-3 pool scan, Helius on-chain supply)
-- True ATH MC with % down from ATH
+- True ATH price + MC (GeckoTerminal OHLCV across top 3 pools, Helius on-chain supply)
 - Launch MC, launch price, % change since launch
 - All-time cumulative volume, ATH date, days since launch
 
-### 🧠 Token Intel Grid (3×3, live-updating)
-All values update as async scans complete:
-
+### 🧠 Token Intel Grid — 3×3, live-updating
 | Top 10 H. | Dev H. | Bundled % |
 |---|---|---|
 | Holders | Fresh W. | LP Status |
 | Mint Auth | Freeze Auth | Dex Paid |
 
-### 🔍 Bundle Detection
-Multi-layer launch analysis — side by side with Vamp Coins:
-- Jito tip confirmation · Same funding wallet · Same-slot sniping
-- Per-bundle rows with wallet list and % of supply
-- LOW / MEDIUM / HIGH risk verdict
+### 🔍 Bundle Detection — most accurate available
+Multi-layer launch analysis:
+- **Paginates up to 4000 signatures** — always reaches the actual creation transaction
+- **2-minute launch window** — catches coordinated multi-wave buys (not just 6 seconds)
+- **Jito tip detection** — all 8 known tip accounts
+- **Same funding wallet** — traces top 20 buyers back to their funding source
+- **Same-slot grouping** — 2-slot buckets (~800ms) to catch split bundles
+- **Real on-chain supply** — Helius `getTokenSupply` (not hardcoded 1B)
 - CLEAN state: full PASS/FAIL checklist
 
 ### 🧛 Vamp Coins
-Copycat tokens with the same name/symbol:
-- Image, name, VAMP badge, MC, 24h%, copy CA
-- Click any vamp → loads full analysis
+Copycat tokens with the same name/symbol — click any to load full analysis
 
 ### 👥 Top Holders — Deep Intel
-Buy/sell history per holder via Helius Enhanced Transactions:
 - DEV · 🐋 WHALE · 🆕 FRESH · 👴 VETERAN badges
-- Tokens bought + SOL spent (USD value)
-- Sold amount + SOL received back — no confusing % of position
-- Current holding USD value at live MC
-- Top 3 shown + expandable
+- Buy/sell history per holder (SOL spent, SOL received, current value)
 
-### 🔴 Rug & Risk Detection Strip
-Two live-updating circles at the bottom:
-- **Rug Detection**: mint auth, freeze auth, dev sold, Jito, dev bundled → LOW/MED/HIGH
-- **Market Risk**: top holder %, fresh wallets %, bundle % → LOW/MED/HIGH
+### 🔴 Rug & Risk Detection
+Two live circles — Rug Detection + Market Risk (LOW/MED/HIGH), updates as each scan completes
 
 ### 🕵️ Dev History
-All previous tokens launched by this dev wallet:
-- Stats: total / alive / bonded / dead
-- Reputation badge: SERIAL RUGGER / MIXED / BUILDER / CLEAN / NEW DEV
+All previous tokens by this dev — SERIAL RUGGER / MIXED / BUILDER / CLEAN / NEW DEV
 
-### 🔒 Safety Score (0–100)
-Hidden until requested via suggestion pill — SAFE / CAUTION / WARNING / DANGER
-
-### 💸 ROI Calculator
-Hidden until requested — $100 at 2x/5x/10x/50x/100x with MC targets
+### 🔒 Safety Score, 💸 ROI Calculator
+Hidden until requested via suggestion pills
 
 ### 📖 AI Narrative + Chat
-Full live token context seeded (MC, vol, holders, bundles, ATH, dev history, etc.).
-Ask anything about the token — Solana/memecoins only.
+Full live token context (MC, vol, holders, bundles, ATH, dev history) seeded automatically.
 Suggestion pills: Safety Score · Quick ROI · Entry strategy · Red flags · Stop loss · Comparable plays
 
 ### Socials
-Twitter · Telegram · TikTok · Discord · Instagram · YouTube · Reddit · Website — whatever the token has
+Full coverage: Twitter · Telegram · TikTok · Discord · Instagram · YouTube · Reddit · Website
 
 ---
 
@@ -86,9 +77,9 @@ Twitter · Telegram · TikTok · Discord · Instagram · YouTube · Reddit · We
 
 | Feature | Status |
 |---|---|
-| Advanced Mode (full AI verdict, KOL/insider detection, sniper tracking, smart money) | In development |
-| Telegram Bot — scan tokens in any TG group | In development |
-| Discord Bot — MoonAi inside your server | In development |
+| Advanced Mode — KOL/insider detection, sniper tracking, smart money | In development |
+| Telegram Bot | In development |
+| Discord Bot | In development |
 | MoonAi App — mobile, wallet login, push alerts | Planned |
 
 Follow [@Moonai_webApp](https://x.com/Moonai_webApp) for launch updates.
@@ -99,16 +90,15 @@ Follow [@Moonai_webApp](https://x.com/Moonai_webApp) for launch updates.
 
 | Layer | Tech |
 |---|---|
-| Frontend | HTML · CSS · Vanilla JS (no framework) |
-| Font | Lexend (Google Fonts) |
-| AI | Anthropic Claude (claude-sonnet-4-5) — server-side proxy |
-| Market data | DexScreener API · GeckoTerminal API |
-| Token metadata | pump.fun API |
-| On-chain data | Helius RPC + Enhanced Transactions API |
+| Frontend | HTML · CSS · Vanilla JS |
+| Font | Lexend |
+| AI | Anthropic Claude (claude-sonnet-4-5) — server proxy |
+| Market data | DexScreener API · GeckoTerminal OHLCV |
+| Token metadata | pump.fun API · Jupiter Token API |
+| On-chain | Helius RPC + Enhanced Transactions |
 | SOL price | Jupiter Price API |
-| Historical data | GeckoTerminal OHLCV + Helius getTokenSupply |
 | Dex paid status | DexScreener Orders API |
-| Backend | Vercel Serverless Functions (Node.js) |
+| Backend | Vercel Serverless (Node.js) |
 | Hosting | Vercel + moonaiapp.xyz |
 | Rate limiting | Upstash Redis + in-memory Map fallback |
 
@@ -116,12 +106,12 @@ Follow [@Moonai_webApp](https://x.com/Moonai_webApp) for launch updates.
 
 ## Security
 
-- All API keys server-side only — Vercel env vars, never in browser
-- Rate limiting on every endpoint — Redis primary, in-memory fallback
-- IP extraction via `x-vercel-forwarded-for` (cannot be spoofed by client)
-- Prompt injection sanitised in chat proxy before forwarding to Anthropic
-- Strict input validation — Solana address regex, symbol alphanumeric regex, timestamp bounds
-- Content-Security-Policy, X-Frame-Options, X-Content-Type-Options headers enforced via `vercel.json`
+- All API keys server-side — Vercel env vars, never in browser
+- Rate limiting: Redis primary, in-memory fallback (never silently allows all)
+- IP via `x-vercel-forwarded-for` (cannot be spoofed)
+- Prompt injection stripped before forwarding to Anthropic
+- Strict input validation — Solana address regex, symbol regex, timestamp bounds
+- CSP + security headers via `vercel.json`
 
 ---
 
@@ -135,5 +125,4 @@ Follow [@Moonai_webApp](https://x.com/Moonai_webApp) for launch updates.
 ---
 
 ## License
-
 MIT
