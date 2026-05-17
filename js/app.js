@@ -2045,34 +2045,26 @@ async function fetchLoreBubble(name, symbol, description, mc, ch24, bonded) {
   const loreEl = document.getElementById('loreText');
   if (!loreEl) return;
 
-  const context = [
-    `Token: ${name} ($${symbol})`,
-    mc && mc !== '—'   ? `MC: ${mc}` : '',
-    ch24               ? `24H: ${ch24.str}` : '',
-    bonded             ? 'Bonded: Yes' : 'Bonded: No',
-    description        ? `Description: ${description.slice(0, 200)}` : '',
-  ].filter(Boolean).join(' | ');
-
   try {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
-        max_tokens: 60,
-        system: `You are MoonAi. Write ONE sentence only — max 20 words — summing up this token's narrative and lore. What is the vibe and story in one punchy line? No price, no technicals. Just the essence.`,
-        messages: [{ role: 'user', content: `Token: ${name} ($${symbol})${description ? '. Description: ' + description.slice(0, 200) : ''}` }],
+        model:      'claude-haiku-4-5',   // fast — narrative must feel instant
+        max_tokens: 40,
+        system:     `You are MoonAi. Return ONE punchy sentence — max 15 words. What is this token's core narrative or vibe? Be direct, degen, specific. No filler. No price talk. Just the story.`,
+        messages:   [{ role: 'user', content: `${name} ($${symbol})${description ? ' — ' + description.slice(0, 150) : ''}${ch24 ? ' — 24h ' + ch24.str : ''}` }],
       }),
     });
     const data = await res.json();
-    const text = data?.content?.[0]?.text?.trim();
+    const text = data?.content?.[0]?.text?.trim().replace(/^["']|["']$/g, '');
     if (text && loreEl) {
       loreEl.style.fontStyle = 'normal';
       loreEl.style.color = 'var(--text-muted)';
       loreEl.textContent = text;
     }
   } catch {
-    if (loreEl) loreEl.textContent = 'Narrative snapshot unavailable.';
+    if (loreEl) loreEl.textContent = '—';
   }
 }
 
