@@ -319,7 +319,11 @@ html, body {
 [data-mode="advanced"] .badge-green { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.2); }
 [data-mode="advanced"] .badge-cyan  { background: rgba(192,132,252,0.1); color: #c084fc; border-color: rgba(192,132,252,0.2); }
 .card-body { padding: 12px 14px; }
-.card-sub-label { font-size:10px; color:var(--text-faint); }
+.card-sub-label   { font-size:10px; color:var(--text-faint); }
+.safety-toggle    { cursor:pointer; user-select:none; }
+.safety-toggle:hover { background:var(--bg-surface); }
+.safety-head-right { display:flex; align-items:center; gap:8px; }
+.safety-chevron   { font-size:10px; color:var(--text-faint); transition:transform 0.2s ease; }
 
 /* ══════════════════════════════════════
    METRIC CARDS (stat grid)

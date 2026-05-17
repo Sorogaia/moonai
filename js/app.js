@@ -56,6 +56,15 @@ applyMode();
 /* ══════════════════════════════════════
    V2 COMING SOON MODAL
 ══════════════════════════════════════ */
+function toggleSafety() {
+  const body    = document.getElementById('safetyBody');
+  const chevron = document.getElementById('safetyChevron');
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display    = open ? 'none' : 'block';
+  if (chevron) chevron.textContent = open ? '▼' : '▲';
+}
+
 function openV2Modal() {
   document.getElementById('v2Modal').classList.add('open');
 }
@@ -874,11 +883,14 @@ function renderTrencher(ca, dex, pump, solPrice) {
 
     <!-- ── SAFETY SCORE ── -->
     <div class="card" id="safetyCard">
-      <div class="card-head">
+      <div class="card-head safety-toggle" onclick="toggleSafety()">
         <div class="card-title"><div class="card-title-dot"></div>Safety Score</div>
-        <span class="card-badge badge-amber" id="safetyBadge">SCANNING</span>
+        <div class="safety-head-right">
+          <span class="card-badge badge-amber" id="safetyBadge">SCANNING</span>
+          <span class="safety-chevron" id="safetyChevron">▼</span>
+        </div>
       </div>
-      <div class="card-body" id="safetyBody">
+      <div class="card-body" id="safetyBody" style="display:none;">
         <div class="card-muted">
           <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
           Running safety checks…
