@@ -1112,9 +1112,9 @@ function renderTrencher(ca, dex, pump, solPrice) {
       <div class="metric-card"><div class="metric-lbl">VOL 24H</div><div class="metric-val c-cyan" id="liveVol">${vol24}</div></div>
       <div class="metric-card"><div class="metric-lbl">LIQUIDITY</div><div class="metric-val c-cyan" id="liveLiq">${liq}</div></div>
       <div class="metric-card">
-        <div class="metric-lbl">ATH MC</div>
+        <div class="metric-lbl">SESSION HIGH</div>
         <div class="metric-val c-cyan" id="athMcVal">${athMc}</div>
-        ${athDownPct ? `<div class="ath-down">${athDownPct} from ATH</div>` : ''}
+        ${athDownPct ? `<div class="ath-down">${athDownPct} this session</div>` : ''}
       </div>
     </div>
 
