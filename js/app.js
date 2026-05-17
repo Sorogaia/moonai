@@ -1071,13 +1071,18 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
       <button class="chart-toggle-btn" onclick="toggleChart()" id="chartToggleBtn">📈 Chart</button>
     </div>
 
-    <!-- ── CHART (collapsible) ── -->
+    <!-- ── CHART (collapsible, lazy-loaded) ── -->
     <div class="chart-section" id="chartSection" style="display:none;margin-bottom:8px;">
+      <div id="chartLoader" class="chart-loader">
+        <div class="spinner" style="width:22px;height:22px;"></div>
+        <span style="font-size:12px;color:var(--text-faint);margin-top:8px;">Loading chart…</span>
+      </div>
       <iframe
         id="dexChart"
-        src="https://dexscreener.com/solana/${dex?.pairAddress || ca}?embed=1&theme=dark&trades=0&info=0"
-        style="width:100%;height:460px;border:none;border-radius:var(--radius-md);display:block;"
+        data-src="https://dexscreener.com/solana/${dex?.pairAddress || ca}?embed=1&theme=dark&trades=0&info=0"
+        style="width:100%;height:460px;border:none;border-radius:var(--radius-md);display:none;"
         allowfullscreen
+        onload="document.getElementById('chartLoader').style.display='none';this.style.display='block';"
       ></iframe>
     </div>
 
@@ -1371,10 +1376,17 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
 function toggleChart() {
   const section = document.getElementById('chartSection');
   const btn     = document.getElementById('chartToggleBtn');
+  const iframe  = document.getElementById('dexChart');
   if (!section) return;
+
   const isOpen = section.style.display === 'block';
   section.style.display = isOpen ? 'none' : 'block';
   if (btn) btn.textContent = isOpen ? '📈 Chart' : '📉 Hide Chart';
+
+  // Lazy-load: only set src the first time the chart is opened
+  if (!isOpen && iframe && iframe.dataset.src && !iframe.src) {
+    iframe.src = iframe.dataset.src;
+  }
 }
 
 /* ══════════════════════════════════════
