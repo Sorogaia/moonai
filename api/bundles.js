@@ -260,7 +260,7 @@ module.exports = async (req, res) => {
     const jitoBuyers = launchBuyers.filter(([, d]) => d.jitoConfirmed);
     if (jitoBuyers.length >= 1) {
       jitoConfirmedAny = true;
-      const jb = { type: 'JITO', label: '🔴 Jito Bundle', wallets: [], fullWallets: [], amount: 0, pct: '0.00', jitoConfirmed: true };
+      const jb = { type: 'JITO', label: '🔴 Jito Bundle', desc: 'Atomic bundle — all wallets bought in a single Jito transaction', wallets: [], fullWallets: [], amount: 0, pct: '0.00', jitoConfirmed: true };
       for (const [wallet, data] of jitoBuyers) {
         if (bundleSet.has(wallet)) continue;
         bundleSet.add(wallet);
@@ -275,7 +275,7 @@ module.exports = async (req, res) => {
     // Same-funder bundles
     for (const [funder, wallets] of Object.entries(funderGroups)) {
       if (funder.startsWith('solo_') || wallets.length < 2) continue;
-      const fb = { type: 'FUNDED', label: '🟠 Same Funder', wallets: [], fullWallets: [], amount: 0, pct: '0.00', funder: funder.slice(0, 4) + '…' + funder.slice(-4), jitoConfirmed: false };
+      const fb = { type: 'FUNDED', label: '🟠 Funded Together', desc: 'Multiple wallets pre-funded from the same source wallet', wallets: [], fullWallets: [], amount: 0, pct: '0.00', funder: funder.slice(0, 4) + '…' + funder.slice(-4), jitoConfirmed: false };
       for (const { wallet, amount } of wallets) {
         if (bundleSet.has(wallet)) continue;
         bundleSet.add(wallet);
@@ -290,7 +290,7 @@ module.exports = async (req, res) => {
     // Same-slot / adjacent-slot bundles
     for (const [, wallets] of Object.entries(slotBuckets)) {
       if (wallets.length < 2) continue;
-      const sb = { type: 'SLOT', label: '🟡 Same Slot', wallets: [], fullWallets: [], amount: 0, pct: '0.00', slot: wallets[0].slot, jitoConfirmed: false };
+      const sb = { type: 'SLOT', label: '🟡 Block Snipers', desc: 'Multiple wallets bought in the same block — coordinated bots', wallets: [], fullWallets: [], amount: 0, pct: '0.00', slot: wallets[0].slot, jitoConfirmed: false };
       for (const { wallet, amount, jitoConfirmed } of wallets) {
         if (bundleSet.has(wallet)) continue;
         bundleSet.add(wallet);

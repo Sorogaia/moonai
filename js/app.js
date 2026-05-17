@@ -2636,19 +2636,23 @@ async function fetchBundleDetection(ca, devWallet) {
       const stillLine = b.stillHoldingPct != null
         ? `<span style="font-size:10px;color:${bStillCol};margin-left:4px;">▸ ${b.stillHoldingPct}% still held</span>`
         : '';
+      const metaChips = [
+        b.jitoConfirmed ? '<span class="badge-b-jito">JITO</span>' : '',
+        b.funder ? `<span class="bundle-row-meta">source: ${b.funder}</span>` : '',
+        b.slot   ? `<span class="bundle-row-meta">block #${b.slot}</span>` : '',
+      ].filter(Boolean).join('');
+
       return `
       <div class="bundle-row">
         <div class="bundle-row-top">
           <div class="bundle-row-left">
             <span class="bundle-row-name">${b.label}</span>
-            ${b.jitoConfirmed ? '<span class="badge-b-jito">JITO</span>' : ''}
-            ${b.funder ? `<span class="bundle-row-meta">funder: ${b.funder}</span>` : ''}
-            ${b.slot   ? `<span class="bundle-row-meta">slot ${b.slot}</span>` : ''}
-            ${stillLine}
+            ${metaChips}
           </div>
           <span class="bundle-row-pct" style="color:${riskCol};">${b.pct}%</span>
         </div>
-        <div class="bundle-row-wallets">${b.wallets.join(' · ')}</div>
+        ${b.desc ? `<div class="bundle-row-desc">${b.desc}</div>` : ''}
+        <div class="bundle-row-wallets">${b.wallets.join(' · ')}${stillLine}</div>
         <div class="bundle-row-bar"><div class="bundle-row-fill" style="background:${riskCol};width:${Math.min(parseFloat(b.pct) * 3, 100)}%;"></div></div>
       </div>`;
     }).join('');
