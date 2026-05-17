@@ -1174,10 +1174,31 @@ async function runAnalysis(raw) {
     await new Promise(r => setTimeout(r, 300));
     renderTrencher(currentCA, dex, pump, solPrice);
 
-    // seed chat context with what we know
-    const ctx = `Token: ${pump?.name||dex?.name||currentCA} ($${pump?.symbol||dex?.symbol||'?'}), CA: ${currentCA}, MC: ${fmtNum(dex?.mc||pump?.mc)}, Vol 24h: ${fmtNum(dex?.vol24h)}, Liquidity: ${fmtNum(dex?.liq)}, Bonded: ${pump?.bonded ? 'Yes' : 'No'}, Dev: ${pump?.dev||'unknown'}.`;
-    chatMessages.push({ role:'user', content: `I just looked up this Solana token. Here is the live data: ${ctx}` });
-    chatMessages.push({ role:'assistant', content: `Got it. I have the live data for ${pump?.name||currentCA}. What do you want to know?` });
+    // seed chat context with everything we know
+    const devWalletShort = pump?.dev ? pump.dev.slice(0,8)+'…' : 'unknown';
+    const ctx = [
+      `Token: ${pump?.name||dex?.name||currentCA} ($${pump?.symbol||dex?.symbol||'?'})`,
+      `CA: ${currentCA}`,
+      `MC: ${fmtNum(dex?.mc||pump?.mc)}`,
+      `Price: ${fmtPrice(dex?.price)}`,
+      `Vol 24h: ${fmtNum(dex?.vol24h)}`,
+      `Vol 1h: ${fmtNum(dex?.vol1h)}`,
+      `Liquidity: ${fmtNum(dex?.liq)}`,
+      `Bonded: ${pump?.bonded ? 'Yes — migrated to Raydium' : 'No — still on bonding curve'}`,
+      `Bonding curve: ${pump?.bondedPct ? pump.bondedPct+'% filled' : 'unknown'}`,
+      `1h change: ${dex?.priceChange1h ? dex.priceChange1h+'%' : '—'}`,
+      `24h change: ${dex?.priceChange24h ? dex.priceChange24h+'%' : '—'}`,
+      `Buys 24h: ${dex?.buys24h||'—'} | Sells 24h: ${dex?.sells24h||'—'}`,
+      `Dev wallet: ${devWalletShort}`,
+      `Twitter: ${pump?.twitter||'none'} | Telegram: ${pump?.telegram||'none'} | Website: ${pump?.website||'none'}`,
+      pump?.description ? `Description: ${pump.description.slice(0,200)}` : '',
+    ].filter(Boolean).join(', ');
+
+    // holder data gets added async once Helius responds
+    window._moonaiHolderCtx = '';
+
+    chatMessages.push({ role:'user', content: `I just looked up this Solana token. Live data: ${ctx}` });
+    chatMessages.push({ role:'assistant', content: `Got it — I have full live data for ${pump?.name||currentCA}. Ask me anything about it.` });
 
     document.getElementById('sendBtn').disabled = false;
     return;
@@ -1693,6 +1714,28 @@ async function fetchTopHolders(ca, devWallet, solPrice, mcRaw) {
 
     const holdersStatEl = document.getElementById('holdersStatVal');
     if (holdersStatEl) holdersStatEl.textContent = data.holders.length + '+ tracked';
+
+    // Inject holder data into chat context so AI can answer questions about it
+    const devHolder  = devWallet ? data.holders.find(h => h.owner.toLowerCase() === devWallet.toLowerCase()) : null;
+    const holderLines = data.holders.slice(0, 5).map((h, i) => {
+      const isDev  = devWallet && h.owner.toLowerCase() === devWallet.toLowerCase();
+      const tag    = isDev ? ' [DEV]' : h.pct >= 10 ? ' [WHALE]' : '';
+      const bought = h.totalBought > 0 ? `, bought ${fmtSupply(h.totalBought)} tokens` : '';
+      const spent  = h.solSpent > 0 ? ` spending ${h.solSpent.toFixed(2)} SOL` : '';
+      const sold   = h.hasSold ? `, sold ${h.soldPct}% of position` : h.hasSold === false ? ', no sells' : '';
+      return `#${i+1}${tag} ${h.owner.slice(0,6)}… holds ${h.pct.toFixed(2)}%${bought}${spent}${sold}`;
+    });
+
+    const devCtx = devHolder
+      ? `Dev wallet: holds ${devHolder.pct.toFixed(2)}% of supply${devHolder.solSpent > 0 ? `, initially spent ${devHolder.solSpent.toFixed(2)} SOL` : ''}${devHolder.hasSold ? `, has sold ${devHolder.soldPct}% of position` : devHolder.hasSold === false ? ', has NOT sold' : ''}.`
+      : devWallet ? 'Dev wallet not in top 10 holders (may have sold or transferred).' : '';
+
+    const holderCtx = `Top holder data: ${holderLines.join(' | ')}. ${devCtx} Top 10 hold ${data.holders.reduce((s,h)=>s+h.pct,0).toFixed(1)}% of supply.`;
+
+    // Update the seeded chat context with holder info
+    if (chatMessages.length >= 2) {
+      chatMessages[0].content += ` HOLDER DATA: ${holderCtx}`;
+    }
 
   } catch {
     bodyEl.textContent = 'Holder data unavailable.';
