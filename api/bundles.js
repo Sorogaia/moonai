@@ -33,8 +33,17 @@ const EXCLUDED_ACCOUNTS = new Set([
   'Ce6TQqeHC9p8KetsN6JsjHK7UTZk7nasjjnr7XxXp9F1', // pump.fun fee
 ]);
 
+const FETCH_TIMEOUT_MS = 10_000; // 10s per call — prevents single slow call consuming full 30s limit
+
+function fetchWithTimeout(url, opts = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  return fetch(url, { ...opts, signal: controller.signal })
+    .finally(() => clearTimeout(timer));
+}
+
 async function rpc(id, method, params) {
-  const res = await fetch(RPC_URL(), {
+  const res = await fetchWithTimeout(RPC_URL(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ jsonrpc: '2.0', id, method, params }),
@@ -44,7 +53,7 @@ async function rpc(id, method, params) {
 
 async function getEnhancedTxns(signatures) {
   if (!signatures.length) return [];
-  const res = await fetch(ENHANCED_URL(), {
+  const res = await fetchWithTimeout(ENHANCED_URL(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ transactions: signatures.slice(0, 100) }),
@@ -89,8 +98,11 @@ async function getFundingWallet(walletAddress, beforeSlot) {
   } catch { return null; }
 }
 
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://moonaiapp.xyz';
+
 module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  res.setHeader('Vary', 'Origin');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const ip      = getIP(req);

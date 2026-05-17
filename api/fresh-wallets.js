@@ -13,12 +13,15 @@ async function rpc(id, method, params) {
   return res.json();
 }
 
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://moonaiapp.xyz';
+
 module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  res.setHeader('Vary', 'Origin');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const ip      = getIP(req);
-  const allowed = await checkRateLimit(ip, { limit: 60, window: 60, prefix: 'freshw' }).catch(() => true);
+  const allowed = await checkRateLimit(ip, { limit: 60, window: 60, prefix: 'freshw' }).catch(() => false);
   if (!allowed) return res.status(429).json({ error: 'Rate limit exceeded.' });
 
   const { ca, created } = req.query;

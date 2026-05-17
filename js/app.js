@@ -244,11 +244,11 @@ function buildTickerHTML(tokens) {
     const changeStr = isNaN(changeVal) ? '' : (changeVal >= 0 ? '+' : '') + changeVal.toFixed(1) + '%';
     const changeClass = isNaN(changeVal) ? '' : changeVal >= 0 ? 'ticker-change-up' : 'ticker-change-down';
     const logo = t.logo
-      ? `<img class="ticker-logo" src="${t.logo}" alt="${t.symbol}" onerror="this.style.display='none';">`
+      ? `<img class="ticker-logo" src="${escHtml(t.logo)}" alt="${escHtml(t.symbol)}" onerror="this.style.display='none';">`
       : `<span style="font-size:14px;">🪙</span>`;
     return `<div class="ticker-item">
       ${logo}
-      <span class="ticker-symbol">${t.symbol}</span>
+      <span class="ticker-symbol">${escHtml(t.symbol)}</span>
       <span class="ticker-price">${fmtTickerPrice(t.price)}</span>
       ${changeStr ? `<span class="${changeClass}">${changeStr}</span>` : ''}
     </div>`;
@@ -1703,8 +1703,7 @@ async function runAnalysis(raw) {
       pump?.description ? `Description: ${pump.description.slice(0,200)}` : '',
     ].filter(Boolean).join(', ');
 
-    // holder data gets added async once Helius responds
-    window._moonaiHolderCtx = '';
+    // holder/bundle context injected into _liveData as async scans complete
 
     chatMessages.push({ role:'user', content: `I just looked up this Solana token. Live data: ${ctx}` });
     chatMessages.push({ role:'assistant', content: `Got it — I have full live data for ${pump?.name||currentCA}. Ask me anything about it.` });
@@ -2292,12 +2291,18 @@ function startAutoRefresh(ca) {
     const vol   = fmtNum(dex.vol24h);
     const liq   = fmtNum(dex.liq);
 
-    // ATH update
+    // ATH update — only update the stat card if current MC exceeds BOTH the
+    // session ATH and the real historical ATH loaded from GeckoTerminal.
+    // Prevents the 60s refresh from overwriting the real ATH with a lower current MC.
     const mcRaw = parseFloat(dex.mc) || 0;
     if (mcRaw > 0 && (!sessionATH[ca] || mcRaw > sessionATH[ca].mc)) {
       sessionATH[ca] = { mc: mcRaw, price: dex.price, time: Date.now() };
-      const athEl = document.getElementById('athMcVal');
-      if (athEl) athEl.textContent = fmtNum(mcRaw);
+      // Only write to the DOM if there's no confirmed real ATH, or current MC exceeds it
+      const realAth = _liveData.realAthMc || 0;
+      if (mcRaw > realAth) {
+        const athEl = document.getElementById('athMcVal');
+        if (athEl) athEl.textContent = fmtNum(mcRaw);
+      }
     }
 
     // Patch individual elements without full re-render
@@ -2319,14 +2324,18 @@ function startAutoRefresh(ca) {
   }, 60000);
 }
 
+let _refreshTick = null;
 function updateRefreshIndicator() {
   const el = document.getElementById('refreshTimer');
   if (!el) return;
+  if (_refreshTick) { clearInterval(_refreshTick); _refreshTick = null; }
   el.textContent = 'LIVE';
   let secs = 60;
-  const tick = setInterval(() => {
+  _refreshTick = setInterval(() => {
     secs--;
-    if (secs <= 0 || !document.getElementById('refreshTimer')) { clearInterval(tick); return; }
+    if (secs <= 0 || !document.getElementById('refreshTimer')) {
+      clearInterval(_refreshTick); _refreshTick = null; return;
+    }
     el.textContent = `↻ ${secs}s`;
   }, 1000);
 }
@@ -2919,6 +2928,9 @@ async function fetchTokenHistory(ca, pairAddress) {
 
     if (!res.ok || data.error || !data.athPrice) return;
 
+    // Store real ATH so the 60s auto-refresh cannot overwrite it with a lower current MC
+    if (data.athMc > 0) _liveData.realAthMc = data.athMc;
+
     // Update ATH MC stat card with real all-time high
     const athEl    = document.getElementById('athMcVal');
     const athCard  = athEl?.closest('.metric-card');
@@ -2956,7 +2968,7 @@ async function fetchTokenHistory(ca, pairAddress) {
 
     // Add launch info line below the stats if not already there
     if (data.launchPrice && data.daysSinceLaunch != null) {
-      const statsGrid = document.querySelector('.stats-4');
+      const statsGrid = document.querySelector('.stats-8');
       if (statsGrid && !document.getElementById('launchInfoBar')) {
         const launchBar = document.createElement('div');
         launchBar.id = 'launchInfoBar';

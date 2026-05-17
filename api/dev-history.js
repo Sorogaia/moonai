@@ -1,13 +1,16 @@
 const { isValidCA, getIP } = require('./_validate');
 const { checkRateLimit }   = require('./_ratelimit');
 
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://moonaiapp.xyz';
+
 module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const ip      = getIP(req);
-  const allowed = await checkRateLimit(ip, { limit: 30, window: 60, prefix: 'devhist' }).catch(() => true);
+  const allowed = await checkRateLimit(ip, { limit: 30, window: 60, prefix: 'devhist' }).catch(() => false);
   if (!allowed) return res.status(429).json({ error: 'Rate limit exceeded.' });
 
   const { dev } = req.query;
@@ -66,11 +69,12 @@ module.exports = async (req, res) => {
     const rug_rate     = total > 0 ? dead_count / total : 0;
 
     let badge = 'UNKNOWN';
-    if (total === 0)          badge = 'NEW_DEV';
-    else if (rug_rate >= 0.7) badge = 'SERIAL_RUGGER';
-    else if (rug_rate >= 0.4) badge = 'MIXED';
-    else if (bonded_count >= Math.ceil(total * 0.5)) badge = 'BUILDER';
-    else badge = 'CLEAN';
+    if (total === 0)                                      badge = 'NEW_DEV';
+    else if (rug_rate >= 0.7)                             badge = 'SERIAL_RUGGER';
+    else if (rug_rate >= 0.4)                             badge = 'MIXED';
+    else if (bonded_count >= 1 && rug_rate < 0.4)         badge = 'BUILDER';
+    else if (rug_rate < 0.2 && total >= 2)                badge = 'CLEAN';
+    else                                                  badge = 'MIXED';
 
     res.json({ tokens, badge, total, alive: alive_count, dead: dead_count, bonded: bonded_count });
   } catch {

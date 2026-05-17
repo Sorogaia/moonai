@@ -16,12 +16,15 @@ const HELIUS_KEY = process.env.HELIUS_API_KEY;
  *     "high" candle across all pools so we don't miss a peak that happened
  *     on a different pool.
  */
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://moonaiapp.xyz';
+
 module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  res.setHeader('Vary', 'Origin');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const ip      = getIP(req);
-  const allowed = await checkRateLimit(ip, { limit: 30, window: 60, prefix: 'history' }).catch(() => true);
+  const allowed = await checkRateLimit(ip, { limit: 30, window: 60, prefix: 'history' }).catch(() => false);
   if (!allowed) return res.status(429).json({ error: 'Rate limit exceeded.' });
 
   const { ca, pair } = req.query;

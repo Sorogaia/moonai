@@ -1,17 +1,20 @@
 const { isValidCA, isValidSymbol, getIP } = require('./_validate');
 const { checkRateLimit }   = require('./_ratelimit');
 
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://moonaiapp.xyz';
+
 module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const ip      = getIP(req);
-  const allowed = await checkRateLimit(ip, { limit: 30, window: 60, prefix: 'vamps' }).catch(() => true);
+  const allowed = await checkRateLimit(ip, { limit: 30, window: 60, prefix: 'vamps' }).catch(() => false);
   if (!allowed) return res.status(429).json({ error: 'Rate limit exceeded.' });
 
-  const { ca, symbol, name } = req.query;
-  if (!ca || !isValidCA(ca))         return res.status(400).json({ error: 'Invalid token address.' });
+  const { ca, symbol } = req.query; // name param removed — unused in backend logic
+  if (!ca || !isValidCA(ca))             return res.status(400).json({ error: 'Invalid token address.' });
   if (!symbol || !isValidSymbol(symbol)) return res.status(400).json({ error: 'Invalid symbol.' });
 
   try {

@@ -85,12 +85,15 @@ async function getWalletActivity(wallet, mint) {
   }
 }
 
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://moonaiapp.xyz';
+
 module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  res.setHeader('Vary', 'Origin');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const ip      = getIP(req);
-  const allowed = await checkRateLimit(ip, { limit: 30, window: 60, prefix: 'holders' }).catch(() => true);
+  const allowed = await checkRateLimit(ip, { limit: 30, window: 60, prefix: 'holders' }).catch(() => false);
   if (!allowed) return res.status(429).json({ error: 'Rate limit exceeded.' });
 
   const { ca } = req.query;
