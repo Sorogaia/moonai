@@ -168,13 +168,101 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target === this) closeV2Modal();
   });
 
+  // Restore sidebar collapsed state
+  if (localStorage.getItem('sidebarCollapsed') === 'true') {
+    document.getElementById('sidebar')?.classList.add('collapsed');
+  }
+
+  // Render saved recents
+  renderSidebarRecents();
+
   // If the URL has a CA hash (e.g. from a refresh or shared link), auto-run analysis
   const hashCA = window.location.hash.slice(1).trim();
   if (hashCA && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(hashCA)) {
-    // Small delay so the page finishes rendering before analysis fires
     setTimeout(() => runAnalysis(hashCA), 120);
   }
 });
+
+/* ══════════════════════════════════════
+   SIDEBAR
+══════════════════════════════════════ */
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  if (!sidebar) return;
+  sidebar.classList.toggle('collapsed');
+  localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+}
+
+function newAnalysis() {
+  clearAutoRefresh();
+  hasAnalyzed  = false;
+  currentCA    = '';
+  chatMessages = [];
+  _liveData    = {};
+  history.replaceState(null, '', ' ');
+
+  document.getElementById('feedArea').style.display    = 'none';
+  document.getElementById('welcomeView').style.display = 'block';
+  document.getElementById('exampleRow').style.display  = '';
+  document.getElementById('suggestionsRow').style.display = 'none';
+  document.getElementById('chatFeed').innerHTML = '';
+  document.getElementById('resultZone').innerHTML = '';
+  document.getElementById('mainInput').value = '';
+  document.getElementById('mainInput').style.height = 'auto';
+  document.getElementById('sendBtn').disabled = false;
+
+  // deactivate sidebar items
+  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+}
+
+// Save a CA to localStorage recents (max 20)
+function saveToRecents(ca, name, symbol, imgUrl) {
+  try {
+    const key = 'moonai_recents';
+    const existing = JSON.parse(localStorage.getItem(key) || '[]');
+    // Remove duplicate if already there
+    const filtered = existing.filter(r => r.ca !== ca);
+    const entry = { ca, name: name || ca.slice(0,8)+'…', symbol: symbol || '', imgUrl: imgUrl || null, ts: Date.now() };
+    filtered.unshift(entry);
+    localStorage.setItem(key, JSON.stringify(filtered.slice(0, 20)));
+    renderSidebarRecents();
+  } catch {}
+}
+
+// Render the recents list in the sidebar
+function renderSidebarRecents() {
+  const container = document.getElementById('sidebarRecents');
+  if (!container) return;
+  try {
+    const recents = JSON.parse(localStorage.getItem('moonai_recents') || '[]');
+    if (!recents.length) {
+      container.innerHTML = '<div class="sidebar-empty">No recent searches</div>';
+      return;
+    }
+    container.innerHTML = recents.map(r => {
+      const imgHtml = r.imgUrl
+        ? `<img src="${escHtml(r.imgUrl)}" alt="" onerror="this.outerHTML='🪙';">`
+        : '🪙';
+      const label = r.symbol ? `$${escHtml(r.symbol)}` : escHtml(r.name);
+      const sub   = r.ca.slice(0, 6) + '…' + r.ca.slice(-4);
+      const isActive = r.ca === currentCA;
+      return `<div class="sidebar-item${isActive ? ' active' : ''}" onclick="sidebarLoadCA('${escHtml(r.ca)}')" title="${escHtml(r.name)}">
+        <div class="sidebar-item-icon">${imgHtml}</div>
+        <div class="sidebar-item-text">
+          <div class="sidebar-item-name">${label}</div>
+          <div class="sidebar-item-ca">${sub}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch {
+    container.innerHTML = '<div class="sidebar-empty">No recent searches</div>';
+  }
+}
+
+function sidebarLoadCA(ca) {
+  if (ca === currentCA) return; // already viewing this
+  runAnalysis(ca);
+}
 
 /* ══════════════════════════════════════
    LIVE TICKER
@@ -1002,6 +1090,10 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
 
   // Token image — DexScreener first, then pump.fun, then Jupiter
   const imgSrc  = dex?.imageUrl || pump?.image || jup?.image || null;
+
+  // Save to sidebar recents
+  saveToRecents(ca, name, symbol, imgSrc);
+  renderSidebarRecents();
   const tokenImg = `<div id="tokenImgWrap" class="tok-img-ph">🪙</div>`;
 
   // Trading platform ref links
