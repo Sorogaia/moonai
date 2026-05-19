@@ -1,4 +1,4 @@
-const { checkRateLimit } = require('./_ratelimit');
+const { checkRateLimit, checkDailyLimit, checkGlobalDaily, checkKillSwitch } = require('./_ratelimit');
 const { getIP }          = require('./_validate');
 
 const ANTHROPIC_KEY  = process.env.ANTHROPIC_API_KEY;
@@ -25,11 +25,30 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST')   return res.status(405).json({ error: { message: 'Method not allowed' } });
 
-  // Rate limit: 20 AI requests per minute per IP
-  const ip      = getIP(req);
+  const ip = getIP(req);
+
+  // Layer 1 — kill switch (emergency hard stop, flipped manually in Upstash)
+  const alive = await checkKillSwitch().catch(() => true);
+  if (!alive) {
+    return res.status(503).json({ error: { message: 'Service temporarily unavailable.' } });
+  }
+
+  // Layer 2 — per-minute rate limit (20 req/min per IP)
   const allowed = await checkRateLimit(ip, { limit: 20, window: 60, prefix: 'chat' }).catch(() => false);
   if (!allowed) {
     return res.status(429).json({ error: { message: 'Rate limit exceeded — try again in a minute.' } });
+  }
+
+  // Layer 3 — per-IP daily cap (100 AI requests/day)
+  const dailyOk = await checkDailyLimit(ip, 'chat').catch(() => true);
+  if (!dailyOk) {
+    return res.status(429).json({ error: { message: 'Daily limit reached — resets at midnight UTC.' } });
+  }
+
+  // Layer 4 — global daily cap (1000 AI requests/day across all users)
+  const globalOk = await checkGlobalDaily('chat').catch(() => true);
+  if (!globalOk) {
+    return res.status(503).json({ error: { message: 'Service busy — please try again tomorrow.' } });
   }
 
   const { model, max_tokens, system, messages } = req.body || {};

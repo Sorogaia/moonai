@@ -1,5 +1,6 @@
-const { isValidCA, isValidSymbol, getIP } = require('./_validate');
-const { checkRateLimit }   = require('./_ratelimit');
+const { isValidCA, isValidSymbol, getIP, safeImageUrl } = require('./_validate');
+const { checkRateLimit }        = require('./_ratelimit');
+const { isSuspended, check }    = require('./_anomaly');
 
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://moonaiapp.xyz';
 
@@ -13,7 +14,11 @@ module.exports = async (req, res) => {
   const allowed = await checkRateLimit(ip, { limit: 30, window: 60, prefix: 'vamps' }).catch(() => false);
   if (!allowed) return res.status(429).json({ error: 'Rate limit exceeded.' });
 
-  const { ca, symbol } = req.query; // name param removed — unused in backend logic
+  if (await isSuspended('dexscreener').catch(() => false)) {
+    return res.json({ vamps: [] });
+  }
+
+  const { ca, symbol } = req.query;
   if (!ca || !isValidCA(ca))             return res.status(400).json({ error: 'Invalid token address.' });
   if (!symbol || !isValidSymbol(symbol)) return res.status(400).json({ error: 'Invalid symbol.' });
 
@@ -24,8 +29,12 @@ module.exports = async (req, res) => {
     );
     if (!r.ok) return res.json({ vamps: [] });
 
-    const data    = await r.json();
-    const caLower = ca.toLowerCase();
+    const data = await r.json();
+
+    // Schema validation — flag anomalous DexScreener responses
+    await check('dexscreener', Array.isArray(data.pairs), 'pairs', data.pairs);
+
+    const caLower  = ca.toLowerCase();
     const symLower = symbol.toLowerCase();
 
     const vamps = (data.pairs || [])
@@ -43,7 +52,7 @@ module.exports = async (req, res) => {
         ca:             p.baseToken.address,
         name:           p.baseToken.name,
         symbol:         p.baseToken.symbol,
-        image:          p.info?.imageUrl || null,
+        image:          safeImageUrl(p.info?.imageUrl),
         mc:             parseFloat(p.fdv || p.marketCap || 0),
         volume24h:      parseFloat(p.volume?.h24 || 0),
         priceChange24h: parseFloat(p.priceChange?.h24 || 0),

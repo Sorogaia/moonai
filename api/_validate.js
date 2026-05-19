@@ -32,4 +32,13 @@ function getIP(req) {
   );
 }
 
-module.exports = { isValidCA, isValidSymbol, getIP };
+/**
+ * Validate an image URL from a third-party API before returning it to the client.
+ * Only allows https:// URLs — blocks javascript:, data:, http://, and anything else.
+ */
+function safeImageUrl(url) {
+  if (!url || typeof url !== 'string') return null;
+  return url.trimStart().startsWith('https://') ? url : null;
+}
+
+module.exports = { isValidCA, isValidSymbol, getIP, safeImageUrl };

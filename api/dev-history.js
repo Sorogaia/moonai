@@ -1,5 +1,6 @@
-const { isValidCA, getIP } = require('./_validate');
-const { checkRateLimit }   = require('./_ratelimit');
+const { isValidCA, getIP, safeImageUrl } = require('./_validate');
+const { checkRateLimit }             = require('./_ratelimit');
+const { isSuspended, check }         = require('./_anomaly');
 
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://moonaiapp.xyz';
 
@@ -13,8 +14,15 @@ module.exports = async (req, res) => {
   const allowed = await checkRateLimit(ip, { limit: 30, window: 60, prefix: 'devhist' }).catch(() => false);
   if (!allowed) return res.status(429).json({ error: 'Rate limit exceeded.' });
 
+  const pumpSuspended = await isSuspended('pumpfun').catch(() => false);
+  const dexSuspended  = await isSuspended('dexscreener').catch(() => false);
+
   const { dev } = req.query;
   if (!dev || !isValidCA(dev)) return res.status(400).json({ error: 'Invalid dev address.' });
+
+  if (pumpSuspended) {
+    return res.json({ tokens: [], badge: 'UNKNOWN', total: 0, alive: 0, dead: 0, bonded: 0 });
+  }
 
   try {
     const pumpRes = await fetch(
@@ -25,6 +33,10 @@ module.exports = async (req, res) => {
     if (!pumpRes.ok) return res.json({ tokens: [], badge: 'UNKNOWN', total: 0, alive: 0, dead: 0, bonded: 0 });
 
     const coins = await pumpRes.json();
+
+    // Schema validation — flag anomalous pump.fun responses
+    await check('pumpfun', Array.isArray(coins), 'coins', coins);
+
     if (!Array.isArray(coins) || coins.length === 0) {
       return res.json({ tokens: [], badge: 'NEW_DEV', total: 0, alive: 0, dead: 0, bonded: 0 });
     }
@@ -33,20 +45,23 @@ module.exports = async (req, res) => {
       coins.slice(0, 8).map(async t => {
         const ca = t.mint;
         let mc = 0, alive = false;
-        try {
-          const dexRes = await fetch(
-            `https://api.dexscreener.com/latest/dex/tokens/${ca}`,
-            { headers: { 'Accept': 'application/json' } }
-          );
-          if (dexRes.ok) {
-            const dexData = await dexRes.json();
-            const pair    = dexData?.pairs?.[0];
-            if (pair) {
-              mc    = parseFloat(pair.fdv || pair.marketCap || 0);
-              alive = mc > 1000;
+        if (!dexSuspended) {
+          try {
+            const dexRes = await fetch(
+              `https://api.dexscreener.com/latest/dex/tokens/${ca}`,
+              { headers: { 'Accept': 'application/json' } }
+            );
+            if (dexRes.ok) {
+              const dexData = await dexRes.json();
+              const pair    = dexData?.pairs?.[0];
+              if (pair) {
+                await check('dexscreener', Array.isArray(dexData.pairs), 'pairs', dexData.pairs);
+                mc    = parseFloat(pair.fdv || pair.marketCap || 0);
+                alive = mc > 1000;
+              }
             }
-          }
-        } catch {}
+          } catch {}
+        }
 
         const bonded = !!(t.complete);
         if (bonded) alive = true;
@@ -55,7 +70,7 @@ module.exports = async (req, res) => {
           ca,
           name:    t.name    || '—',
           symbol:  t.symbol  || '—',
-          image:   t.image_uri || null,
+          image:   safeImageUrl(t.image_uri),
           mc, bonded, alive,
           created: t.created_timestamp ? t.created_timestamp * 1000 : null,
         };

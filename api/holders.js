@@ -1,5 +1,6 @@
-const { isValidCA, getIP } = require('./_validate');
-const { checkRateLimit }   = require('./_ratelimit');
+const { isValidCA, getIP }      = require('./_validate');
+const { checkRateLimit }        = require('./_ratelimit');
+const { isSuspended, check }    = require('./_anomaly');
 
 const HELIUS_KEY  = process.env.HELIUS_API_KEY;
 const RPC_URL     = () => `https://mainnet.helius-rpc.com/?api-key=${HELIUS_KEY}`;
@@ -96,6 +97,10 @@ module.exports = async (req, res) => {
   const allowed = await checkRateLimit(ip, { limit: 30, window: 60, prefix: 'holders' }).catch(() => false);
   if (!allowed) return res.status(429).json({ error: 'Rate limit exceeded.' });
 
+  if (await isSuspended('helius').catch(() => false)) {
+    return res.status(503).json({ error: 'Holder data temporarily unavailable.' });
+  }
+
   const { ca } = req.query;
   if (!ca || !isValidCA(ca)) return res.status(400).json({ error: 'Invalid token address.' });
   if (!HELIUS_KEY)            return res.status(500).json({ error: 'Service unavailable.' });
@@ -136,6 +141,11 @@ module.exports = async (req, res) => {
     // A wallet with 2 accounts at positions 11 + 15 combined might be top-5.
     const accounts    = largestData.result?.value?.slice(0, 20) || [];
     const totalSupply = parseFloat(supplyData.result?.value?.uiAmount) || 0;
+
+    // Schema validation — flag anomalous Helius responses
+    await check('helius', Array.isArray(largestData.result?.value), 'getTokenLargestAccounts.result.value', largestData.result?.value);
+    await check('helius', typeof supplyData.result?.value?.uiAmount === 'number' && supplyData.result.value.uiAmount >= 0, 'getTokenSupply.result.value.uiAmount', supplyData.result?.value?.uiAmount);
+
     if (accounts.length === 0) return res.status(200).json({ holders: [], totalSupply, totalHolderCount });
 
     // Step 2: resolve token account → owner wallet

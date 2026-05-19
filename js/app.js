@@ -240,8 +240,8 @@ function renderSidebarRecents() {
       return;
     }
     container.innerHTML = recents.map(r => {
-      const imgHtml = r.imgUrl
-        ? `<img src="${escHtml(r.imgUrl)}" alt="" onerror="this.outerHTML='🪙';">`
+      const imgHtml = safeImg(r.imgUrl)
+        ? `<img src="${escHtml(safeImg(r.imgUrl))}" alt="" onerror="this.outerHTML='🪙';">`
         : '🪙';
       const label = r.symbol ? `$${escHtml(r.symbol)}` : escHtml(r.name);
       const sub   = r.ca.slice(0, 6) + '…' + r.ca.slice(-4);
@@ -331,8 +331,8 @@ function buildTickerHTML(tokens) {
     const changeVal = parseFloat(t.change);
     const changeStr = isNaN(changeVal) ? '' : (changeVal >= 0 ? '+' : '') + changeVal.toFixed(1) + '%';
     const changeClass = isNaN(changeVal) ? '' : changeVal >= 0 ? 'ticker-change-up' : 'ticker-change-down';
-    const logo = t.logo
-      ? `<img class="ticker-logo" src="${escHtml(t.logo)}" alt="${escHtml(t.symbol)}" onerror="this.style.display='none';">`
+    const logo = safeImg(t.logo)
+      ? `<img class="ticker-logo" src="${escHtml(safeImg(t.logo))}" alt="${escHtml(t.symbol)}" onerror="this.style.display='none';">`
       : `<span style="font-size:14px;">🪙</span>`;
     return `<div class="ticker-item">
       ${logo}
@@ -1089,7 +1089,7 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
     : `<span class="tok-warn">⚠ Token not found on DexScreener/pump.fun</span>`;
 
   // Token image — DexScreener first, then pump.fun, then Jupiter
-  const imgSrc  = dex?.imageUrl || pump?.image || jup?.image || null;
+  const imgSrc  = safeImg(dex?.imageUrl) || safeImg(pump?.image) || safeImg(jup?.image) || null;
 
   // Save to sidebar recents
   saveToRecents(ca, name, symbol, imgSrc);
@@ -2934,8 +2934,8 @@ async function fetchDevHistory(devWallet) {
       const status  = t.bonded ? '<span class="dev-tok-status status-bonded">BONDED</span>'
                     : t.alive  ? '<span class="dev-tok-status status-alive">ALIVE</span>'
                     :            '<span class="dev-tok-status status-dead">DEAD</span>';
-      const imgHtml = t.image
-        ? `<img src="${t.image}" class="dev-tok-img" onerror="this.outerHTML='<div class=\\'dev-tok-img-ph\\'>🪙</div>'">`
+      const imgHtml = safeImg(t.image)
+        ? `<img src="${escHtml(safeImg(t.image))}" class="dev-tok-img" onerror="this.outerHTML='<div class=\\'dev-tok-img-ph\\'>🪙</div>'">`
         : `<div class="dev-tok-img-ph">🪙</div>`;
       return `
         <div class="dev-tok-row" onclick="loadExample('${escHtml(t.ca)}')" title="Analyse ${escHtml(t.name)}">
@@ -2989,8 +2989,8 @@ async function fetchVampCoins(ca, symbol, name) {
       const mcStr   = v.mc > 0 ? fmtNum(v.mc) : '—';
       const ch      = v.priceChange24h;
       const chStr   = ch != null ? `<span style="color:${ch>=0?'var(--accent)':'var(--danger)'};">${ch>=0?'+':''}${ch.toFixed(1)}%</span>` : '';
-      const imgHtml = v.image
-        ? `<img src="${v.image}" class="vamp-tok-img" onerror="this.outerHTML='<div class=\\'vamp-tok-img-ph\\'>🧛</div>'">`
+      const imgHtml = safeImg(v.image)
+        ? `<img src="${escHtml(safeImg(v.image))}" class="vamp-tok-img" onerror="this.outerHTML='<div class=\\'vamp-tok-img-ph\\'>🧛</div>'">`
         : `<div class="vamp-tok-img-ph">🧛</div>`;
       return `
         <div class="vamp-tok-row" onclick="loadExample('${escHtml(v.ca)}')" title="Analyse ${escHtml(v.name)}">
@@ -3269,6 +3269,12 @@ function escHtml(s) {
     .replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;')
     .replace(/'/g,'&#039;');
+}
+
+// Only allow https:// image URLs — blocks javascript:, data:, http://, etc.
+function safeImg(url) {
+  if (!url || typeof url !== 'string') return null;
+  return url.trimStart().startsWith('https://') ? url : null;
 }
 
 function formatAlpha(text) {
