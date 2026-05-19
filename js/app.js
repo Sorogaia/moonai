@@ -661,7 +661,7 @@ async function fetchPumpFun(ca) {
       symbol:      d.symbol          || '—',
       description: d.description     || '',
       dev:         d.creator         || null,
-      bonded:      d.complete         === true,
+      bonded:      d.complete === true || !!d.raydium_pool,
       bondedPct:   d.bonding_curve_percentage != null
                      ? parseFloat(d.bonding_curve_percentage).toFixed(1)
                      : null,
@@ -1266,10 +1266,10 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
         </div>
         <div class="tiq">
           <div class="tiq-val" id="tiq-lp">${
-            pump?.bonded === true                         ? '<span style="color:#14F195;">Burned</span>'
-          : pump?.bonded === false                        ? '<span style="color:#ff9f0a;">Bonding</span>'
-          : pump && pump.bonded == null                   ? '<span style="color:#ff9f0a;">Bonding</span>'
-          : dex?.dex === 'raydium'                        ? '<span style="color:#ff9f0a;">Raydium</span>'
+            pump?.bonded === true  ? '<span style="color:#14F195;">Burned ✓</span>'
+          : pump?.bonded === false ? '<span style="color:#ff9f0a;">Bonding</span>'
+          : dex?.dex === 'raydium' ? '<span style="color:#14F195;">Raydium</span>'
+          : dex?.dex              ? `<span style="color:#ff9f0a;">${escHtml(dex.dex)}</span>`
           : '—'
           }</div>
           <div class="tiq-lbl">LP Status</div>
@@ -2636,9 +2636,9 @@ function renderSafetyScore({ score, flags, good }, info) {
   _liveData.mintRevoked   = info.mintRevoked;
   _liveData.freezeRevoked = info.freezeRevoked;
   _liveData.devSold       = info.devSold;
+  _liveData.devPct        = info.devPct;
   updateRiskStrip();
   updateTokenIntel();
-  _liveData.devPct        = info.devPct;
   _liveData.safetyFlags   = flags.map(f => f.label);
   _liveData.safetyGood    = good;
 }
@@ -2693,8 +2693,8 @@ async function fetchBundleDetection(ca, devWallet) {
             <div class="bstat-val" style="color:#14F195;">None</div>
           </div>
           <div class="bstat" style="background:var(--bg-surface);border:1px solid var(--border2);">
-            <div class="bstat-lbl">New Wallets</div>
-            <div class="bstat-val">${data.newWallets ?? '—'}</div>
+            <div class="bstat-lbl">Wallets</div>
+            <div class="bstat-val">${data.wallets ?? '—'}</div>
           </div>
         </div>
 
@@ -2721,13 +2721,19 @@ async function fetchBundleDetection(ca, devWallet) {
           </div>
         </div>`;
       if (badgeEl) { badgeEl.textContent = 'CLEAN'; badgeEl.className = 'card-badge badge-green'; }
+      // Must update _liveData even for clean tokens so risk strip / verdict are correct
+      _liveData.bundled       = false;
+      _liveData.bundlePct     = 0;
+      _liveData.bundleRisk    = 'LOW';
+      _liveData.jitoConfirmed = false;
+      _liveData.devBundled    = data.devBundled || false;
+      updateRiskStrip(); updateTokenIntel(); updateVerdictBadge();
       return;
     }
 
     // Extra signal badges
     const jitoTag = data.jitoConfirmed ? `<span class="badge-jito">JITO CONFIRMED</span>` : '';
-    const devTag  = data.devBundled    ? `<span class="badge-dev-b">DEV BUNDLED</span>` : '';
-    const newTag  = data.newWallets > 0 ? `<span class="badge-new-w">${data.newWallets} NEW WALLETS</span>` : '';
+    const devTag  = data.devBundled    ? `<span class="badge-dev-b">DEV BUNDLED</span>`   : '';
 
     // "Still holding" colors
     const stillHolding  = data.stillHoldingPct ?? null;
@@ -2779,7 +2785,7 @@ async function fetchBundleDetection(ca, devWallet) {
     bodyEl.innerHTML = `
       <div class="bundle-header">
         <span class="bundle-pct-lbl" style="color:${riskCol};">${pct}% of supply bundled</span>
-        ${jitoTag}${devTag}${newTag}
+        ${jitoTag}${devTag}
       </div>
 
       <div class="bundle-stats">
@@ -2847,7 +2853,7 @@ async function fetchBundleDetection(ca, devWallet) {
     _liveData.bundleWallets       = data.wallets;
     _liveData.jitoConfirmed       = data.jitoConfirmed;
     _liveData.devBundled          = data.devBundled;
-    _liveData.newWallets          = data.newWallets;
+    _liveData.bundleWalletCount   = data.wallets;
     _liveData.bundleStillHolding  = data.stillHoldingPct;
     _liveData.bundleDumped        = data.dumpedPct;
     _liveData.bundleSupplyHeld    = data.stillHoldingSupplyPct;

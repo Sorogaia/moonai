@@ -38,17 +38,28 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: { message: 'Invalid request.' } });
   }
 
-  // Sanitise messages — only valid roles and content; strip injection attempts from user turns
+  // Sanitise messages — strip injection attempts, never leave consecutive same-role turns
   const safeMessages = messages
     .slice(-MAX_MESSAGES)
     .map(m => {
       const raw = typeof m.content === 'string' ? m.content.slice(0, MAX_MSG_LENGTH) : '';
-      const content = m.role === 'user'
-        ? raw.replace(INJECTION_RE, '[removed]')
-        : raw;
-      return { role: m.role === 'assistant' ? 'assistant' : 'user', content };
+      const role = m.role === 'assistant' ? 'assistant' : 'user';
+      const content = role === 'user'
+        ? raw.replace(INJECTION_RE, '[removed]').trim() || '[message removed]'
+        : raw.trim() || '[message removed]';
+      return { role, content };
     })
-    .filter(m => m.content.length > 0);
+    // Remove leading assistant turns (Anthropic requires first message is user)
+    .filter((m, i) => !(i === 0 && m.role === 'assistant'))
+    // Collapse consecutive same-role messages into one
+    .reduce((acc, m) => {
+      const prev = acc[acc.length - 1];
+      if (prev && prev.role === m.role) {
+        prev.content += '\n' + m.content;
+        return acc;
+      }
+      acc.push(m); return acc;
+    }, []);
 
   if (safeMessages.length === 0) {
     return res.status(400).json({ error: { message: 'Invalid request.' } });
