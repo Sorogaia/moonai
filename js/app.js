@@ -52,10 +52,15 @@ window.moonaiTsError    = (code) => {
 async function getTurnstileToken() {
   const deadline = Date.now() + 15000;
   while (Date.now() < deadline) {
-    if (_tsToken) return _tsToken;
+    if (_tsToken) {
+      const token = _tsToken;
+      _tsToken = null;              // consume immediately — prevents duplicate use
+      try { turnstile.reset(); } catch {} // start generating next token now
+      return token;
+    }
     await new Promise(r => setTimeout(r, 100));
   }
-  _tsLog('ts-timeout', { msg: 'no token after 15s — widget may not have loaded or challenge failed' });
+  _tsLog('ts-timeout', { msg: 'no token after 15s' });
   return null;
 }
 
@@ -2013,7 +2018,6 @@ Use the live data above for MC, VOL, LIQUIDITY, DEV WALLET, BONDED status, and S
         turnstileToken: tsToken,
       }),
     });
-    resetTurnstile();
 
     clearInterval(doneTimer);
     steps.forEach((_,i) => {
@@ -2323,7 +2327,6 @@ async function fetchLoreBubble(name, symbol, description, mc, ch24, bonded) {
         turnstileToken: tsToken,
       }),
     });
-    resetTurnstile();
     const data = await res.json();
     const raw  = data?.content?.[0]?.text?.trim() || '';
     const text = raw
@@ -3358,7 +3361,6 @@ async function sendChat(msg, aiPrompt) {
         turnstileToken: tsToken,
       }),
     });
-    resetTurnstile();
 
     if (!resp.ok) {
       const err = await resp.json().catch(()=>({}));
