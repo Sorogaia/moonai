@@ -21,18 +21,20 @@ let _tsExecuted  = false;
 
 window.onloadTurnstileCallback = function () {
   _tsWidgetId = turnstile.render('#turnstile-widget', {
-    sitekey:           '0x4AAAAAADT5PKHwr0fN7aV-',
-    size:              'invisible',
-    callback:          (token) => { _tsToken = token; },
-    'expired-callback': ()     => { _tsToken = null; _tsExecuted = false; },
-    'error-callback':   ()     => { _tsToken = null; _tsExecuted = false; },
+    sitekey:            '0x4AAAAAADT5PKHwr0fN7aV-',
+    size:               'invisible',
+    callback:           (token) => { _tsToken = token; },
+    'expired-callback': ()      => { _tsToken = null; _tsExecuted = false; },
+    'error-callback':   ()      => { _tsToken = null; _tsExecuted = false; },
   });
-  // Pre-execute immediately so token is ready before user submits
-  try { turnstile.execute(_tsWidgetId); _tsExecuted = true; } catch {}
+  // Execute after a short delay to ensure widget is fully initialised
+  setTimeout(() => {
+    try { turnstile.execute(_tsWidgetId); _tsExecuted = true; } catch {}
+  }, 250);
 };
 
 async function getTurnstileToken() {
-  // If widget loaded but not yet executed, trigger now
+  // Execute once if widget loaded but challenge not yet triggered
   if (_tsWidgetId !== null && !_tsExecuted) {
     try { turnstile.execute(_tsWidgetId); _tsExecuted = true; } catch {}
   }
