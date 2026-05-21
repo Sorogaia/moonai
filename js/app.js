@@ -17,50 +17,21 @@ let analysisMode   = 'trencher';
 /* ── Cloudflare Turnstile ── */
 let _tsToken = null;
 
-function _tsLog(event, data) {
-  const payload = JSON.stringify({ event, data });
-  try {
-    // Blob with application/json ensures Vercel parses the body correctly
-    navigator.sendBeacon('/api/log', new Blob([payload], { type: 'application/json' }));
-  } catch {
-    fetch('/api/log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload }).catch(() => {});
-  }
-}
-
-// Fire immediately so we can confirm /api/log works at all
-_tsLog('app-loaded', { ts: Date.now() });
-
-// Check if Turnstile script loads
-window.addEventListener('load', () => {
-  _tsLog('page-load', { turnstileAvailable: typeof turnstile !== 'undefined' });
-});
-
-window.moonaiTsCallback = (token) => {
-  _tsToken = token;
-  _tsLog('ts-callback', { tokenLength: token?.length ?? 0 });
-};
-window.moonaiTsExpired  = () => {
-  _tsLog('ts-expired', {});
-  _tsToken = null;
-  try { turnstile.reset(); } catch {}
-};
-window.moonaiTsError    = (code) => {
-  _tsLog('ts-error', { code });
-  _tsToken = null;
-};
+window.moonaiTsCallback = (token) => { _tsToken = token; };
+window.moonaiTsExpired  = ()      => { _tsToken = null; try { turnstile.reset(); } catch {} };
+window.moonaiTsError    = ()      => { _tsToken = null; };
 
 async function getTurnstileToken() {
   const deadline = Date.now() + 15000;
   while (Date.now() < deadline) {
     if (_tsToken) {
       const token = _tsToken;
-      _tsToken = null;              // consume immediately — prevents duplicate use
-      try { turnstile.reset(); } catch {} // start generating next token now
+      _tsToken = null;
+      try { turnstile.reset(); } catch {}
       return token;
     }
     await new Promise(r => setTimeout(r, 100));
   }
-  _tsLog('ts-timeout', { msg: 'no token after 15s' });
   return null;
 }
 
