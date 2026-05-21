@@ -15,25 +15,38 @@ let chatMessages   = [];
 let analysisMode   = 'trencher';
 
 /* ── Cloudflare Turnstile ── */
-let _tsWidgetId = null;
+let _tsWidgetId  = null;
+let _tsToken     = null;  // set by callback when challenge completes
+let _tsExecuted  = false;
+
 window.onloadTurnstileCallback = function () {
   _tsWidgetId = turnstile.render('#turnstile-widget', {
-    sitekey:  '0x4AAAAAADT5PKHwr0fN7aV-',
-    size:     'invisible',
+    sitekey:           '0x4AAAAAADT5PKHwr0fN7aV-',
+    size:              'invisible',
+    callback:          (token) => { _tsToken = token; },
+    'expired-callback': ()     => { _tsToken = null; _tsExecuted = false; },
+    'error-callback':   ()     => { _tsToken = null; _tsExecuted = false; },
   });
+  // Pre-execute immediately so token is ready before user submits
+  try { turnstile.execute(_tsWidgetId); _tsExecuted = true; } catch {}
 };
+
 async function getTurnstileToken() {
-  for (let i = 0; i < 100; i++) {
-    if (_tsWidgetId !== null) {
-      const token = turnstile.getResponse(_tsWidgetId);
-      if (token) return token;
-      try { turnstile.execute(_tsWidgetId); } catch {}
-    }
+  // If widget loaded but not yet executed, trigger now
+  if (_tsWidgetId !== null && !_tsExecuted) {
+    try { turnstile.execute(_tsWidgetId); _tsExecuted = true; } catch {}
+  }
+  // Wait up to 15 seconds for callback to fire with token
+  for (let i = 0; i < 150; i++) {
+    if (_tsToken) return _tsToken;
     await new Promise(r => setTimeout(r, 100));
   }
   return null;
 }
+
 function resetTurnstile() {
+  _tsToken    = null;
+  _tsExecuted = false;
   if (_tsWidgetId !== null) try { turnstile.reset(_tsWidgetId); } catch {}
 }
 let hasAnalyzed    = false;

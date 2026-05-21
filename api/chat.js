@@ -19,16 +19,23 @@ const TURNSTILE_SECRET  = process.env.TURNSTILE_SECRET_KEY;
 const TURNSTILE_VERIFY  = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
 async function verifyTurnstile(token, ip) {
-  if (!TURNSTILE_SECRET) return true; // skip in dev if secret not configured
-  if (!token) return false;
+  if (!TURNSTILE_SECRET) return true;
+  if (!token) {
+    console.warn('[TURNSTILE] No token received — widget may not have loaded');
+    return false;
+  }
   try {
     const body = new URLSearchParams({ secret: TURNSTILE_SECRET, response: token });
     if (ip && ip !== 'unknown') body.append('remoteip', ip);
     const res  = await fetch(TURNSTILE_VERIFY, { method: 'POST', body });
     const data = await res.json();
+    if (!data.success) {
+      console.warn('[TURNSTILE] Verification failed — error-codes:', JSON.stringify(data['error-codes'] ?? []));
+    }
     return data.success === true;
-  } catch {
-    return true; // fail open if Cloudflare is unreachable
+  } catch (e) {
+    console.error('[TURNSTILE] Fetch error:', e.message);
+    return true; // fail open if Cloudflare unreachable
   }
 }
 
