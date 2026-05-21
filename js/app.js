@@ -18,10 +18,12 @@ let analysisMode   = 'trencher';
 let _tsToken = null;
 
 function _tsLog(event, data) {
+  const payload = JSON.stringify({ event, data });
   try {
-    navigator.sendBeacon('/api/log', JSON.stringify({ event, data }));
+    // Blob with application/json ensures Vercel parses the body correctly
+    navigator.sendBeacon('/api/log', new Blob([payload], { type: 'application/json' }));
   } catch {
-    fetch('/api/log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event, data }) }).catch(() => {});
+    fetch('/api/log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload }).catch(() => {});
   }
 }
 
