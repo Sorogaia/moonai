@@ -187,9 +187,32 @@ function closeV2Modal() {
   document.getElementById('v2Modal').classList.remove('open');
 }
 document.addEventListener('DOMContentLoaded', () => {
+  // V2 modal — backdrop + buttons
   document.getElementById('v2Modal').addEventListener('click', function(e) {
     if (e.target === this) closeV2Modal();
   });
+  document.querySelectorAll('.v2-modal-close').forEach(btn => btn.addEventListener('click', closeV2Modal));
+
+  // Sidebar buttons
+  document.querySelectorAll('.sidebar-toggle, .sidebar-expand').forEach(btn => btn.addEventListener('click', toggleSidebar));
+  document.querySelectorAll('.sidebar-brand, .sidebar-new-btn').forEach(el => el.addEventListener('click', newAnalysis));
+
+  // Mode toggle + send button
+  document.getElementById('modeToggle')?.addEventListener('click', toggleMode);
+  document.getElementById('sendBtn')?.addEventListener('click', handleSend);
+
+  // Static suggestion pills — driven by data-msg attribute
+  document.querySelectorAll('.sug-pill[data-msg]').forEach(pill =>
+    pill.addEventListener('click', () => sendSuggestion(pill.dataset.msg)));
+  // Named pills with JS functions
+  document.getElementById('pillSafetyScore')?.addEventListener('click', revealSafetyScore);
+  document.getElementById('pillROI')?.addEventListener('click', revealROI);
+
+  // Logo image error fallbacks
+  document.querySelectorAll('img.logo-img-moon').forEach(img =>
+    img.addEventListener('error', function () { this.outerHTML = '🌙'; }));
+  document.querySelectorAll('img.logo-img-hide').forEach(img =>
+    img.addEventListener('error', function () { this.style.display = 'none'; }));
 
   // Restore sidebar collapsed state
   if (localStorage.getItem('sidebarCollapsed') === 'true') {
@@ -199,11 +222,72 @@ document.addEventListener('DOMContentLoaded', () => {
   // Render saved recents
   renderSidebarRecents();
 
-  // If the URL has a CA hash (e.g. from a refresh or shared link), auto-run analysis
+  // If the URL has a CA hash, auto-run analysis
   const hashCA = window.location.hash.slice(1).trim();
   if (hashCA && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(hashCA)) {
     setTimeout(() => runAnalysis(hashCA), 120);
   }
+});
+
+// Global click delegation for all dynamically inserted content
+document.addEventListener('click', e => {
+  // Sidebar CA items
+  const sidebarItem = e.target.closest('.sidebar-item[data-ca]');
+  if (sidebarItem) { sidebarLoadCA(sidebarItem.dataset.ca); return; }
+
+  // Chart toggle
+  if (e.target.closest('#chartToggleBtn')) { toggleChart(); return; }
+
+  // Narrative analysis button
+  if (e.target.closest('.analysis-btn')) { runNarrativeAnalysis(); return; }
+
+  // Safety card toggle
+  if (e.target.closest('.safety-toggle')) { toggleSafety(); return; }
+
+  // Copy CA button
+  const copyBtn = e.target.closest('.copy-ca-btn[data-copy-ca]');
+  if (copyBtn) {
+    navigator.clipboard.writeText(copyBtn.dataset.copyCa).then(() => {
+      copyBtn.textContent = '✓ Copied';
+      copyBtn.style.color = 'var(--accent)';
+      setTimeout(() => { copyBtn.textContent = 'Copy CA'; copyBtn.style.color = ''; }, 1500);
+    });
+    return;
+  }
+
+  // Expand/collapse holders
+  const expandBtn = e.target.closest('.expand-btn[data-expand]');
+  if (expandBtn) {
+    const el = document.getElementById(expandBtn.dataset.expand);
+    if (!el) return;
+    if (el.style.display === 'none') {
+      el.style.display = 'block';
+      expandBtn.textContent = '▲ Show less';
+    } else {
+      el.style.display = 'none';
+      expandBtn.textContent = `▼ Show ${expandBtn.dataset.count} more holders`;
+    }
+    return;
+  }
+
+  // Dev history token rows
+  const devRow = e.target.closest('.dev-tok-row[data-ca]');
+  if (devRow) { loadExample(devRow.dataset.ca); return; }
+
+  // Vamp copy button (check before vamp row)
+  const vampCopyBtn = e.target.closest('.vamp-copy-btn[data-copy-ca]');
+  if (vampCopyBtn) {
+    e.stopPropagation();
+    navigator.clipboard.writeText(vampCopyBtn.dataset.copyCa).then(() => {
+      vampCopyBtn.textContent = '✓';
+      setTimeout(() => { vampCopyBtn.textContent = 'copy'; }, 1200);
+    });
+    return;
+  }
+
+  // Vamp token rows
+  const vampRow = e.target.closest('.vamp-tok-row[data-ca]');
+  if (vampRow) { loadExample(vampRow.dataset.ca); return; }
 });
 
 /* ══════════════════════════════════════
@@ -269,7 +353,7 @@ function renderSidebarRecents() {
       const label = r.symbol ? `$${escHtml(r.symbol)}` : escHtml(r.name);
       const sub   = r.ca.slice(0, 6) + '…' + r.ca.slice(-4);
       const isActive = r.ca === currentCA;
-      return `<div class="sidebar-item${isActive ? ' active' : ''}" onclick="sidebarLoadCA('${escHtml(r.ca)}')" title="${escHtml(r.name)}">
+      return `<div class="sidebar-item${isActive ? ' active' : ''}" data-ca="${escHtml(r.ca)}" title="${escHtml(r.name)}">
         <div class="sidebar-item-icon">${imgHtml}</div>
         <div class="sidebar-item-text">
           <div class="sidebar-item-name">${label}</div>
@@ -1146,10 +1230,7 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
         </div>
         <div class="tok-ca-row">
           <span class="tok-ca-txt">${escHtml(ca)}</span>
-          <button class="copy-ca-btn"
-            onclick="navigator.clipboard.writeText('${escHtml(ca)}').then(()=>{this.textContent='✓ Copied';this.style.color='var(--accent)';setTimeout(()=>{this.textContent='Copy CA';this.style.color='';},1500)})">
-            Copy CA
-          </button>
+          <button class="copy-ca-btn" data-copy-ca="${escHtml(ca)}">Copy CA</button>
         </div>
         <div class="tok-meta-row">
           ${dataSource}
@@ -1183,7 +1264,7 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
       <a href="https://solscan.io/token/${ca}" target="_blank" rel="noopener" class="trade-link" style="color:#9945ff;background:#9945ff18;border:1px solid #9945ff44;">Solscan ↗</a>
       <a href="https://www.geckoterminal.com/solana/pools/${ca}" target="_blank" rel="noopener" class="trade-link" style="color:#86efac;background:#86efac18;border:1px solid #86efac44;">GeckoTerminal ↗</a>
       <a href="https://pump.fun/${ca}" target="_blank" rel="noopener" class="trade-link" style="color:#a78bfa;background:#a78bfa18;border:1px solid #a78bfa44;">pump.fun ↗</a>
-      <button class="chart-toggle-btn" onclick="toggleChart()" id="chartToggleBtn">📈 Chart</button>
+      <button class="chart-toggle-btn" id="chartToggleBtn">📈 Chart</button>
     </div>
 
     <!-- ── CHART (collapsible, lazy-loaded) ── -->
@@ -1210,7 +1291,7 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
           <span id="loreText" class="lore-text">Analysing narrative…</span>
         </div>
       </div>
-      <button onclick="runNarrativeAnalysis()" class="analysis-btn">✦ Analysis</button>
+      <button class="analysis-btn">✦ Analysis</button>
     </div>
 
     <!-- ── PRICE BAR ── -->
@@ -1385,7 +1466,7 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
 
     <!-- ── SAFETY SCORE ── -->
     <div class="card" id="safetyCard" style="display:none;">
-      <div class="card-head safety-toggle" onclick="toggleSafety()">
+      <div class="card-head safety-toggle">
         <div class="card-title"><div class="card-title-dot"></div>Safety Score</div>
         <div class="safety-head-right">
           <span class="card-badge badge-amber" id="safetyBadge">SCANNING</span>
@@ -2331,11 +2412,7 @@ async function fetchTopHolders(ca, devWallet, solPrice, mcRaw) {
     const rest    = rows.slice(3);
     const restHtml = rest.length ? `
       <div id="holdersExtra" style="display:none;">${rest.join('')}</div>
-      <button class="expand-btn" onclick="
-        const el=document.getElementById('holdersExtra');
-        if(el.style.display==='none'){el.style.display='block';this.textContent='▲ Show less';}
-        else{el.style.display='none';this.textContent='▼ Show ${rest.length} more holders';}
-      ">▼ Show ${rest.length} more holders</button>` : '';
+      <button class="expand-btn" data-expand="holdersExtra" data-count="${rest.length}">▼ Show ${rest.length} more holders</button>` : '';
 
     bodyEl.innerHTML = top3.join('') + whaleWarn + restHtml;
     if (badgeEl) { badgeEl.textContent = 'LIVE'; badgeEl.className = 'card-badge badge-green'; }
@@ -2967,7 +3044,7 @@ async function fetchDevHistory(devWallet) {
         ? `<img src="${escHtml(safeImg(t.image))}" class="dev-tok-img" onerror="this.outerHTML='<div class=\\'dev-tok-img-ph\\'>🪙</div>'">`
         : `<div class="dev-tok-img-ph">🪙</div>`;
       return `
-        <div class="dev-tok-row" onclick="loadExample('${escHtml(t.ca)}')" title="Analyse ${escHtml(t.name)}">
+        <div class="dev-tok-row" data-ca="${escHtml(t.ca)}" title="Analyse ${escHtml(t.name)}">
           ${imgHtml}
           <div class="dev-tok-info">
             <div class="dev-tok-name">${escHtml(t.name)} <span class="dev-tok-sym">$${escHtml(t.symbol)}</span></div>
@@ -3022,7 +3099,7 @@ async function fetchVampCoins(ca, symbol, name) {
         ? `<img src="${escHtml(safeImg(v.image))}" class="vamp-tok-img" onerror="this.outerHTML='<div class=\\'vamp-tok-img-ph\\'>🧛</div>'">`
         : `<div class="vamp-tok-img-ph">🧛</div>`;
       return `
-        <div class="vamp-tok-row" onclick="loadExample('${escHtml(v.ca)}')" title="Analyse ${escHtml(v.name)}">
+        <div class="vamp-tok-row" data-ca="${escHtml(v.ca)}" title="Analyse ${escHtml(v.name)}">
           ${imgHtml}
           <div class="vamp-tok-info">
             <div class="vamp-tok-name">${escHtml(v.name)} <span class="badge-vamp">🧛 VAMP</span></div>
@@ -3030,7 +3107,7 @@ async function fetchVampCoins(ca, symbol, name) {
           </div>
           <div class="vamp-tok-right">
             <div class="vamp-tok-ca">${short}
-              <button class="vamp-copy-btn" onclick="event.stopPropagation();navigator.clipboard.writeText('${escHtml(v.ca)}').then(()=>{this.textContent='✓';setTimeout(()=>this.textContent='copy',1200)})">copy</button>
+              <button class="vamp-copy-btn" data-copy-ca="${escHtml(v.ca)}">copy</button>
             </div>
           </div>
         </div>`;
