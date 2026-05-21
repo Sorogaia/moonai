@@ -3402,7 +3402,10 @@ function escHtml(s) {
 // Only allow https:// image URLs — blocks javascript:, data:, http://, etc.
 function safeImg(url) {
   if (!url || typeof url !== 'string') return null;
-  return url.trimStart().startsWith('https://') ? url : null;
+  const t = url.trim();
+  if (t.startsWith('https://')) return t;
+  if (t.startsWith('http://'))  return 'https://' + t.slice(7); // upgrade to https
+  return null; // block javascript:, data:, and anything else
 }
 
 function formatAlpha(text) {

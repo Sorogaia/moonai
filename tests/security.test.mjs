@@ -64,8 +64,8 @@ describe('Image URL validation — _validate.js', () => {
   test('blocks data: URI', () => {
     assert.equal(safeImageUrl('data:image/png;base64,abc'), null);
   });
-  test('blocks http:// (insecure)', () => {
-    assert.equal(safeImageUrl('http://example.com/img.png'), null);
+  test('upgrades http:// to https://', () => {
+    assert.equal(safeImageUrl('http://example.com/img.png'), 'https://example.com/img.png');
   });
   test('blocks empty string', () => {
     assert.equal(safeImageUrl(''), null);

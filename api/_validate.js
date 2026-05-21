@@ -34,11 +34,15 @@ function getIP(req) {
 
 /**
  * Validate an image URL from a third-party API before returning it to the client.
- * Only allows https:// URLs — blocks javascript:, data:, http://, and anything else.
+ * Only allows https:// and http:// URLs (http upgraded to https).
+ * Blocks javascript:, data:, and anything else.
  */
 function safeImageUrl(url) {
   if (!url || typeof url !== 'string') return null;
-  return url.trimStart().startsWith('https://') ? url : null;
+  const t = url.trim();
+  if (t.startsWith('https://')) return t;
+  if (t.startsWith('http://'))  return 'https://' + t.slice(7);
+  return null;
 }
 
 module.exports = { isValidCA, isValidSymbol, getIP, safeImageUrl };
