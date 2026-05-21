@@ -7,7 +7,13 @@ module.exports = (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST')   return res.status(405).end();
 
-  const { event, data } = req.body || {};
+  // sendBeacon sends raw string body; fetch sends parsed JSON
+  let body = req.body;
+  if (typeof body === 'string') {
+    try { body = JSON.parse(body); } catch { body = { raw: body }; }
+  }
+
+  const { event, data } = body || {};
   console.log(`[FRONTEND] ${event || 'unknown'}:`, JSON.stringify(data ?? {}));
-  return res.status(200).json({ ok: true });
+  return res.status(200).end();
 };

@@ -15,12 +15,23 @@ let chatMessages   = [];
 let analysisMode   = 'trencher';
 
 /* ── Cloudflare Turnstile ── */
-// Global callbacks — must be on window before the Turnstile script loads
 let _tsToken = null;
 
 function _tsLog(event, data) {
-  fetch('/api/log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event, data }) }).catch(() => {});
+  try {
+    navigator.sendBeacon('/api/log', JSON.stringify({ event, data }));
+  } catch {
+    fetch('/api/log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event, data }) }).catch(() => {});
+  }
 }
+
+// Fire immediately so we can confirm /api/log works at all
+_tsLog('app-loaded', { ts: Date.now() });
+
+// Check if Turnstile script loads
+window.addEventListener('load', () => {
+  _tsLog('page-load', { turnstileAvailable: typeof turnstile !== 'undefined' });
+});
 
 window.moonaiTsCallback = (token) => {
   _tsToken = token;
