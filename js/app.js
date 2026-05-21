@@ -17,17 +17,32 @@ let analysisMode   = 'trencher';
 /* ── Cloudflare Turnstile ── */
 // Global callbacks — must be on window before the Turnstile script loads
 let _tsToken = null;
-window.moonaiTsCallback = (token) => { _tsToken = token; };
-window.moonaiTsExpired  = ()      => { _tsToken = null; try { turnstile.reset(); } catch {} };
-window.moonaiTsError    = ()      => { _tsToken = null; };
+
+function _tsLog(event, data) {
+  fetch('/api/log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event, data }) }).catch(() => {});
+}
+
+window.moonaiTsCallback = (token) => {
+  _tsToken = token;
+  _tsLog('ts-callback', { tokenLength: token?.length ?? 0 });
+};
+window.moonaiTsExpired  = () => {
+  _tsLog('ts-expired', {});
+  _tsToken = null;
+  try { turnstile.reset(); } catch {}
+};
+window.moonaiTsError    = (code) => {
+  _tsLog('ts-error', { code });
+  _tsToken = null;
+};
 
 async function getTurnstileToken() {
-  // Wait up to 15s for the auto-rendered widget to fire the callback
   const deadline = Date.now() + 15000;
   while (Date.now() < deadline) {
     if (_tsToken) return _tsToken;
     await new Promise(r => setTimeout(r, 100));
   }
+  _tsLog('ts-timeout', { msg: 'no token after 15s — widget may not have loaded or challenge failed' });
   return null;
 }
 
