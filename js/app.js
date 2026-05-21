@@ -232,15 +232,24 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Global image error fallbacks — replaces inline onerror attributes
-document.addEventListener('error', e => {
-  const t = e.target;
-  if (!(t instanceof HTMLImageElement)) return;
-  if (t.classList.contains('img-fb-coin'))    { t.outerHTML = '🪙'; return; }
-  if (t.classList.contains('img-fb-hide'))    { t.style.display = 'none'; return; }
-  if (t.classList.contains('img-fb-dev-ph'))  { t.outerHTML = '<div class="dev-tok-img-ph">🪙</div>'; return; }
-  if (t.classList.contains('img-fb-vamp-ph')) { t.outerHTML = '<div class="vamp-tok-img-ph">🧛</div>'; return; }
-}, true); // capture phase required for error events
+// Image error fallbacks — MutationObserver sets onerror as JS property
+// when images are inserted into the DOM, which is more reliable than
+// capture-phase event delegation for innerHTML-inserted images.
+function _applyImgFallback(img) {
+  if (img.classList.contains('img-fb-coin'))    { img.onerror = () => { img.outerHTML = '🪙'; }; }
+  else if (img.classList.contains('img-fb-hide'))    { img.onerror = () => { img.style.display = 'none'; }; }
+  else if (img.classList.contains('img-fb-dev-ph'))  { img.onerror = () => { img.outerHTML = '<div class="dev-tok-img-ph">🪙</div>'; }; }
+  else if (img.classList.contains('img-fb-vamp-ph')) { img.onerror = () => { img.outerHTML = '<div class="vamp-tok-img-ph">🧛</div>'; }; }
+}
+new MutationObserver(mutations => {
+  for (const m of mutations) {
+    for (const node of m.addedNodes) {
+      if (node.nodeType !== 1) continue;
+      if (node.tagName === 'IMG') _applyImgFallback(node);
+      node.querySelectorAll('img').forEach(_applyImgFallback);
+    }
+  }
+}).observe(document.documentElement, { childList: true, subtree: true });
 
 // Global click delegation for all dynamically inserted content
 document.addEventListener('click', e => {
