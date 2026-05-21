@@ -15,42 +15,25 @@ let chatMessages   = [];
 let analysisMode   = 'trencher';
 
 /* ── Cloudflare Turnstile ── */
-let _tsWidgetId  = null;
-let _tsToken     = null;  // set by callback when challenge completes
-let _tsExecuted  = false;
-
-window.onloadTurnstileCallback = function () {
-  _tsWidgetId = turnstile.render('#turnstile-widget', {
-    sitekey:            '0x4AAAAAADT5PKHwr0fN7aV-',
-    size:               'invisible',
-    callback:           (token) => { _tsToken = token; },
-    'expired-callback': ()      => { _tsToken = null; _tsExecuted = false; },
-    'error-callback':   ()      => { _tsToken = null; _tsExecuted = false; },
-  });
-  // Execute after a short delay to ensure widget is fully initialised
-  setTimeout(() => {
-    try { turnstile.execute(_tsWidgetId); _tsExecuted = true; } catch {}
-  }, 250);
-};
+// Global callbacks — must be on window before the Turnstile script loads
+let _tsToken = null;
+window.moonaiTsCallback = (token) => { _tsToken = token; };
+window.moonaiTsExpired  = ()      => { _tsToken = null; try { turnstile.reset(); } catch {} };
+window.moonaiTsError    = ()      => { _tsToken = null; };
 
 async function getTurnstileToken() {
+  // Wait up to 15s for the auto-rendered widget to fire the callback
   const deadline = Date.now() + 15000;
   while (Date.now() < deadline) {
-    // Token ready — return immediately
     if (_tsToken) return _tsToken;
-    // Widget loaded but execute not yet triggered
-    if (_tsWidgetId !== null && !_tsExecuted) {
-      try { turnstile.execute(_tsWidgetId); _tsExecuted = true; } catch {}
-    }
     await new Promise(r => setTimeout(r, 100));
   }
   return null;
 }
 
 function resetTurnstile() {
-  _tsToken    = null;
-  _tsExecuted = false;
-  if (_tsWidgetId !== null) try { turnstile.reset(_tsWidgetId); } catch {}
+  _tsToken = null;
+  try { turnstile.reset(); } catch {}
 }
 let hasAnalyzed    = false;
 let autoRefreshTimer = null;
