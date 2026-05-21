@@ -13,6 +13,29 @@
 let currentCA      = '';
 let chatMessages   = [];
 let analysisMode   = 'trencher';
+
+/* ── Cloudflare Turnstile ── */
+let _tsWidgetId = null;
+window.onloadTurnstileCallback = function () {
+  _tsWidgetId = turnstile.render('#turnstile-widget', {
+    sitekey:  '0x4AAAAAADT5PKHwr0fN7aV-',
+    size:     'invisible',
+  });
+};
+async function getTurnstileToken() {
+  for (let i = 0; i < 100; i++) {
+    if (_tsWidgetId !== null) {
+      const token = turnstile.getResponse(_tsWidgetId);
+      if (token) return token;
+      try { turnstile.execute(_tsWidgetId); } catch {}
+    }
+    await new Promise(r => setTimeout(r, 100));
+  }
+  return null;
+}
+function resetTurnstile() {
+  if (_tsWidgetId !== null) try { turnstile.reset(_tsWidgetId); } catch {}
+}
 let hasAnalyzed    = false;
 let autoRefreshTimer = null;
 let lastRefreshTime  = null;
@@ -1870,6 +1893,7 @@ ${liveContext}
 Use the live data above for MC, VOL, LIQUIDITY, DEV WALLET, BONDED status, and SOCIALS in your output. For holder distribution and rug signals, use your analysis and pattern recognition. Provide the complete MoonAi analysis with ALL sections.`;
 
   try {
+    const tsToken = await getTurnstileToken();
     const resp = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1878,8 +1902,10 @@ Use the live data above for MC, VOL, LIQUIDITY, DEV WALLET, BONDED status, and S
         max_tokens: 2000,
         system: buildSystemPrompt(),
         messages: [{ role: 'user', content: userMsg }],
+        turnstileToken: tsToken,
       }),
     });
+    resetTurnstile();
 
     clearInterval(doneTimer);
     steps.forEach((_,i) => {
@@ -2177,16 +2203,19 @@ async function fetchLoreBubble(name, symbol, description, mc, ch24, bonded) {
   if (!loreEl) return;
 
   try {
+    const tsToken = await getTurnstileToken();
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model:      'claude-haiku-4-5',   // fast — narrative must feel instant
+        model:      'claude-haiku-4-5',
         max_tokens: 40,
         system:     `You are MoonAi. Return ONE punchy sentence — max 15 words. What is this token's core narrative or vibe? Be direct, degen, specific. No filler. No price talk. Just the story.`,
         messages:   [{ role: 'user', content: `${name} ($${symbol})${description ? ' — ' + description.slice(0, 150) : ''}${ch24 ? ' — 24h ' + ch24.str : ''}` }],
+        turnstileToken: tsToken,
       }),
     });
+    resetTurnstile();
     const data = await res.json();
     const raw  = data?.content?.[0]?.text?.trim() || '';
     const text = raw
@@ -3213,6 +3242,7 @@ async function sendChat(msg, aiPrompt) {
   chatMessages.push({ role:'user', content: promptToSend });
 
   try {
+    const tsToken = await getTurnstileToken();
     const resp = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -3221,8 +3251,10 @@ async function sendChat(msg, aiPrompt) {
         max_tokens: 700,
         system: buildChatSystem(),
         messages: chatMessages,
+        turnstileToken: tsToken,
       }),
     });
+    resetTurnstile();
 
     if (!resp.ok) {
       const err = await resp.json().catch(()=>({}));
