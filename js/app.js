@@ -232,6 +232,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Global image error fallbacks — replaces inline onerror attributes
+document.addEventListener('error', e => {
+  const t = e.target;
+  if (!(t instanceof HTMLImageElement)) return;
+  if (t.classList.contains('img-fb-coin'))    { t.outerHTML = '🪙'; return; }
+  if (t.classList.contains('img-fb-hide'))    { t.style.display = 'none'; return; }
+  if (t.classList.contains('img-fb-dev-ph'))  { t.outerHTML = '<div class="dev-tok-img-ph">🪙</div>'; return; }
+  if (t.classList.contains('img-fb-vamp-ph')) { t.outerHTML = '<div class="vamp-tok-img-ph">🧛</div>'; return; }
+}, true); // capture phase required for error events
+
 // Global click delegation for all dynamically inserted content
 document.addEventListener('click', e => {
   // Sidebar CA items
@@ -351,7 +361,7 @@ function renderSidebarRecents() {
     }
     container.innerHTML = recents.map(r => {
       const imgHtml = safeImg(r.imgUrl)
-        ? `<img src="${escHtml(safeImg(r.imgUrl))}" alt="" onerror="this.outerHTML='🪙';">`
+        ? `<img src="${escHtml(safeImg(r.imgUrl))}" alt="" class="img-fb-coin">`
         : '🪙';
       const label = r.symbol ? `$${escHtml(r.symbol)}` : escHtml(r.name);
       const sub   = r.ca.slice(0, 6) + '…' + r.ca.slice(-4);
@@ -442,7 +452,7 @@ function buildTickerHTML(tokens) {
     const changeStr = isNaN(changeVal) ? '' : (changeVal >= 0 ? '+' : '') + changeVal.toFixed(1) + '%';
     const changeClass = isNaN(changeVal) ? '' : changeVal >= 0 ? 'ticker-change-up' : 'ticker-change-down';
     const logo = safeImg(t.logo)
-      ? `<img class="ticker-logo" src="${escHtml(safeImg(t.logo))}" alt="${escHtml(t.symbol)}" onerror="this.style.display='none';">`
+      ? `<img class="ticker-logo img-fb-hide" src="${escHtml(safeImg(t.logo))}" alt="${escHtml(t.symbol)}">`
       : `<span style="font-size:14px;">🪙</span>`;
     return `<div class="ticker-item">
       ${logo}
@@ -3042,7 +3052,7 @@ async function fetchDevHistory(devWallet) {
                     : t.alive  ? '<span class="dev-tok-status status-alive">ALIVE</span>'
                     :            '<span class="dev-tok-status status-dead">DEAD</span>';
       const imgHtml = safeImg(t.image)
-        ? `<img src="${escHtml(safeImg(t.image))}" class="dev-tok-img" onerror="this.outerHTML='<div class=\\'dev-tok-img-ph\\'>🪙</div>'">`
+        ? `<img src="${escHtml(safeImg(t.image))}" class="dev-tok-img img-fb-dev-ph">`
         : `<div class="dev-tok-img-ph">🪙</div>`;
       return `
         <div class="dev-tok-row" data-ca="${escHtml(t.ca)}" title="Analyse ${escHtml(t.name)}">
@@ -3097,7 +3107,7 @@ async function fetchVampCoins(ca, symbol, name) {
       const ch      = v.priceChange24h;
       const chStr   = ch != null ? `<span style="color:${ch>=0?'var(--accent)':'var(--danger)'};">${ch>=0?'+':''}${ch.toFixed(1)}%</span>` : '';
       const imgHtml = safeImg(v.image)
-        ? `<img src="${escHtml(safeImg(v.image))}" class="vamp-tok-img" onerror="this.outerHTML='<div class=\\'vamp-tok-img-ph\\'>🧛</div>'">`
+        ? `<img src="${escHtml(safeImg(v.image))}" class="vamp-tok-img img-fb-vamp-ph">`
         : `<div class="vamp-tok-img-ph">🧛</div>`;
       return `
         <div class="vamp-tok-row" data-ca="${escHtml(v.ca)}" title="Analyse ${escHtml(v.name)}">
