@@ -205,10 +205,11 @@
 
 </div><!-- /app-layout -->
 
+<!-- app.js must load before Turnstile so onloadTurnstileCallback is defined first -->
+<script src="js/app.js"></script>
+
 <!-- Cloudflare Turnstile — invisible bot protection -->
 <div id="turnstile-widget" style="display:none;"></div>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onloadTurnstileCallback&render=explicit" async defer></script>
-
-<script src="js/app.js"></script>
 </body>
 </html>

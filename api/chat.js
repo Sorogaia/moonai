@@ -26,8 +26,7 @@ async function verifyTurnstile(token, ip) {
   }
   if (!token) {
     console.warn('[TURNSTILE] No token — widget did not generate one in time');
-    // Fail open temporarily so users aren't blocked while we diagnose
-    return true;
+    return false;
   }
   try {
     const body = new URLSearchParams({ secret: TURNSTILE_SECRET, response: token });

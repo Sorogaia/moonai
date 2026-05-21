@@ -34,13 +34,14 @@ window.onloadTurnstileCallback = function () {
 };
 
 async function getTurnstileToken() {
-  // Execute once if widget loaded but challenge not yet triggered
-  if (_tsWidgetId !== null && !_tsExecuted) {
-    try { turnstile.execute(_tsWidgetId); _tsExecuted = true; } catch {}
-  }
-  // Wait up to 15 seconds for callback to fire with token
-  for (let i = 0; i < 150; i++) {
+  const deadline = Date.now() + 15000;
+  while (Date.now() < deadline) {
+    // Token ready — return immediately
     if (_tsToken) return _tsToken;
+    // Widget loaded but execute not yet triggered
+    if (_tsWidgetId !== null && !_tsExecuted) {
+      try { turnstile.execute(_tsWidgetId); _tsExecuted = true; } catch {}
+    }
     await new Promise(r => setTimeout(r, 100));
   }
   return null;
