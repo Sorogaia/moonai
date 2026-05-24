@@ -1300,3 +1300,92 @@ html, body {
   .welcome h1      { font-size:1.5rem; }
   .feat-chip       { font-size:11px; padding:6px 10px; }
 }
+
+/* ══════════════════════════════════════
+   BETA GATE
+══════════════════════════════════════ */
+#beta-gate {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #000000;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.beta-card {
+  display: flex; flex-direction: column; align-items: center;
+  background: #111111;
+  border: 1px solid #2a2a2a;
+  border-radius: 18px;
+  padding: 2.5rem 2rem;
+  width: 90%; max-width: 360px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.8);
+  animation: fadeUp 0.22s ease;
+}
+
+.beta-logo {
+  width: 60px; height: 60px; object-fit: contain;
+  margin-bottom: 1.1rem;
+  filter: drop-shadow(0 0 12px rgba(20,241,149,0.35));
+}
+
+.beta-title {
+  font-family: 'Geist', sans-serif;
+  font-size: 1.1rem; font-weight: 700;
+  color: #ffffff; letter-spacing: -0.02em;
+  margin-bottom: 0.3rem;
+}
+
+.beta-subtitle {
+  font-family: 'Geist', sans-serif;
+  font-size: 12.5px; color: #888888;
+  margin-bottom: 1.4rem; text-align: center;
+  line-height: 1.5;
+}
+
+.beta-expired {
+  font-family: 'Geist', sans-serif;
+  font-size: 13px; color: #FF3B30;
+  text-align: center; margin-top: 0.5rem;
+  line-height: 1.5;
+}
+
+#beta-form { width: 100%; }
+
+.beta-input {
+  width: 100%; background: #0d0d0d;
+  border: 1.5px solid #2a2a2a;
+  border-radius: 8px; padding: 10px 14px;
+  font-family: 'Geist', sans-serif; font-size: 13px;
+  color: #ffffff; outline: none;
+  caret-color: #14F195;
+  margin-bottom: 0.6rem;
+  transition: border-color 0.22s cubic-bezier(0.4,0,0.2,1);
+  box-sizing: border-box;
+}
+.beta-input:focus { border-color: #14F195; }
+.beta-input::placeholder { color: #444444; }
+
+.beta-error {
+  font-family: 'Geist', sans-serif;
+  font-size: 12px; color: #FF3B30;
+  margin-bottom: 0.6rem;
+}
+
+.beta-btn {
+  width: 100%; background: #14F195; color: #000000;
+  font-family: 'Geist', sans-serif; font-weight: 700;
+  font-size: 13px; padding: 10px;
+  border: none; border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.22s cubic-bezier(0.4,0,0.2,1);
+}
+.beta-btn:hover { opacity: 0.85; }
+.beta-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@keyframes betaShake {
+  0%,100% { transform: translateX(0); }
+  20%      { transform: translateX(-8px); }
+  40%      { transform: translateX(8px); }
+  60%      { transform: translateX(-6px); }
+  80%      { transform: translateX(6px); }
+}
+.beta-shake { animation: betaShake 0.35s ease; }
