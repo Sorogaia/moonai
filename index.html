@@ -108,6 +108,9 @@
 <!-- ── APP LAYOUT ── -->
 <div class="app-layout">
 
+  <!-- Mobile backdrop — tap to close drawer -->
+  <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
   <!-- ── SIDEBAR ── -->
   <aside class="sidebar" id="sidebar">
 
@@ -148,6 +151,10 @@
 
     <!-- HEADER -->
     <div class="header">
+      <!-- Hamburger — mobile only, opens sidebar drawer -->
+      <button class="header-hamburger" id="headerHamburger" title="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
       <div class="header-right">
         <div class="live-badge"><div class="live-dot"></div>LIVE · SOL</div>
         <div class="mode-toggle-wrap" title="Switch between Trencher and Advanced mode">

@@ -196,16 +196,25 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.querySelectorAll('.v2-modal-close').forEach(btn => btn.addEventListener('click', closeV2Modal));
 
-  // Sidebar buttons
+  // Sidebar — desktop collapse / mobile drawer
   document.getElementById('sidebarToggle')?.addEventListener('click', toggleSidebar);
-  // Brand: expand if collapsed, new analysis if expanded
+  document.getElementById('headerHamburger')?.addEventListener('click', toggleSidebar);
+  // Backdrop tap closes mobile drawer
+  document.getElementById('sidebarBackdrop')?.addEventListener('click', closeMobileDrawer);
+  // Brand: desktop = expand if collapsed / new analysis if expanded; mobile = close drawer + new analysis
   document.getElementById('sidebarBrand')?.addEventListener('click', () => {
-    const sidebar = document.getElementById('sidebar');
-    if (sidebar?.classList.contains('collapsed')) toggleSidebar();
-    else newAnalysis();
+    if (isMobile()) { closeMobileDrawer(); newAnalysis(); }
+    else {
+      const sidebar = document.getElementById('sidebar');
+      if (sidebar?.classList.contains('collapsed')) toggleSidebar();
+      else newAnalysis();
+    }
   });
-  // New Analysis nav item
-  document.getElementById('sidebarNewBtn')?.addEventListener('click', newAnalysis);
+  // New Analysis nav item — close mobile drawer then start new
+  document.getElementById('sidebarNewBtn')?.addEventListener('click', () => {
+    if (isMobile()) closeMobileDrawer();
+    newAnalysis();
+  });
 
   // Mode toggle + send button
   document.getElementById('modeToggle')?.addEventListener('click', toggleMode);
@@ -322,11 +331,29 @@ document.addEventListener('click', e => {
 /* ══════════════════════════════════════
    SIDEBAR
 ══════════════════════════════════════ */
+function isMobile() { return window.innerWidth <= 768; }
+
+function closeMobileDrawer() {
+  const sidebar  = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  sidebar?.classList.remove('mobile-open');
+  backdrop?.classList.remove('visible');
+}
+
 function toggleSidebar() {
-  const sidebar = document.getElementById('sidebar');
+  const sidebar  = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
   if (!sidebar) return;
-  sidebar.classList.toggle('collapsed');
-  localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+  if (isMobile()) {
+    // Mobile: slide-in drawer
+    const opening = !sidebar.classList.contains('mobile-open');
+    sidebar.classList.toggle('mobile-open', opening);
+    backdrop?.classList.toggle('visible', opening);
+  } else {
+    // Desktop: icon-collapse
+    sidebar.classList.toggle('collapsed');
+    localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+  }
 }
 
 function newAnalysis() {
@@ -389,6 +416,7 @@ function renderSidebarRecents() {
 
 function sidebarLoadCA(ca) {
   if (ca === currentCA) return; // already viewing this
+  if (isMobile()) closeMobileDrawer();
   runAnalysis(ca);
 }
 
