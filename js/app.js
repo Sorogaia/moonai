@@ -21,18 +21,19 @@ window.moonaiTsCallback = (token) => { _tsToken = token; };
 window.moonaiTsExpired  = ()      => { _tsToken = null; try { turnstile.reset(); } catch {} };
 window.moonaiTsError    = ()      => { _tsToken = null; };
 
+// Consume the token but do NOT reset here — reset after the API call so the widget
+// has the full response round-trip to generate the next token (prevents 15s stalls)
 async function getTurnstileToken() {
-  const deadline = Date.now() + 15000;
+  const deadline = Date.now() + 8000; // 8s max — fail fast, show a clear error
   while (Date.now() < deadline) {
     if (_tsToken) {
       const token = _tsToken;
       _tsToken = null;
-      try { turnstile.reset(); } catch {}
-      return token;
+      return token; // caller must call resetTurnstile() after using
     }
     await new Promise(r => setTimeout(r, 100));
   }
-  return null;
+  return null; // timed out — API will reject gracefully
 }
 
 function resetTurnstile() {
@@ -1897,63 +1898,66 @@ async function runAnalysis(raw) {
 
   // ── TRENCHER: fetch live data, no AI needed ──
   if (isTrencher) {
-    document.getElementById('resultZone').innerHTML = `
-      <div class="loading-panel">
-        <div class="load-header">
-          <div class="spinner"></div>
-          <div>
-            <div class="load-title">Fetching Live Data</div>
-            <div class="load-ca">${shortCA}</div>
+    try {
+      document.getElementById('resultZone').innerHTML = `
+        <div class="loading-panel">
+          <div class="load-header">
+            <div class="spinner"></div>
+            <div>
+              <div class="load-title">Fetching Live Data</div>
+              <div class="load-ca">${shortCA}</div>
+            </div>
           </div>
-        </div>
-        <div class="load-steps">
-          <div class="lstep show" id="ls0"><div class="lstep-icon">○</div>Querying DexScreener…</div>
-          <div class="lstep" id="ls1"><div class="lstep-icon">○</div>Querying pump.fun…</div>
-        </div>
-      </div>`;
-    scrollBottom();
+          <div class="load-steps">
+            <div class="lstep show" id="ls0"><div class="lstep-icon">○</div>Querying DexScreener…</div>
+            <div class="lstep" id="ls1"><div class="lstep-icon">○</div>Querying pump.fun…</div>
+          </div>
+        </div>`;
+      scrollBottom();
 
-    const [dex, pump, jup, solPrice] = await Promise.all([
-      fetchDexScreener(currentCA),
-      fetchPumpFun(currentCA),
-      fetchJupiterMeta(currentCA),
-      fetchSolPrice(),
-    ]);
+      const [dex, pump, jup, solPrice] = await Promise.all([
+        fetchDexScreener(currentCA),
+        fetchPumpFun(currentCA),
+        fetchJupiterMeta(currentCA),
+        fetchSolPrice(),
+      ]);
 
-    document.getElementById('ls0').classList.add('done');
-    document.getElementById('ls0').querySelector('.lstep-icon').textContent = '✓';
-    document.getElementById('ls1').classList.add('show','done');
-    document.getElementById('ls1').querySelector('.lstep-icon').textContent = '✓';
+      document.getElementById('ls0').classList.add('done');
+      document.getElementById('ls0').querySelector('.lstep-icon').textContent = '✓';
+      document.getElementById('ls1').classList.add('show','done');
+      document.getElementById('ls1').querySelector('.lstep-icon').textContent = '✓';
 
-    await new Promise(r => setTimeout(r, 300));
-    renderTrencher(currentCA, dex, pump, solPrice, jup);
+      await new Promise(r => setTimeout(r, 300));
+      renderTrencher(currentCA, dex, pump, solPrice, jup);
 
-    // seed chat context with everything we know
-    const devWalletShort = pump?.dev ? pump.dev.slice(0,8)+'…' : 'unknown';
-    const ctx = [
-      `Token: ${pump?.name||dex?.name||currentCA} ($${pump?.symbol||dex?.symbol||'?'})`,
-      `CA: ${currentCA}`,
-      `MC: ${fmtNum(dex?.mc||pump?.mc)}`,
-      `Price: ${fmtPrice(dex?.price)}`,
-      `Vol 24h: ${fmtNum(dex?.vol24h)}`,
-      `Vol 1h: ${fmtNum(dex?.vol1h)}`,
-      `Liquidity: ${fmtNum(dex?.liq)}`,
-      `Bonded: ${pump?.bonded ? 'Yes — migrated to Raydium' : 'No — still on bonding curve'}`,
-      `Bonding curve: ${pump?.bondedPct ? pump.bondedPct+'% filled' : 'unknown'}`,
-      `1h change: ${dex?.priceChange1h ? dex.priceChange1h+'%' : '—'}`,
-      `24h change: ${dex?.priceChange24h ? dex.priceChange24h+'%' : '—'}`,
-      `Buys 24h: ${dex?.buys24h||'—'} | Sells 24h: ${dex?.sells24h||'—'}`,
-      `Dev wallet: ${devWalletShort}`,
-      `Twitter: ${pump?.twitter||'none'} | Telegram: ${pump?.telegram||'none'} | Website: ${pump?.website||'none'}`,
-      pump?.description ? `Description: ${pump.description.slice(0,200)}` : '',
-    ].filter(Boolean).join(', ');
+      // seed chat context with everything we know
+      const devWalletShort = pump?.dev ? pump.dev.slice(0,8)+'…' : 'unknown';
+      const ctx = [
+        `Token: ${pump?.name||dex?.name||currentCA} ($${pump?.symbol||dex?.symbol||'?'})`,
+        `CA: ${currentCA}`,
+        `MC: ${fmtNum(dex?.mc||pump?.mc)}`,
+        `Price: ${fmtPrice(dex?.price)}`,
+        `Vol 24h: ${fmtNum(dex?.vol24h)}`,
+        `Vol 1h: ${fmtNum(dex?.vol1h)}`,
+        `Liquidity: ${fmtNum(dex?.liq)}`,
+        `Bonded: ${pump?.bonded ? 'Yes — migrated to Raydium' : 'No — still on bonding curve'}`,
+        `Bonding curve: ${pump?.bondedPct ? pump.bondedPct+'% filled' : 'unknown'}`,
+        `1h change: ${dex?.priceChange1h ? dex.priceChange1h+'%' : '—'}`,
+        `24h change: ${dex?.priceChange24h ? dex.priceChange24h+'%' : '—'}`,
+        `Buys 24h: ${dex?.buys24h||'—'} | Sells 24h: ${dex?.sells24h||'—'}`,
+        `Dev wallet: ${devWalletShort}`,
+        `Twitter: ${pump?.twitter||'none'} | Telegram: ${pump?.telegram||'none'} | Website: ${pump?.website||'none'}`,
+        pump?.description ? `Description: ${pump.description.slice(0,200)}` : '',
+      ].filter(Boolean).join(', ');
 
-    // holder/bundle context injected into _liveData as async scans complete
-
-    chatMessages.push({ role:'user', content: `I just looked up this Solana token. Live data: ${ctx}` });
-    chatMessages.push({ role:'assistant', content: `Got it — I have full live data for ${pump?.name||currentCA}. Ask me anything about it.` });
-
-    document.getElementById('sendBtn').disabled = false;
+      // holder/bundle context injected into _liveData as async scans complete
+      chatMessages.push({ role:'user', content: `I just looked up this Solana token. Live data: ${ctx}` });
+      chatMessages.push({ role:'assistant', content: `Got it — I have full live data for ${pump?.name||currentCA}. Ask me anything about it.` });
+    } catch(e) {
+      console.error('[runAnalysis trencher]', e);
+    } finally {
+      document.getElementById('sendBtn').disabled = false;
+    }
     return;
   }
 
@@ -2069,10 +2073,11 @@ Use the live data above for MC, VOL, LIQUIDITY, DEV WALLET, BONDED status, and S
           </div>
         </div>
       </div>`;
+  } finally {
+    resetTurnstile();
+    document.getElementById('sendBtn').disabled = false;
+    scrollBottom();
   }
-
-  document.getElementById('sendBtn').disabled = false;
-  scrollBottom();
 }
 
 /* ══════════════════════════════════════
@@ -3391,12 +3396,14 @@ async function sendChat(msg, aiPrompt) {
     aiBubble.innerHTML = `<div class="bubble-ai-lbl">MoonAi</div><div>${formatAlpha(text)}</div>`;
 
   } catch(e) {
-    aiBubble.innerHTML = `<div class="bubble-ai-lbl">MoonAi</div><div style="color:var(--danger)">Error: ${escHtml(e.message)}</div>`;
+    aiBubble.innerHTML = `<div class="bubble-ai-lbl">MoonAi</div><div style="color:var(--danger)">Error: ${escHtml(e.message)}${e.message?.includes('verification') ? ' — please try again.' : ''}</div>`;
     chatMessages.pop();
+  } finally {
+    // Reset Turnstile AFTER the API call — widget has had the full round-trip to pre-generate the next token
+    resetTurnstile();
+    document.getElementById('sendBtn').disabled = false;
+    scrollBottom();
   }
-
-  document.getElementById('sendBtn').disabled = false;
-  scrollBottom();
 }
 
 /* ══════════════════════════════════════

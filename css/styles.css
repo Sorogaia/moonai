@@ -664,6 +664,15 @@ html, body {
 .lstep.done .lstep-icon { background: rgba(20,241,149,0.12); color: var(--accent); }
 [data-mode="advanced"] .lstep.done .lstep-icon { background: rgba(245,158,11,0.15); color: #f59e0b; }
 
+/* Turnstile — push off-screen so invisible iframe can't intercept mobile taps */
+.cf-turnstile {
+  position: fixed !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+
 /* ══════════════════════════════════════
    BOTTOM BAR
 ══════════════════════════════════════ */
