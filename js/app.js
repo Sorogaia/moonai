@@ -344,16 +344,16 @@ function newAnalysis() {
   document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
 }
 
-// Save a CA to localStorage recents (max 20)
+// Save a CA to sessionStorage recents (max 20, clears on tab/browser close)
 function saveToRecents(ca, name, symbol, imgUrl) {
   try {
     const key = 'moonai_recents';
-    const existing = JSON.parse(localStorage.getItem(key) || '[]');
+    const existing = JSON.parse(sessionStorage.getItem(key) || '[]');
     // Remove duplicate if already there
     const filtered = existing.filter(r => r.ca !== ca);
     const entry = { ca, name: name || ca.slice(0,8)+'…', symbol: symbol || '', imgUrl: imgUrl || null, ts: Date.now() };
     filtered.unshift(entry);
-    localStorage.setItem(key, JSON.stringify(filtered.slice(0, 20)));
+    sessionStorage.setItem(key, JSON.stringify(filtered.slice(0, 20)));
     renderSidebarRecents();
   } catch {}
 }
@@ -363,7 +363,7 @@ function renderSidebarRecents() {
   const container = document.getElementById('sidebarRecents');
   if (!container) return;
   try {
-    const recents = JSON.parse(localStorage.getItem('moonai_recents') || '[]');
+    const recents = JSON.parse(sessionStorage.getItem('moonai_recents') || '[]');
     if (!recents.length) {
       container.innerHTML = '<div class="sidebar-empty">No recent searches</div>';
       return;
