@@ -182,96 +182,97 @@ html, body {
 ══════════════════════════════════════ */
 .sidebar {
   position: fixed; top: 0; left: 0; bottom: 0;
-  width: 240px;
+  width: 260px;
   display: flex; flex-direction: column;
-  background: var(--bg-surface);
-  border-right: 1px solid var(--border);
-  transition: width 0.25s cubic-bezier(0.4,0,0.2,1);
+  background: var(--bg); /* seamless — same as main */
+  border-right: none;
+  transition: width 0.22s cubic-bezier(0.4,0,0.2,1);
   overflow: hidden;
   z-index: 100;
 }
-.sidebar.collapsed { width: 64px; }
+.sidebar.collapsed { width: 48px; }
 
-/* ── TOP ROW (expanded) ── */
+/* ── TOP ROW ── */
 .sidebar-top {
   display: flex; align-items: center;
-  padding: 10px 12px;
-  gap: 4px; flex-shrink: 0; height: 60px;
+  padding: 12px 8px 12px 12px;
+  gap: 0; flex-shrink: 0; height: 60px;
 }
 
-/* hamburger */
-.sidebar-toggle {
-  width: 40px; height: 40px; flex-shrink: 0;
-  background: transparent; border: none;
-  border-radius: 50%;
-  color: var(--text-muted); cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: background var(--transition), color var(--transition);
-}
-.sidebar-toggle:hover { background: rgba(255,255,255,0.06); color: var(--text); }
-
-/* brand — logo + "MoonAi" text */
+/* brand — logo + "MoonAi" text (left side) */
 .sidebar-brand {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; gap: 9px;
   flex: 1; overflow: hidden; cursor: pointer;
-  padding: 0 4px;
+  padding: 4px 6px; border-radius: 10px;
+  transition: background var(--transition);
+  min-width: 0;
 }
+.sidebar-brand:hover { background: rgba(255,255,255,0.05); }
 .sidebar-brand-img {
-  width: 28px; height: 28px; object-fit: contain; flex-shrink: 0;
-  filter: drop-shadow(0 0 6px rgba(20,241,149,0.35));
+  width: 26px; height: 26px; object-fit: contain; flex-shrink: 0;
+  filter: drop-shadow(0 0 6px rgba(20,241,149,0.4));
 }
 .sidebar-brand-text {
-  font-size: 1.05rem; font-weight: 700; color: var(--text);
-  white-space: nowrap;
-  transition: opacity 0.15s ease;
+  font-size: 1rem; font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden;
+  opacity: 1; transition: opacity 0.18s ease, width 0.18s ease;
 }
 
-/* expand arrow — only shown in collapsed state */
-.sidebar-expand {
-  display: none; /* hidden when expanded */
-  width: 32px; height: 32px; flex-shrink: 0;
+/* collapse toggle — right side, only visible when expanded */
+.sidebar-toggle {
+  width: 36px; height: 36px; flex-shrink: 0;
   background: transparent; border: none;
-  border-radius: 50%;
-  color: var(--text-muted); cursor: pointer;
-  align-items: center; justify-content: center;
-  transition: background var(--transition), color var(--transition);
-}
-.sidebar-expand:hover { background: rgba(255,255,255,0.06); color: var(--accent); }
-.sidebar.collapsed .sidebar-expand { display: flex; }
-
-/* pen / new analysis button */
-.sidebar-new-btn {
-  width: 40px; height: 40px; flex-shrink: 0;
-  background: transparent; border: none;
-  border-radius: 50%;
-  color: var(--text-muted); cursor: pointer;
+  border-radius: 8px;
+  color: var(--text-faint); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  transition: background var(--transition), color var(--transition);
+  opacity: 1; transition: background var(--transition), color var(--transition), opacity 0.15s ease;
 }
-.sidebar-new-btn:hover { background: rgba(255,255,255,0.06); color: var(--accent); }
+.sidebar-toggle:hover { background: rgba(255,255,255,0.06); color: var(--text-muted); }
 
 /* ── COLLAPSED STATE ── */
-/* Top row: [logo] [→ expand btn] side by side */
-.sidebar.collapsed .sidebar-top {
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 6px 8px;
-  height: auto; gap: 2px;
-  flex-wrap: wrap;
+.sidebar.collapsed .sidebar-brand-text {
+  opacity: 0; width: 0; pointer-events: none; overflow: hidden;
 }
-.sidebar.collapsed .sidebar-brand-text { opacity: 0; width: 0; overflow: hidden; pointer-events: none; }
-.sidebar.collapsed .sidebar-brand { flex: 0 0 auto; padding: 0; gap: 0; }
-/* hide the main hamburger in collapsed — the expand function moves to sidebar-toggle slot */
-.sidebar.collapsed .sidebar-toggle { display: none; }
-/* show new-analysis pen below */
-.sidebar.collapsed .sidebar-new-btn {
-  display: flex; width: 40px; height: 40px; order: 3;
-  margin: 0 auto;
+.sidebar.collapsed .sidebar-brand {
+  flex: 0 0 auto; justify-content: center;
+  padding: 4px; gap: 0;
 }
-/* re-order: logo first, expand arrow second */
-.sidebar.collapsed .sidebar-brand  { order: 1; }
-.sidebar.collapsed .sidebar-expand { order: 2; }
+/* hide collapse btn when already collapsed — clicking logo expands */
+.sidebar.collapsed .sidebar-toggle { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
+
+/* ── NAV ITEMS (New Analysis etc.) ── */
+.sidebar-nav {
+  padding: 4px 8px 8px;
+  flex-shrink: 0;
+}
+.sidebar-nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: 999px;
+  cursor: pointer; transition: background var(--transition);
+  white-space: nowrap; overflow: hidden;
+  color: var(--text-muted);
+}
+.sidebar-nav-item:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+.sidebar-nav-item.active {
+  background: rgba(20,241,149,0.10);
+  color: var(--accent);
+}
+.sidebar-nav-icon {
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; width: 20px; height: 20px;
+}
+.sidebar-nav-text {
+  font-size: 13.5px; font-weight: 500;
+  opacity: 1; transition: opacity 0.15s ease;
+  overflow: hidden;
+}
+/* collapsed nav: icon only, centred */
+.sidebar.collapsed .sidebar-nav { padding: 4px 4px 8px; }
+.sidebar.collapsed .sidebar-nav-item {
+  padding: 10px 0; justify-content: center;
+  border-radius: 10px;
+}
+.sidebar.collapsed .sidebar-nav-text { opacity: 0; width: 0; pointer-events: none; }
 
 /* ── SIDEBAR BODY / RECENTS ── */
 .sidebar-body {
@@ -283,50 +284,40 @@ html, body {
 
 .sidebar-section-label {
   font-size: 11px; font-weight: 600; color: var(--text-faint);
-  letter-spacing: 0.06em; padding: 12px 12px 6px;
+  letter-spacing: 0.07em; padding: 10px 12px 4px;
   text-transform: uppercase; white-space: nowrap;
-  transition: opacity 0.15s ease;
+  opacity: 1; transition: opacity 0.15s ease;
 }
 .sidebar.collapsed .sidebar-section-label { opacity: 0; height: 0; padding: 0; overflow: hidden; }
 
 .sidebar-recents { display: flex; flex-direction: column; gap: 1px; }
 
-/* recent item row */
+/* recent item — plain text row (Gemini-style) */
 .sidebar-item {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center;
   padding: 8px 12px; border-radius: 10px;
   cursor: pointer; transition: background var(--transition);
-  min-width: 0;
+  min-width: 0; overflow: hidden;
 }
 .sidebar-item:hover { background: rgba(255,255,255,0.05); }
 .sidebar-item.active { background: rgba(20,241,149,0.08); }
 
-/* token image avatar */
-.sidebar-item-icon {
-  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
-  background: var(--bg-card); border: 1px solid var(--border2);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; overflow: hidden;
-}
-.sidebar-item-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-
-.sidebar-item-text { flex: 1; min-width: 0; overflow: hidden; transition: opacity 0.15s ease; }
 .sidebar-item-name {
-  font-size: 13px; font-weight: 500; color: var(--text);
+  font-size: 13px; font-weight: 400; color: var(--text-muted);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex: 1; min-width: 0;
+  transition: color var(--transition);
 }
-.sidebar-item-ca { font-size: 10px; color: var(--text-faint); white-space: nowrap; }
+.sidebar-item:hover .sidebar-item-name,
+.sidebar-item.active .sidebar-item-name { color: var(--text); }
 
-/* collapsed: centre the icon, hide text */
-.sidebar.collapsed .sidebar-item {
-  padding: 8px 0; justify-content: center;
-}
-.sidebar.collapsed .sidebar-item-text { opacity: 0; width: 0; overflow: hidden; pointer-events: none; }
+/* collapsed: hide recents entirely — no icons to show */
+.sidebar.collapsed .sidebar-item { opacity: 0; height: 0; padding: 0; pointer-events: none; overflow: hidden; }
 
 .sidebar-empty {
   font-size: 12px; color: var(--text-faint);
-  padding: 16px 12px; text-align: center;
-  transition: opacity 0.15s ease;
+  padding: 8px 12px;
+  opacity: 1; transition: opacity 0.15s ease;
 }
 .sidebar.collapsed .sidebar-empty { opacity: 0; height: 0; padding: 0; overflow: hidden; }
 
@@ -337,7 +328,7 @@ html, body {
   flex: 1; display: flex; flex-direction: column;
   overflow: hidden; position: relative;
   /* offset for fixed sidebar */
-  margin-left: 240px;
+  margin-left: 260px;
   transition: margin-left 0.22s cubic-bezier(0.4,0,0.2,1);
   /* subtle green gradient background */
   background:
@@ -346,7 +337,7 @@ html, body {
 }
 /* When sidebar is collapsed, shrink the offset */
 .sidebar.collapsed + .main-area {
-  margin-left: 64px;
+  margin-left: 48px;
 }
 
 /* keep old .shell reference working for anything that uses it */
@@ -1233,14 +1224,16 @@ html, body {
 
 /* ── Sidebar mobile — auto-collapse on small screens ── */
 @media (max-width: 768px) {
-  .sidebar { width: 60px; }
+  .sidebar { width: 48px; }
   .sidebar-brand-text,
-  .sidebar-item-text,
+  .sidebar-nav-text,
   .sidebar-section-label,
-  .sidebar-empty,
-  .sidebar-new-btn { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
-  .sidebar-item { justify-content: center; padding: 8px 6px; }
-  .main-area { margin-left: 64px; }
+  .sidebar-empty { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
+  .sidebar-brand { flex: 0 0 auto; justify-content: center; padding: 4px; gap: 0; }
+  .sidebar-toggle { opacity: 0; pointer-events: none; width: 0; }
+  .sidebar-nav-item { justify-content: center; padding: 10px 0; border-radius: 10px; }
+  .sidebar-item { opacity: 0; height: 0; padding: 0; pointer-events: none; overflow: hidden; }
+  .main-area { margin-left: 48px; }
   .main { padding: 0.75rem 0.75rem 0.5rem; }
   .bottom-bar { padding: 0.5rem 0.75rem 1rem; }
   .header { padding: 0.75rem 0.75rem; }

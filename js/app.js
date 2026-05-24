@@ -197,8 +197,15 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.v2-modal-close').forEach(btn => btn.addEventListener('click', closeV2Modal));
 
   // Sidebar buttons
-  document.querySelectorAll('.sidebar-toggle, .sidebar-expand').forEach(btn => btn.addEventListener('click', toggleSidebar));
-  document.querySelectorAll('.sidebar-brand, .sidebar-new-btn').forEach(el => el.addEventListener('click', newAnalysis));
+  document.getElementById('sidebarToggle')?.addEventListener('click', toggleSidebar);
+  // Brand: expand if collapsed, new analysis if expanded
+  document.getElementById('sidebarBrand')?.addEventListener('click', () => {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar?.classList.contains('collapsed')) toggleSidebar();
+    else newAnalysis();
+  });
+  // New Analysis nav item
+  document.getElementById('sidebarNewBtn')?.addEventListener('click', newAnalysis);
 
   // Mode toggle + send button
   document.getElementById('modeToggle')?.addEventListener('click', toggleMode);
@@ -369,18 +376,10 @@ function renderSidebarRecents() {
       return;
     }
     container.innerHTML = recents.map(r => {
-      const imgHtml = safeImg(r.imgUrl)
-        ? `<img src="${escHtml(safeImg(r.imgUrl))}" alt="" class="img-fb-coin">`
-        : '🪙';
-      const label = r.symbol ? `$${escHtml(r.symbol)}` : escHtml(r.name);
-      const sub   = r.ca.slice(0, 6) + '…' + r.ca.slice(-4);
+      const label    = r.symbol ? `$${escHtml(r.symbol)} — ${escHtml(r.name)}` : escHtml(r.name);
       const isActive = r.ca === currentCA;
       return `<div class="sidebar-item${isActive ? ' active' : ''}" data-ca="${escHtml(r.ca)}" title="${escHtml(r.name)}">
-        <div class="sidebar-item-icon">${imgHtml}</div>
-        <div class="sidebar-item-text">
-          <div class="sidebar-item-name">${label}</div>
-          <div class="sidebar-item-ca">${sub}</div>
-        </div>
+        <span class="sidebar-item-name">${label}</span>
       </div>`;
     }).join('');
   } catch {
