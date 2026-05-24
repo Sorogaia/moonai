@@ -230,15 +230,25 @@ html, body {
 .sidebar-toggle:hover { background: rgba(255,255,255,0.06); color: var(--text-muted); }
 
 /* ── COLLAPSED STATE ── */
-.sidebar.collapsed .sidebar-brand-text {
-  opacity: 0; width: 0; pointer-events: none; overflow: hidden;
+/* Top row: centre the logo, hide everything else */
+.sidebar.collapsed .sidebar-top {
+  padding: 12px 0;
+  justify-content: center;
 }
 .sidebar.collapsed .sidebar-brand {
-  flex: 0 0 auto; justify-content: center;
-  padding: 4px; gap: 0;
+  flex: 0 0 auto;
+  justify-content: center;
+  padding: 6px;
+  gap: 0;
+  width: 48px;
 }
-/* hide collapse btn when already collapsed — clicking logo expands */
-.sidebar.collapsed .sidebar-toggle { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
+.sidebar.collapsed .sidebar-brand-text {
+  display: none;
+}
+/* Hide the collapse button — logo click expands instead */
+.sidebar.collapsed .sidebar-toggle {
+  display: none;
+}
 
 /* ── NAV ITEMS (New Analysis etc.) ── */
 .sidebar-nav {
@@ -263,16 +273,25 @@ html, body {
 }
 .sidebar-nav-text {
   font-size: 13.5px; font-weight: 500;
-  opacity: 1; transition: opacity 0.15s ease;
+  opacity: 1;
   overflow: hidden;
+  white-space: nowrap;
 }
 /* collapsed nav: icon only, centred */
-.sidebar.collapsed .sidebar-nav { padding: 4px 4px 8px; }
-.sidebar.collapsed .sidebar-nav-item {
-  padding: 10px 0; justify-content: center;
-  border-radius: 10px;
+.sidebar.collapsed .sidebar-nav {
+  padding: 4px 0 8px;
+  display: flex; flex-direction: column; align-items: center;
 }
-.sidebar.collapsed .sidebar-nav-text { opacity: 0; width: 0; pointer-events: none; }
+.sidebar.collapsed .sidebar-nav-item {
+  padding: 10px;
+  justify-content: center;
+  border-radius: 10px;
+  width: 40px;
+  gap: 0;
+}
+.sidebar.collapsed .sidebar-nav-text {
+  display: none;
+}
 
 /* ── SIDEBAR BODY / RECENTS ── */
 .sidebar-body {
@@ -288,7 +307,7 @@ html, body {
   text-transform: uppercase; white-space: nowrap;
   opacity: 1; transition: opacity 0.15s ease;
 }
-.sidebar.collapsed .sidebar-section-label { opacity: 0; height: 0; padding: 0; overflow: hidden; }
+.sidebar.collapsed .sidebar-section-label { display: none; }
 
 .sidebar-recents { display: flex; flex-direction: column; gap: 1px; }
 
@@ -311,15 +330,9 @@ html, body {
 .sidebar-item:hover .sidebar-item-name,
 .sidebar-item.active .sidebar-item-name { color: var(--text); }
 
-/* collapsed: hide recents entirely — no icons to show */
-.sidebar.collapsed .sidebar-item { opacity: 0; height: 0; padding: 0; pointer-events: none; overflow: hidden; }
-
-.sidebar-empty {
-  font-size: 12px; color: var(--text-faint);
-  padding: 8px 12px;
-  opacity: 1; transition: opacity 0.15s ease;
-}
-.sidebar.collapsed .sidebar-empty { opacity: 0; height: 0; padding: 0; overflow: hidden; }
+/* collapsed: hide all recents — icon-only mode shows nothing below nav */
+.sidebar.collapsed .sidebar-item { display: none; }
+.sidebar.collapsed .sidebar-empty { display: none; }
 
 /* ══════════════════════════════════════
    MAIN AREA (right of sidebar)
