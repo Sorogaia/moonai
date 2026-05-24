@@ -346,22 +346,14 @@ module.exports = async (req, res) => {
       });
     }
 
-    // Overall still-holding metrics
-    // Cap at 100%: if current balance > detected launch buy, wallets accumulated more
-    // after launch (bought from secondary market or our detection missed some buys).
-    // > 100% is meaningless to show — "still holding" can only be 0–100%.
-    const rawStillPct = totalBundledAmount > 0
-      ? (currentHoldingTotal / totalBundledAmount) * 100
-      : 0;
-    const stillHoldingPct    = parseFloat(Math.min(100, rawStillPct).toFixed(1));
-    const dumpedPct          = parseFloat(Math.max(0, 100 - stillHoldingPct).toFixed(1));
-    // Did bundle wallets accumulate MORE than they bought at launch?
-    const accumulatedMore    = rawStillPct > 105; // 5% buffer for rounding
-    const stillHoldingSupplyPct = totalSupply > 0
-      ? parseFloat(((currentHoldingTotal / totalSupply) * 100).toFixed(2))
-      : 0;
+    // Per-bundle still-holding + clean up fullWallets before response.
+    // Also accumulate a CAPPED total for the accurate aggregate:
+    //   - raw currentHoldingTotal inflates the aggregate when wallets bought more after
+    //     launch (a 50× accumulator hides other wallets that fully dumped)
+    //   - capping each bundle at its launch amount means "still holding" = fraction of
+    //     the original bundled supply that hasn't been sold
+    let cappedHoldingTotal = 0;
 
-    // Per-bundle still-holding + clean up fullWallets before response
     for (const bundle of bundleList) {
       const bundleCurrentBal = (bundle.fullWallets || [])
         .reduce((s, w) => s + (currentBalMap[w] || 0), 0);
@@ -371,10 +363,23 @@ module.exports = async (req, res) => {
       bundle.stillHoldingPct  = parseFloat(Math.min(100, rawBundlePct).toFixed(1));
       bundle.dumpedPct        = parseFloat(Math.max(0, 100 - bundle.stillHoldingPct).toFixed(1));
       bundle.currentAmount    = parseFloat(bundleCurrentBal.toFixed(0));
-      // Flag if they appear to have bought more since launch
       bundle.accumulatedMore  = rawBundlePct > 105;
+      // Cap contribution at launch amount — post-launch buys don't count as "still holding bundle"
+      cappedHoldingTotal += Math.min(bundleCurrentBal, bundle.amount);
       delete bundle.fullWallets; // internal only — not sent to client
     }
+
+    // Aggregate metrics — derived AFTER per-bundle loop using capped total
+    const stillHoldingPct = totalBundledAmount > 0
+      ? parseFloat(Math.min(100, (cappedHoldingTotal / totalBundledAmount) * 100).toFixed(1))
+      : 0;
+    const dumpedPct = parseFloat(Math.max(0, 100 - stillHoldingPct).toFixed(1));
+    // accumulatedMore: at least one bundle wallet holds more than it bought at launch
+    const accumulatedMore = bundleList.some(b => b.accumulatedMore);
+    // stillHoldingSupplyPct uses raw (uncapped) total — shows actual current holdings vs total supply
+    const stillHoldingSupplyPct = totalSupply > 0
+      ? parseFloat(((currentHoldingTotal / totalSupply) * 100).toFixed(2))
+      : 0;
 
     return res.status(200).json({
       bundled:              bundleList.length > 0,
