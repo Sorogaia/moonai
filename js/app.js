@@ -140,6 +140,8 @@ function buildChatSystem() {
     d.devReputation ? `Dev reputation: ${d.devReputation}` : '',
     d.devPrevLaunched != null ? `Dev previous launches: ${d.devPrevLaunched} total — ${d.devPrevAlive} alive, ${d.devPrevBonded} bonded, ${d.devPrevDead} dead/rugged` : '',
     d.devPrevTokens?.length ? `Previous tokens: ${d.devPrevTokens.join(' | ')}` : '',
+    // DEX Paid
+    d.dexPaid != null ? `DEX Paid: ${d.dexPaid ? 'YES ✅ — trending page eligible' : 'NO ❌ — not paid'}` : '',
     // Socials
     d.twitter  ? `Twitter: ${d.twitter}` : '',
     d.telegram ? `Telegram: ${d.telegram}` : '',
@@ -1065,9 +1067,17 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
     buys1h:         dex?.buys1h,
     sells1h:        dex?.sells1h,
     devWallet:      pump?.dev,
-    twitter:        pump?.twitter,
-    telegram:       pump?.telegram,
-    website:        pump?.website,
+    // Socials — pump.fun first, fall back to DexScreener arrays
+    twitter:  pump?.twitter
+           || dex?.socials?.find(s => s.type === 'twitter')?.url
+           || dex?.socials?.find(s => s.type === 'x')?.url
+           || null,
+    telegram: pump?.telegram
+           || dex?.socials?.find(s => s.type === 'telegram')?.url
+           || null,
+    website:  pump?.website
+           || dex?.websites?.[0]?.url
+           || null,
     description:    tokenDescription?.slice(0, 300),
     momentumLabel,
     athMc:          fmtNum(sessionATH[ca]?.mc),
@@ -1946,7 +1956,7 @@ async function runAnalysis(raw) {
         `24h change: ${dex?.priceChange24h ? dex.priceChange24h+'%' : '—'}`,
         `Buys 24h: ${dex?.buys24h||'—'} | Sells 24h: ${dex?.sells24h||'—'}`,
         `Dev wallet: ${devWalletShort}`,
-        `Twitter: ${pump?.twitter||'none'} | Telegram: ${pump?.telegram||'none'} | Website: ${pump?.website||'none'}`,
+        `Twitter: ${pump?.twitter || dex?.socials?.find(s=>s.type==='twitter')?.url || dex?.socials?.find(s=>s.type==='x')?.url || 'none'} | Telegram: ${pump?.telegram || dex?.socials?.find(s=>s.type==='telegram')?.url || 'none'} | Website: ${pump?.website || dex?.websites?.[0]?.url || 'none'}`,
         pump?.description ? `Description: ${pump.description.slice(0,200)}` : '',
       ].filter(Boolean).join(', ');
 
