@@ -2577,37 +2577,25 @@ async function fetchLoreBubble(name, symbol, description, mc, ch24, bonded) {
   // overwrite a new token's lore if the user analyzes something else mid-flight.
   const _ca = currentCA;
 
-  // Use a 2s wait (non-blocking for main UX) — auto-retry once after 5s if not ready
-  let tsToken = null;
-  const deadline = Date.now() + 2000;
-  while (Date.now() < deadline) {
-    if (_tsToken) { tsToken = _tsToken; _tsToken = null; break; }
-    await new Promise(r => setTimeout(r, 100));
-  }
-  if (_isStale(_ca)) return;
-  if (!tsToken) {
-    // Turnstile not ready yet — retry once after 5 more seconds
-    if (loreEl.textContent === 'Analysing narrative…') {
-      setTimeout(() => { if (!_isStale(_ca)) fetchLoreBubble(name, symbol, description, mc, ch24, bonded); }, 5000);
-    }
-    return;
-  }
-
   try {
-    const res = await fetch('/api/chat', {
+    // Dedicated /api/lore endpoint — no Turnstile, just rate-limited.
+    // The previous Turnstile wait added 2-7s before the request even fired;
+    // this version is 1-2s end-to-end.
+    const res = await fetch('/api/lore', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model:      'claude-haiku-4-5',
-        max_tokens: 40,
-        system:     `You are MoonAi. Return ONE punchy sentence — max 15 words. What is this token's core narrative or vibe? Be direct, degen, specific. No filler. No price talk. Just the story.`,
-        messages:   [{ role: 'user', content: `${name} ($${symbol})${description ? ' — ' + description.slice(0, 150) : ''}${ch24 ? ' — 24h ' + ch24.str : ''}` }],
-        turnstileToken: tsToken,
+        name, symbol,
+        description: description ? description.slice(0, 200) : '',
+        ch24: ch24 ? ch24.str : '',
       }),
     });
     if (_isStale(_ca)) return;
+    if (!res.ok) { if (loreEl) loreEl.textContent = '—'; return; }
+
     const data = await res.json();
     if (_isStale(_ca)) return;
+
     const raw  = data?.content?.[0]?.text?.trim() || '';
     const text = raw
       .replace(/\*\*([^*]+)\*\*/g, '$1')   // **bold**
