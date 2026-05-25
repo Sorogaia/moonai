@@ -47,6 +47,12 @@ let sessionATH       = {}; // ca → { mc, price, time }
 let _liveData        = {}; // accumulates all fetched data for AI context
 let _lastBundles     = []; // last bundle list — used by pie tooltip
 
+// Returns true if the user has switched tokens since this fetch started.
+// Use AFTER any `await` in per-token fetch functions to bail before mutating
+// shared UI/_liveData state — prevents the OLD token's results from clobbering
+// the NEW token's analysis when the user analyzes tokens in quick succession.
+function _isStale(ca) { return ca !== currentCA; }
+
 /* ══════════════════════════════════════
    THEME TOGGLE
 ══════════════════════════════════════ */
@@ -361,17 +367,25 @@ document.addEventListener('click', e => {
   if (e.target.closest('.bpie-tip-x')) { hideBundleTip(); return; }
 });
 
-// Desktop hover — show bundle pie tooltip on mouseover segment or row
+// Desktop hover — show bundle pie tooltip on mouseover segment or row.
+// Uses a short debounce on hide to prevent flicker when transitioning between
+// a segment and a row that point to the same bundle.
+let _bpieHideTimer = null;
+function _cancelBpieHide() { if (_bpieHideTimer) { clearTimeout(_bpieHideTimer); _bpieHideTimer = null; } }
 document.addEventListener('mouseover', e => {
   if (window.innerWidth <= 768) return; // mobile = tap only
   const seg = e.target.closest('.bpie-seg-active');
   const row = e.target.closest('.bdl-row-active');
   if (seg) {
+    _cancelBpieHide();
     showBundleTip(parseInt(seg.dataset.bi), e.clientX, e.clientY);
   } else if (row) {
+    _cancelBpieHide();
     showBundleTip(parseInt(row.dataset.bi), e.clientX, e.clientY);
-  } else if (!e.target.closest('#bundlePieTip')) {
-    hideBundleTip();
+  } else if (!e.target.closest('#bundlePieTip') && !e.target.closest('.bundle-pie-section')) {
+    // Debounce hide so brief gaps between segments/rows don't kill the tooltip
+    _cancelBpieHide();
+    _bpieHideTimer = setTimeout(hideBundleTip, 120);
   }
 });
 
@@ -556,9 +570,26 @@ async function initTicker() {
 }
 
 // only init if ticker element exists in DOM
+let _tickerTimer = null;
+function _startTicker() {
+  if (_tickerTimer) return;
+  _tickerTimer = setInterval(initTicker, 60000);
+}
+function _stopTicker() {
+  if (_tickerTimer) { clearInterval(_tickerTimer); _tickerTimer = null; }
+}
 if (document.getElementById('tickerTrack')) {
   initTicker();
-  setInterval(initTicker, 60000);
+  _startTicker();
+  // Pause polling when tab is hidden — saves rate-limited 3rd-party API calls
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      _stopTicker();
+    } else {
+      initTicker();      // refresh immediately on return
+      _startTicker();
+    }
+  });
 }
 
 
@@ -1763,8 +1794,9 @@ async function fetchRugcheck(ca) {
   if (!el) return;
   try {
     const res = await fetch(`https://api.rugcheck.xyz/v1/tokens/${encodeURIComponent(ca)}/report/summary`);
-    if (!res.ok) return;
+    if (_isStale(ca) || !res.ok) return;
     const data = await res.json();
+    if (_isStale(ca)) return;
 
     const score   = data.score_normalised ?? Math.min(100, Math.round((data.score || 0) / 10));
     const rugged  = data.rugged === true;
@@ -2393,6 +2425,10 @@ async function fetchLoreBubble(name, symbol, description, mc, ch24, bonded) {
   const loreEl = document.getElementById('loreText');
   if (!loreEl) return;
 
+  // Snapshot the current token at call time so a slow narrative call doesn't
+  // overwrite a new token's lore if the user analyzes something else mid-flight.
+  const _ca = currentCA;
+
   // Use a 2s wait (non-blocking for main UX) — auto-retry once after 5s if not ready
   let tsToken = null;
   const deadline = Date.now() + 2000;
@@ -2400,10 +2436,11 @@ async function fetchLoreBubble(name, symbol, description, mc, ch24, bonded) {
     if (_tsToken) { tsToken = _tsToken; _tsToken = null; break; }
     await new Promise(r => setTimeout(r, 100));
   }
+  if (_isStale(_ca)) return;
   if (!tsToken) {
     // Turnstile not ready yet — retry once after 5 more seconds
     if (loreEl.textContent === 'Analysing narrative…') {
-      setTimeout(() => fetchLoreBubble(name, symbol, description, mc, ch24, bonded), 5000);
+      setTimeout(() => { if (!_isStale(_ca)) fetchLoreBubble(name, symbol, description, mc, ch24, bonded); }, 5000);
     }
     return;
   }
@@ -2420,7 +2457,9 @@ async function fetchLoreBubble(name, symbol, description, mc, ch24, bonded) {
         turnstileToken: tsToken,
       }),
     });
+    if (_isStale(_ca)) return;
     const data = await res.json();
+    if (_isStale(_ca)) return;
     const raw  = data?.content?.[0]?.text?.trim() || '';
     const text = raw
       .replace(/\*\*([^*]+)\*\*/g, '$1')   // **bold**
@@ -2433,7 +2472,7 @@ async function fetchLoreBubble(name, symbol, description, mc, ch24, bonded) {
       loreEl.textContent = text;
     }
   } catch {
-    if (loreEl) loreEl.textContent = '—';
+    if (!_isStale(_ca) && loreEl) loreEl.textContent = '—';
   }
 }
 
@@ -2447,7 +2486,9 @@ async function fetchTopHolders(ca, devWallet, solPrice, mcRaw) {
 
   try {
     const res  = await fetch(`/api/holders?ca=${encodeURIComponent(ca)}`);
+    if (_isStale(ca)) return;
     const data = await res.json();
+    if (_isStale(ca)) return;
 
     if (!res.ok || !data.holders?.length) {
       bodyEl.textContent = 'Holder data unavailable.';
@@ -2600,8 +2641,9 @@ function startAutoRefresh(ca) {
 
   autoRefreshTimer = setInterval(async () => {
     if (!hasAnalyzed || currentCA !== ca) { clearAutoRefresh(); return; }
+    if (document.hidden) return; // skip live refresh when tab is hidden
     const dex = await fetchDexScreener(ca).catch(() => null);
-    if (!dex) return;
+    if (!dex || currentCA !== ca) return; // user switched while refreshing
 
     // Update price bar values live
     const price = fmtPrice(dex.price);
@@ -2670,8 +2712,9 @@ async function fetchFreshWallets(ca, tokenCreatedAt) {
   try {
     const ageParam = tokenCreatedAt ? `&created=${tokenCreatedAt}` : '';
     const res  = await fetch(`/api/fresh-wallets?ca=${encodeURIComponent(ca)}${ageParam}`);
+    if (_isStale(ca)) return;
     const data = await res.json();
-    if (!res.ok || data.error) return;
+    if (_isStale(ca) || !res.ok || data.error) return;
     const pct = parseFloat(data.freshPct) || 0;
     const col = pct >= 50 ? '#ff3b30' : pct >= 25 ? '#ff9f0a' : 'var(--accent)';
     bodyEl.innerHTML = `<span style="color:${col};font-weight:700;">${pct.toFixed(0)}%</span> <span style="color:var(--text-faint);font-size:10px;">new wallets</span>`;
@@ -2695,7 +2738,9 @@ async function fetchTokenInfo(ca, devWallet, dex, pump) {
   try {
     const devParam = devWallet ? `&dev=${encodeURIComponent(devWallet)}` : '';
     const res  = await fetch(`/api/token-info?ca=${encodeURIComponent(ca)}${devParam}`);
+    if (_isStale(ca)) return;
     const info = await res.json();
+    if (_isStale(ca)) return;
 
     if (!res.ok || info.error) {
       bodyEl.innerHTML = `<span style="color:var(--text-faint);font-size:12px;">Safety data unavailable.</span>`;
@@ -3030,7 +3075,9 @@ async function fetchBundleDetection(ca, devWallet) {
   try {
     const devParam = devWallet ? `&dev=${encodeURIComponent(devWallet)}` : '';
     const res  = await fetch(`/api/bundles?ca=${encodeURIComponent(ca)}${devParam}`);
+    if (_isStale(ca)) return;
     const data = await res.json();
+    if (_isStale(ca)) return;
 
     if (!res.ok || data.error) {
       bodyEl.innerHTML = `<span class="no-data">Bundle data unavailable for this token.</span>`;
@@ -3201,9 +3248,14 @@ async function fetchDevHistory(devWallet) {
     return;
   }
 
+  // Snapshot current analysis target — bail after awaits if user switched tokens
+  const _ca = currentCA;
+
   try {
     const res  = await fetch(`/api/dev-history?dev=${encodeURIComponent(devWallet)}`);
+    if (_isStale(_ca)) return;
     const data = await res.json();
+    if (_isStale(_ca)) return;
 
     if (!res.ok || data.error) {
       bodyEl.innerHTML = `<span class="no-data">Dev history unavailable.</span>`;
@@ -3289,7 +3341,9 @@ async function fetchVampCoins(ca, symbol, name) {
 
   try {
     const res  = await fetch(`/api/vamps?ca=${encodeURIComponent(ca)}&symbol=${encodeURIComponent(symbol)}&name=${encodeURIComponent(name)}`);
+    if (_isStale(ca)) return;
     const data = await res.json();
+    if (_isStale(ca)) return;
 
     if (!res.ok || data.error || !data.vamps?.length) {
       bodyEl.innerHTML = `<span class="no-data">✅ No vamp coins detected — clean launch.</span>`;
@@ -3350,9 +3404,9 @@ async function fetchTokenHistory(ca, pairAddress) {
   try {
     const pairParam = pairAddress ? `&pair=${encodeURIComponent(pairAddress)}` : '';
     const res  = await fetch(`/api/token-history?ca=${encodeURIComponent(ca)}${pairParam}`);
+    if (_isStale(ca)) return;
     const data = await res.json();
-
-    if (!res.ok || data.error || !data.athPrice) return;
+    if (_isStale(ca) || !res.ok || data.error || !data.athPrice) return;
 
     // Store real ATH so the 60s auto-refresh cannot overwrite it with a lower current MC
     if (data.athMc > 0) _liveData.realAthMc = data.athMc;
@@ -3460,8 +3514,10 @@ async function fetchDexPaid(ca) {
   try {
     // Proxy via our backend to avoid CORS and normalize DexScreener's response format
     const res  = await fetch(`/api/dex-paid?ca=${encodeURIComponent(ca)}`);
+    if (_isStale(ca)) return;
     if (!res.ok) { el.innerHTML = `<span style="color:var(--text-faint);">—</span>`; return; }
     const data = await res.json();
+    if (_isStale(ca)) return;
 
     if (data.paid) {
       const label = data.type === 'takeover' ? '✓ Takeover' : data.type === 'boosted' ? '✓ Boosted' : '✓ Paid';
