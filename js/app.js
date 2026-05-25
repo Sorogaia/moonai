@@ -1092,10 +1092,20 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
   const liqRaw = dex?.liq
     || (pump?.virtualSolReserves && solPrice ? pump.virtualSolReserves * solPrice : null);
   const liq = fmtNum(liqRaw);
-  // isBonded: pump.fun confirmed migration, OR pump returned null but DexScreener shows Raydium
-  const isBonded = pump?.bonded === true
-    || (pump == null && (dex?.dex === 'raydium' || dex?.dex === 'raydiumv4'));
-  const bonded  = isBonded ? '✅ Migrated' : pump?.bonded === false ? '❌ No' : '—';
+  // isBonded — a pump.fun token is "bonded" / "migrated" once its liquidity
+  // moves off the pump.fun bonding curve to any post-graduation venue:
+  //   - pumpswap   (pump.fun's own AMM, default since mid-2025)
+  //   - raydium / raydium-clmm / raydium-cpmm  (legacy migration target)
+  //   - meteora-*  (occasional alt-migration target)
+  // We trust pump.fun's explicit `complete:true` flag, AND we trust the live
+  // DexScreener pair location — if DexScreener shows the token trading on a
+  // post-graduation DEX, it's migrated even if pump.fun's API is stale or absent.
+  const dexId = (dex?.dex || '').toLowerCase();
+  const isBondedDex = dexId === 'pumpswap'
+                   || dexId.startsWith('raydium')
+                   || dexId.startsWith('meteora');
+  const isBonded = pump?.bonded === true || isBondedDex;
+  const bonded   = isBonded ? '✅ Migrated' : pump?.bonded === false ? '❌ No' : '—';
   const bondPct = pump?.bondedPct ? pump.bondedPct + '%' : null;
   const dev     = pump?.dev ? pump.dev.substring(0,4)+'…'+pump.dev.slice(-4) : '—';
   const age     = dex?.created ? timeAgo(dex.created) : '—';
