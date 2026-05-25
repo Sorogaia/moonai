@@ -56,7 +56,8 @@ module.exports = async (req, res) => {
         sum + parseFloat(a.account?.data?.parsed?.info?.tokenAmount?.uiAmount || 0), 0);
       devBalance = totalRaw;
       devPct     = actualSupply > 0 ? ((totalRaw / actualSupply) * 100).toFixed(2) : '0.00';
-      devSold    = totalRaw === 0;
+      // < 1 full token = effectively sold (handles dust left over from sell txns)
+      devSold    = totalRaw < 1;
     }
 
     return res.status(200).json({

@@ -45,6 +45,7 @@ let autoRefreshTimer = null;
 let lastRefreshTime  = null;
 let sessionATH       = {}; // ca → { mc, price, time }
 let _liveData        = {}; // accumulates all fetched data for AI context
+let _lastBundles     = []; // last bundle list — used by pie tooltip
 
 /* ══════════════════════════════════════
    THEME TOGGLE
@@ -329,6 +330,46 @@ document.addEventListener('click', e => {
   // Vamp token rows
   const vampRow = e.target.closest('.vamp-tok-row[data-ca]');
   if (vampRow) { loadExample(vampRow.dataset.ca); return; }
+
+  // Bundle pie segment — tap to show tooltip (all devices)
+  const bpieSeg = e.target.closest('.bpie-seg-active');
+  if (bpieSeg) {
+    const bi  = parseInt(bpieSeg.dataset.bi);
+    const tip = document.getElementById('bundlePieTip');
+    if (tip && tip.style.display !== 'none' && parseInt(tip.dataset.bi) === bi) {
+      hideBundleTip(); // tap same segment again = close
+    } else {
+      showBundleTip(bi, e.clientX, e.clientY);
+    }
+    return;
+  }
+
+  // Bundle pie legend row — click to show tooltip
+  const bpieLeg = e.target.closest('.bpie-leg-active');
+  if (bpieLeg) {
+    const bi  = parseInt(bpieLeg.dataset.bi);
+    const tip = document.getElementById('bundlePieTip');
+    if (tip && tip.style.display !== 'none' && parseInt(tip.dataset.bi) === bi) {
+      hideBundleTip();
+    } else {
+      showBundleTip(bi, null, null);
+    }
+    return;
+  }
+
+  // Bundle pie tooltip close button
+  if (e.target.closest('.bpie-tip-x')) { hideBundleTip(); return; }
+});
+
+// Desktop hover — show bundle pie tooltip on mouseover
+document.addEventListener('mouseover', e => {
+  if (window.innerWidth <= 768) return; // mobile = tap only
+  const seg = e.target.closest('.bpie-seg-active');
+  if (seg) {
+    showBundleTip(parseInt(seg.dataset.bi), e.clientX, e.clientY);
+  } else if (!e.target.closest('#bundlePieTip') && !e.target.closest('.bpie-seg-active') && !e.target.closest('.bpie-leg-active')) {
+    hideBundleTip();
+  }
 });
 
 /* ══════════════════════════════════════
@@ -1332,6 +1373,7 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
       <div id="chartLoader" class="chart-loader">
         <div class="spinner" style="width:22px;height:22px;"></div>
         <span style="font-size:12px;color:var(--text-faint);margin-top:8px;">Loading chart…</span>
+        <a href="${escHtml(dex?.pairUrl || `https://dexscreener.com/solana/${ca}`)}" target="_blank" rel="noopener" class="chart-fallback-link">Slow? Open in DexScreener ↗</a>
       </div>
       <iframe
         id="dexChart"
@@ -2346,8 +2388,22 @@ async function fetchLoreBubble(name, symbol, description, mc, ch24, bonded) {
   const loreEl = document.getElementById('loreText');
   if (!loreEl) return;
 
+  // Use a 2s wait (non-blocking for main UX) — auto-retry once after 5s if not ready
+  let tsToken = null;
+  const deadline = Date.now() + 2000;
+  while (Date.now() < deadline) {
+    if (_tsToken) { tsToken = _tsToken; _tsToken = null; break; }
+    await new Promise(r => setTimeout(r, 100));
+  }
+  if (!tsToken) {
+    // Turnstile not ready yet — retry once after 5 more seconds
+    if (loreEl.textContent === 'Analysing narrative…') {
+      setTimeout(() => fetchLoreBubble(name, symbol, description, mc, ch24, bonded), 5000);
+    }
+    return;
+  }
+
   try {
-    const tsToken = await getTurnstileToken();
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2812,6 +2868,127 @@ function renderSafetyScore({ score, flags, good }, info) {
 }
 
 /* ══════════════════════════════════════
+   BUNDLE PIE CHART HELPERS
+══════════════════════════════════════ */
+function buildBundlePie(bundles, totalPct, cleanPct) {
+  // Stroke-dasharray donut: each segment is a circle with partial stroke
+  // circumference ≈ 100 when r = 100/(2π) ≈ 15.92
+  const R = 15.9159, SW = 6, PAD = 2;
+  const VB = (R + SW + PAD) * 2;
+  const CX = VB / 2, CY = VB / 2;
+  const COLS = ['#ff3b30','#ff6b35','#ff9f0a','#ffb840','#ffd060'];
+
+  const segs = [
+    ...bundles.map((b, i) => ({ pct: parseFloat(b.pct) || 0, col: COLS[Math.min(i, COLS.length - 1)], bi: i, active: true })),
+    { pct: cleanPct, col: 'rgba(20,241,149,0.3)', bi: -1, active: false },
+  ].filter(s => s.pct > 0.1);
+
+  // Background ring
+  let svgInner = `<circle cx="${CX.toFixed(2)}" cy="${CY.toFixed(2)}" r="${R}" fill="none" stroke="var(--border2)" stroke-width="${SW}"/>`;
+
+  let cumPct = 0;
+  segs.forEach(s => {
+    const dashOffset = 25 - cumPct;
+    const cls  = s.active ? 'class="bpie-seg bpie-seg-active" ' : 'class="bpie-seg" ';
+    const data = s.active ? `data-bi="${s.bi}" ` : '';
+    svgInner += `<circle cx="${CX.toFixed(2)}" cy="${CY.toFixed(2)}" r="${R}"
+      fill="none" stroke="${s.col}" stroke-width="${SW}"
+      stroke-dasharray="${s.pct.toFixed(2)} ${(100 - s.pct).toFixed(2)}"
+      stroke-dashoffset="${dashOffset.toFixed(2)}"
+      ${cls}${data}/>`;
+    cumPct += s.pct;
+  });
+
+  // Legend
+  const legendHtml = [
+    ...bundles.map((b, i) => {
+      const still    = b.stillHoldingPct;
+      const stillCol = still != null ? (still >= 70 ? '#ff3b30' : still >= 30 ? '#ff9f0a' : '#14F195') : null;
+      const stillBit = still != null
+        ? `<span style="color:${stillCol};font-size:9px;"> · ${b.accumulatedMore ? '+more' : still === 0 ? '✓ dumped' : still + '% held'}</span>`
+        : '';
+      return `<div class="bpie-leg bpie-leg-active" data-bi="${i}">
+        <span class="bpie-dot" style="background:${COLS[Math.min(i, COLS.length - 1)]};"></span>
+        <span class="bpie-lbl">${escHtml(b.label)}</span>
+        <span class="bpie-lpct">${b.pct}%${stillBit}</span>
+      </div>`;
+    }),
+    `<div class="bpie-leg">
+      <span class="bpie-dot" style="background:rgba(20,241,149,0.5);"></span>
+      <span class="bpie-lbl">Clean supply</span>
+      <span class="bpie-lpct">${cleanPct.toFixed(1)}%</span>
+    </div>`,
+  ].join('');
+
+  return `
+  <div class="bundle-pie-section">
+    <div class="bpie-wrap">
+      <div class="bpie-svg-wrap">
+        <svg viewBox="0 0 ${VB.toFixed(1)} ${VB.toFixed(1)}" width="${Math.round(VB)}" height="${Math.round(VB)}" id="bundlePieSvg" style="display:block;overflow:visible;">${svgInner}</svg>
+        <div class="bpie-center">
+          <div class="bpie-cv">${totalPct.toFixed(0)}%</div>
+          <div class="bpie-cl">bundled</div>
+        </div>
+      </div>
+      <div class="bpie-legend">${legendHtml}</div>
+    </div>
+    <div class="bpie-tip" id="bundlePieTip" style="display:none;position:absolute;"></div>
+  </div>`;
+}
+
+function showBundleTip(bidx, mouseX, mouseY) {
+  const tip = document.getElementById('bundlePieTip');
+  if (!tip) return;
+  const b = _lastBundles[bidx];
+  if (!b) { tip.style.display = 'none'; return; }
+
+  const stillCol = (b.stillHoldingPct ?? 0) >= 70 ? '#ff3b30' : (b.stillHoldingPct ?? 0) >= 30 ? '#ff9f0a' : '#14F195';
+  const jitoTag  = b.jitoConfirmed ? '<span class="bpie-tip-jito">JITO</span>' : '';
+  const stillLine = b.stillHoldingPct != null
+    ? `<div style="color:${stillCol};font-size:11px;margin-top:5px;">
+        ${b.accumulatedMore ? '📈 Accumulated more since launch'
+          : b.stillHoldingPct === 0 ? '✓ Fully dumped — no sell pressure'
+          : `${b.stillHoldingPct}% still holding · ${b.dumpedPct}% dumped`}
+       </div>`
+    : '';
+  const walletHtml = (b.wallets || []).length
+    ? `<div class="bpie-tip-wallets">${(b.wallets || []).map(w => escHtml(w)).join(' · ')}</div>`
+    : '';
+  const metaHtml = (b.funder || b.slot)
+    ? `<div class="bpie-tip-meta">${[b.funder ? 'source: ' + b.funder : '', b.slot ? 'block #' + b.slot : ''].filter(Boolean).join(' · ')}</div>`
+    : '';
+
+  tip.innerHTML = `
+    <button class="bpie-tip-x" title="Close">✕</button>
+    <div class="bpie-tip-name">${escHtml(b.label)} ${jitoTag}</div>
+    <div class="bpie-tip-pct">${b.pct}% of supply · ${(b.wallets || []).length} wallet${(b.wallets || []).length !== 1 ? 's' : ''}</div>
+    ${b.desc ? `<div class="bpie-tip-desc">${escHtml(b.desc)}</div>` : ''}
+    ${walletHtml}
+    ${stillLine}
+    ${metaHtml}`;
+
+  if (mouseX != null && window.innerWidth > 768) {
+    // Desktop: fixed near cursor
+    const tw = 210;
+    let lx = mouseX + 18;
+    let ly = mouseY - 16;
+    if (lx + tw > window.innerWidth - 8) lx = mouseX - tw - 8;
+    if (ly + 140 > window.innerHeight - 8) ly = mouseY - 140;
+    if (ly < 8) ly = 8;
+    tip.style.cssText = `display:block;position:fixed;left:${lx}px;top:${ly}px;`;
+  } else {
+    // Mobile: relative, below chart
+    tip.style.cssText = `display:block;position:relative;margin-top:8px;`;
+  }
+  tip.dataset.bi = bidx;
+}
+
+function hideBundleTip() {
+  const tip = document.getElementById('bundlePieTip');
+  if (tip) tip.style.display = 'none';
+}
+
+/* ══════════════════════════════════════
    BUNDLE DETECTION
 ══════════════════════════════════════ */
 async function fetchBundleDetection(ca, devWallet) {
@@ -2906,49 +3083,19 @@ async function fetchBundleDetection(ca, devWallet) {
     // "Still holding" colors
     const stillHolding  = data.stillHoldingPct ?? null;
     const stillCol = stillHolding == null ? 'var(--text-faint)'
-                   : stillHolding >= 70 ? '#ff3b30'    // mostly still holding = dump risk
+                   : stillHolding >= 70 ? '#ff3b30'
                    : stillHolding >= 30 ? '#ff9f0a'
-                   : '#14F195';                          // most has already been sold
+                   : '#14F195';
     const dumpedCol = stillHolding == null ? 'var(--text-faint)'
-                    : stillHolding <= 30 ? '#14F195'    // most dumped = lower pressure
+                    : stillHolding <= 30 ? '#14F195'
                     : stillHolding <= 70 ? '#ff9f0a'
                     : '#ff3b30';
 
-    // Bundle rows (with per-bundle still-holding)
-    const bundleRows = (data.bundles || []).map(b => {
-      const bStillCol = b.stillHoldingPct == null ? 'var(--text-faint)'
-                      : b.stillHoldingPct >= 70 ? '#ff3b30'
-                      : b.stillHoldingPct >= 30 ? '#ff9f0a'
-                      : '#14F195';
-      const stillLine = b.stillHoldingPct != null
-        ? `<span style="font-size:10px;color:${bStillCol};margin-left:4px;">▸ ${
-            b.accumulatedMore
-              ? `still holding <span style="color:#ff9f0a;">(bought more since launch)</span>`
-              : b.stillHoldingPct === 0
-                ? 'fully dumped'
-                : `${b.stillHoldingPct}% still held`
-          }</span>`
-        : '';
-      const metaChips = [
-        b.jitoConfirmed ? '<span class="badge-b-jito">JITO</span>' : '',
-        b.funder ? `<span class="bundle-row-meta">source: ${b.funder}</span>` : '',
-        b.slot   ? `<span class="bundle-row-meta">block #${b.slot}</span>` : '',
-      ].filter(Boolean).join('');
+    // Store bundles for pie tooltip
+    _lastBundles = data.bundles || [];
 
-      return `
-      <div class="bundle-row">
-        <div class="bundle-row-top">
-          <div class="bundle-row-left">
-            <span class="bundle-row-name">${b.label}</span>
-            ${metaChips}
-          </div>
-          <span class="bundle-row-pct" style="color:${riskCol};">${b.pct}%</span>
-        </div>
-        ${b.desc ? `<div class="bundle-row-desc">${b.desc}</div>` : ''}
-        <div class="bundle-row-wallets">${b.wallets.join(' · ')}${stillLine}</div>
-        <div class="bundle-row-bar"><div class="bundle-row-fill" style="background:${riskCol};width:${Math.min(parseFloat(b.pct) * 3, 100)}%;"></div></div>
-      </div>`;
-    }).join('');
+    const cleanPct = Math.max(0, 100 - pct);
+    const pieHtml  = buildBundlePie(_lastBundles, pct, cleanPct);
 
     bodyEl.innerHTML = `
       <div class="bundle-header">
@@ -2990,11 +3137,9 @@ async function fetchBundleDetection(ca, devWallet) {
         </span>
       </div>
 
-      <div class="bundle-bar"><div class="bundle-bar-fill" style="background:${riskCol};width:${Math.min(pct, 100)}%;"></div></div>
+      ${pieHtml}
 
-      ${bundleRows}
-
-      <div class="bundle-verdict" style="background:${riskBg};border-color:${riskBd};">
+      <div class="bundle-verdict" style="background:${riskBg};border-color:${riskBd};margin-top:10px;">
         <span>${pct >= 20 ? '🚨' : pct >= 5 ? '⚠️' : '✅'}</span>
         <div>
           <span style="font-size:12px;font-weight:700;color:${riskCol};">${risk} RISK</span>
@@ -3152,13 +3297,14 @@ async function fetchVampCoins(ca, symbol, name) {
       badgeEl.className = count >= 3 ? 'card-badge badge-red' : 'card-badge badge-amber';
     }
 
-    const rowsHtml = data.vamps.map(v => {
+    const buildVampRow = v => {
       const short   = v.ca.slice(0,4) + '…' + v.ca.slice(-4);
       const mcStr   = v.mc > 0 ? fmtNum(v.mc) : '—';
       const ch      = v.priceChange24h;
       const chStr   = ch != null ? `<span style="color:${ch>=0?'var(--accent)':'var(--danger)'};">${ch>=0?'+':''}${ch.toFixed(1)}%</span>` : '';
-      const imgHtml = safeImg(v.image)
-        ? `<img src="${escHtml(safeImg(v.image))}" class="vamp-tok-img img-fb-vamp-ph">`
+      const imgSrc  = safeImg(v.image);
+      const imgHtml = imgSrc
+        ? `<img src="${escHtml(imgSrc)}" class="vamp-tok-img img-fb-vamp-ph" alt="">`
         : `<div class="vamp-tok-img-ph">🧛</div>`;
       return `
         <div class="vamp-tok-row" data-ca="${escHtml(v.ca)}" title="Analyse ${escHtml(v.name)}">
@@ -3173,9 +3319,16 @@ async function fetchVampCoins(ca, symbol, name) {
             </div>
           </div>
         </div>`;
-    }).join('');
+    };
 
-    bodyEl.innerHTML = rowsHtml;
+    const top3  = data.vamps.slice(0, 3);
+    const rest  = data.vamps.slice(3);
+    const moreHtml = rest.length
+      ? `<div id="vampsExtra" style="display:none;">${rest.map(buildVampRow).join('')}</div>
+         <button class="expand-btn vamp-more-btn" data-expand="vampsExtra" data-count="${rest.length}">▼ Show ${rest.length} more vamps</button>`
+      : '';
+
+    bodyEl.innerHTML = top3.map(buildVampRow).join('') + moreHtml;
 
   } catch {
     bodyEl.innerHTML = `<span class="no-data">Vamp scan unavailable.</span>`;
@@ -3298,28 +3451,18 @@ async function fetchDexPaid(ca) {
   const el = document.getElementById('tiq-dexpaid');
   if (!el) return;
   try {
-    const res  = await fetch(`https://api.dexscreener.com/orders/v1/solana/${ca}`);
+    // Proxy via our backend to avoid CORS and normalize DexScreener's response format
+    const res  = await fetch(`/api/dex-paid?ca=${encodeURIComponent(ca)}`);
     if (!res.ok) { el.innerHTML = `<span style="color:var(--text-faint);">—</span>`; return; }
-    const orders = await res.json();
-    if (!Array.isArray(orders)) { el.innerHTML = `<span style="color:var(--text-faint);">—</span>`; return; }
+    const data = await res.json();
 
-    // "Dex Paid" = any order that has been paid for and not rejected/cancelled.
-    // DexScreener statuses: approved | processing | rejected | cancelled
-    // We count 'approved' (live) AND 'processing' (paid, in review) — Axiom does the same.
-    // Order types include: tokenProfile, tokenAd, communityTakeover, trendingBarAd, bannerAd, etc.
-    const paid = orders.some(o => o.status === 'approved' || o.status === 'processing');
-
-    if (paid) {
-      // Show what kind of order it is
-      const hasProfile  = orders.some(o => o.type === 'tokenProfile'  && (o.status === 'approved' || o.status === 'processing'));
-      const hasAd       = orders.some(o => (o.type === 'tokenAd' || o.type === 'trendingBarAd' || o.type === 'bannerAd') && (o.status === 'approved' || o.status === 'processing'));
-      const hasTakeover = orders.some(o => o.type === 'communityTakeover' && (o.status === 'approved' || o.status === 'processing'));
-      const label = hasTakeover ? '✓ Takeover' : hasAd ? '✓ Boosted' : '✓ Paid';
+    if (data.paid) {
+      const label = data.type === 'takeover' ? '✓ Takeover' : data.type === 'boosted' ? '✓ Boosted' : '✓ Paid';
       el.innerHTML = `<span style="color:#14F195;font-weight:800;">${label}</span>`;
     } else {
       el.innerHTML = `<span style="color:var(--text-faint);font-weight:700;">✕ Unpaid</span>`;
     }
-    _liveData.dexPaid = paid;
+    _liveData.dexPaid = data.paid;
   } catch {
     el.innerHTML = `<span style="color:var(--text-faint);">—</span>`;
   }
@@ -3443,13 +3586,15 @@ function escHtml(s) {
     .replace(/'/g,'&#039;');
 }
 
-// Only allow https:// image URLs — blocks javascript:, data:, http://, etc.
+// Allow https://, http:// (upgraded), and ipfs:// (converted to public gateway).
+// Blocks javascript:, data:, and anything else.
 function safeImg(url) {
   if (!url || typeof url !== 'string') return null;
   const t = url.trim();
   if (t.startsWith('https://')) return t;
-  if (t.startsWith('http://'))  return 'https://' + t.slice(7); // upgrade to https
-  return null; // block javascript:, data:, and anything else
+  if (t.startsWith('http://'))  return 'https://' + t.slice(7);
+  if (t.startsWith('ipfs://'))  return 'https://ipfs.io/ipfs/' + t.slice(7);
+  return null;
 }
 
 function formatAlpha(text) {

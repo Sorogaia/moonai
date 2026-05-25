@@ -34,7 +34,7 @@ function getIP(req) {
 
 /**
  * Validate an image URL from a third-party API before returning it to the client.
- * Only allows https:// and http:// URLs (http upgraded to https).
+ * Allows https://, http:// (upgraded), and ipfs:// (converted to public gateway).
  * Blocks javascript:, data:, and anything else.
  */
 function safeImageUrl(url) {
@@ -42,6 +42,7 @@ function safeImageUrl(url) {
   const t = url.trim();
   if (t.startsWith('https://')) return t;
   if (t.startsWith('http://'))  return 'https://' + t.slice(7);
+  if (t.startsWith('ipfs://'))  return 'https://ipfs.io/ipfs/' + t.slice(7);
   return null;
 }
 
