@@ -82,7 +82,8 @@
 /* Remove 300ms tap delay on all interactive elements */
 a, button, [onclick], .sug-pill, .ex-pill, .feat-chip,
 .dev-tok-row, .vamp-tok-row, .expand-btn, .copy-ca-btn,
-.analysis-btn, .send-btn, .toggle-track {
+.analysis-btn, .send-btn, .toggle-track,
+.bdl-row-active, .bpie-seg-active, .sidebar-item, .sidebar-nav-item {
   touch-action: manipulation;
 }
 
@@ -174,7 +175,10 @@ html, body {
 ══════════════════════════════════════ */
 .app-layout {
   position: relative; z-index: 1;
-  display: flex; height: 100vh; overflow: hidden;
+  display: flex;
+  height: 100vh;              /* fallback for older browsers */
+  height: 100dvh;             /* iOS Safari: adjusts as address bar shows/hides */
+  overflow: hidden;
 }
 
 /* ══════════════════════════════════════
@@ -357,7 +361,8 @@ html, body {
 .shell {
   position: relative; z-index: 1;
   display: flex; flex-direction: column;
-  height: 100vh; max-width: 1100px;
+  height: 100vh; height: 100dvh; /* iOS Safari dynamic viewport */
+  max-width: 1100px;
   margin: 0 auto;
   padding: 0 1.5rem;
 }
@@ -368,6 +373,8 @@ html, body {
 .header {
   display: flex; align-items: center; justify-content: flex-end;
   padding: 0.75rem 1.5rem 0.75rem;
+  /* Notched iPhones — push header below the status bar */
+  padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   transition: border-color var(--transition);
@@ -844,11 +851,15 @@ html, body {
 }
 .btn-ghost:hover { border-color: var(--text-muted); color: var(--text); }
 .modal-close {
-  position: absolute; top: 12px; right: 14px;
+  position: absolute; top: 8px; right: 8px;
   background: none; border: none; color: var(--text-faint);
-  cursor: pointer; font-size: 16px; line-height: 1;
-  transition: color var(--transition);
+  cursor: pointer; font-size: 18px; line-height: 1;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px;
+  transition: color var(--transition), background var(--transition);
 }
+.modal-close:active { background: rgba(255,255,255,0.06); }
 .modal-close:hover { color: var(--text); }
 .modal-note { margin-top: 0.65rem; font-size: 11px; color: var(--text-faint); line-height: 1.6; }
 .modal-note a { color: var(--accent); text-decoration: none; }
@@ -1298,10 +1309,10 @@ html, body {
 .sidebar-backdrop.visible { display: block; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* Header hamburger — hidden on desktop */
+/* Header hamburger — hidden on desktop. 44×44 hits Apple HIG / WCAG tap-target minimum on mobile */
 .header-hamburger {
   display: none;
-  width: 38px; height: 38px;
+  width: 44px; height: 44px;
   background: transparent; border: none;
   border-radius: 8px; cursor: pointer;
   color: var(--text-muted);
@@ -1363,10 +1374,12 @@ html, body {
   .main { padding: 0.75rem 1rem 0.5rem; }
   .bottom-bar { padding: 0.5rem 1rem 1rem; padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); }
 
-  /* Bigger, more prominent input on mobile */
+  /* Bigger, more prominent input on mobile.
+     16px font-size prevents iOS Safari from auto-zooming on focus. */
   .input-wrap { padding: 6px 6px 6px 16px; }
-  .main-input { font-size: 15px; }
-  .send-btn { width: 40px; height: 40px; }
+  .main-input { font-size: 16px; }
+  .main-input::placeholder { font-size: 15px; }
+  .send-btn { width: 44px; height: 44px; }
 
   /* Welcome screen vertically centered with more breathing room */
   .welcome { min-height: 70vh; padding: 2rem 1.25rem; }
@@ -1430,9 +1443,22 @@ html, body {
   /* Bundle pie donut shrinks slightly on tight screens to leave breathing room */
   .bpie-donut-wrap { width:120px; height:120px; }
   .bpie-cv         { font-size:1.5rem; }
-  .bpie-meta       { font-size:9.5px; }
+  .bpie-meta       { font-size:9.5px; line-height:1.4; }
   .bdl-row         { padding:4px 6px; font-size:11px; gap:6px; }
   .bdl-status      { font-size:8.5px; padding:1px 5px; }
+
+  /* Token Intel 3×3 grid — keep 3 columns, but bump padding so each cell still
+     has comfortable touch room and label/value readable on 320px screens */
+  .tiq             { padding:7px 6px; gap:2px; }
+  .tiq-val         { font-size:12px; }
+  .tiq-lbl         { font-size:8.5px; }
+
+  /* Token meta row — tighter gap so it doesn't push CA off-screen on small phones */
+  .tok-meta-row    { gap:6px; }
+  .tok-ca-txt      { font-size:10px; }
+
+  /* Expand buttons — bigger tap target */
+  .expand-btn      { padding:11px; font-size:12.5px; }
 }
 
 /* ══════════════════════════════════════
