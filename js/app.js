@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // If the URL has a CA hash, auto-run analysis
   const hashCA = window.location.hash.slice(1).trim();
-  if (hashCA && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(hashCA)) {
+  if (isValidCA(hashCA)) {
     setTimeout(() => runAnalysis(hashCA), 120);
   }
 });
@@ -318,9 +318,9 @@ document.addEventListener('click', e => {
     return;
   }
 
-  // Dev history token rows
+  // Dev history token rows — auto-analyze (consistent with sidebar recents)
   const devRow = e.target.closest('.dev-tok-row[data-ca]');
-  if (devRow) { loadExample(devRow.dataset.ca); return; }
+  if (devRow) { sidebarLoadCA(devRow.dataset.ca); return; }
 
   // Vamp copy button (check before vamp row)
   const vampCopyBtn = e.target.closest('.vamp-copy-btn[data-copy-ca]');
@@ -333,9 +333,9 @@ document.addEventListener('click', e => {
     return;
   }
 
-  // Vamp token rows
+  // Vamp token rows — auto-analyze (consistent with sidebar recents)
   const vampRow = e.target.closest('.vamp-tok-row[data-ca]');
-  if (vampRow) { loadExample(vampRow.dataset.ca); return; }
+  if (vampRow) { sidebarLoadCA(vampRow.dataset.ca); return; }
 
   // Bundle pie segment — tap to show tooltip (all devices)
   const bpieSeg = e.target.closest('.bpie-seg-active');
@@ -616,12 +616,6 @@ mainInput.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
 });
 
-function loadExample(val) {
-  mainInput.value = val;
-  mainInput.style.height = 'auto';
-  mainInput.focus();
-}
-
 /* ══════════════════════════════════════
    TOPIC GUARD — Solana/memecoin only
 ══════════════════════════════════════ */
@@ -661,7 +655,13 @@ const OFF_TOPIC_REPLY = `I'm MoonAi — I only analyze Solana tokens and memecoi
 ══════════════════════════════════════ */
 function handleSend() {
   const raw = mainInput.value.trim();
-  if (!raw) { mainInput.focus(); return; }
+  if (!raw) {
+    mainInput.focus();
+    // Visual feedback for empty submit
+    const wrap = mainInput.closest('.input-wrap');
+    if (wrap) { wrap.classList.remove('input-shake'); void wrap.offsetWidth; wrap.classList.add('input-shake'); }
+    return;
+  }
 
   // Client-side topic guard
   if (isOffTopic(raw)) {
@@ -681,18 +681,28 @@ function handleSend() {
     return;
   }
 
+  // Detect intent BEFORE clearing input (so we can show the raw text in errors)
+  const isURL = raw.includes('pump.fun');
+  const looksLikeCA = isURL || /^[1-9A-HJ-NP-Za-km-z]{30,50}$/.test(raw);
+
+  // If they're trying to analyze a token, validate the address before firing 8+ API calls
+  if (looksLikeCA || !hasAnalyzed) {
+    const ca = extractCA(raw);
+    if (!ca) {
+      showToast('That doesn\'t look like a valid Solana address.');
+      mainInput.focus();
+      return;
+    }
+    mainInput.value = '';
+    mainInput.style.height = 'auto';
+    runAnalysis(ca);
+    return;
+  }
+
+  // Otherwise it's a chat message — send it
   mainInput.value = '';
   mainInput.style.height = 'auto';
-
-  // If it looks like a CA or pump.fun URL → run full analysis
-  const isCA  = /^[A-Za-z0-9]{32,50}$/.test(raw.trim());
-  const isURL = raw.includes('pump.fun');
-
-  if (isCA || isURL || !hasAnalyzed) {
-    runAnalysis(raw);
-  } else {
-    sendChat(raw);
-  }
+  sendChat(raw);
 }
 
 /* ══════════════════════════════════════
@@ -718,14 +728,23 @@ function scrollTop() {
 /* ══════════════════════════════════════
    EXTRACT CA
 ══════════════════════════════════════ */
+// Solana addresses are base58 — excludes 0, O, I, l. Length 32-44.
+const _SOL_CA_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+function isValidCA(s) { return typeof s === 'string' && _SOL_CA_RE.test(s); }
+
 function extractCA(raw) {
-  raw = raw.trim();
-  let m = raw.match(/pump\.fun\/coin\/([A-Za-z0-9]+)/);
+  raw = (raw || '').trim();
+  // pump.fun URL formats
+  let m = raw.match(/pump\.fun\/coin\/([1-9A-HJ-NP-Za-km-z]{32,44})/);
   if (m) return m[1];
-  m = raw.match(/pump\.fun\/([A-Za-z0-9]{32,50})/);
+  m = raw.match(/pump\.fun\/([1-9A-HJ-NP-Za-km-z]{32,44})/);
   if (m) return m[1];
-  if (/^[A-Za-z0-9]{32,50}$/.test(raw)) return raw;
-  return raw.replace(/\s/g, '');
+  // Direct CA
+  if (isValidCA(raw)) return raw;
+  // Strip whitespace as a last resort and try again — handles pasted CA with stray spaces
+  const stripped = raw.replace(/\s/g, '');
+  if (isValidCA(stripped)) return stripped;
+  return ''; // not a valid CA — caller must show an error
 }
 
 /* ══════════════════════════════════════
@@ -1966,14 +1985,19 @@ function statCard(label, value, colorClass) {
    RUN ANALYSIS — mode-aware
 ══════════════════════════════════════ */
 async function runAnalysis(raw) {
-  currentCA    = extractCA(raw);
+  const ca = extractCA(raw);
+  if (!ca) {
+    showToast('That doesn\'t look like a valid Solana address.');
+    return;
+  }
+  currentCA    = ca;
   chatMessages = [];
   _liveData    = {};
+  _lastBundles = []; // reset bundle tooltip state from previous analysis
+  hideBundleTip();   // close any open tooltip from the previous token
 
   // Persist CA in URL hash so browser refresh re-runs the same analysis
-  if (currentCA) {
-    history.replaceState(null, '', '#' + currentCA);
-  }
+  history.replaceState(null, '', '#' + currentCA);
 
   showFeed();
   document.getElementById('chatFeed').innerHTML = '';
@@ -2709,12 +2733,15 @@ function updateRefreshIndicator() {
 async function fetchFreshWallets(ca, tokenCreatedAt) {
   const bodyEl = document.getElementById('freshWalletVal');
   if (!bodyEl) return;
+  // Fallback "—" if anything goes wrong below (instead of leaving the spinning … placeholder)
+  const showUnavailable = () => { if (!_isStale(ca)) bodyEl.innerHTML = `<span class="no-data">—</span>`; };
   try {
     const ageParam = tokenCreatedAt ? `&created=${tokenCreatedAt}` : '';
     const res  = await fetch(`/api/fresh-wallets?ca=${encodeURIComponent(ca)}${ageParam}`);
     if (_isStale(ca)) return;
     const data = await res.json();
-    if (_isStale(ca) || !res.ok || data.error) return;
+    if (_isStale(ca)) return;
+    if (!res.ok || data.error) { showUnavailable(); return; }
     const pct = parseFloat(data.freshPct) || 0;
     const col = pct >= 50 ? '#ff3b30' : pct >= 25 ? '#ff9f0a' : 'var(--accent)';
     bodyEl.innerHTML = `<span style="color:${col};font-weight:700;">${pct.toFixed(0)}%</span> <span style="color:var(--text-faint);font-size:10px;">new wallets</span>`;
@@ -2724,7 +2751,7 @@ async function fetchFreshWallets(ca, tokenCreatedAt) {
     updateRiskStrip();
     updateTokenIntel();
     updateVerdictBadge();
-  } catch {}
+  } catch { showUnavailable(); }
 }
 
 /* ══════════════════════════════════════

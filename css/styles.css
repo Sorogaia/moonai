@@ -1426,7 +1426,26 @@ html, body {
   /* Welcome screen */
   .welcome h1      { font-size:1.5rem; }
   .feat-chip       { font-size:11px; padding:6px 10px; }
+
+  /* Bundle pie donut shrinks slightly on tight screens to leave breathing room */
+  .bpie-donut-wrap { width:120px; height:120px; }
+  .bpie-cv         { font-size:1.5rem; }
+  .bpie-meta       { font-size:9.5px; }
+  .bdl-row         { padding:4px 6px; font-size:11px; gap:6px; }
+  .bdl-status      { font-size:8.5px; padding:1px 5px; }
 }
+
+/* ══════════════════════════════════════
+   INPUT SHAKE (empty-submit feedback)
+══════════════════════════════════════ */
+@keyframes inputShake {
+  0%,100% { transform: translateX(0); }
+  20%     { transform: translateX(-4px); }
+  40%     { transform: translateX(4px); }
+  60%     { transform: translateX(-3px); }
+  80%     { transform: translateX(2px); }
+}
+.input-shake { animation: inputShake 0.32s ease; }
 
 /* ══════════════════════════════════════
    BETA GATE
