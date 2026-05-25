@@ -1039,7 +1039,10 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
   const liqRaw = dex?.liq
     || (pump?.virtualSolReserves && solPrice ? pump.virtualSolReserves * solPrice : null);
   const liq = fmtNum(liqRaw);
-  const bonded  = pump?.bonded ? '✅ Yes' : pump?.bonded === false ? '❌ No' : '—';
+  // isBonded: pump.fun confirmed migration, OR pump returned null but DexScreener shows Raydium
+  const isBonded = pump?.bonded === true
+    || (pump == null && (dex?.dex === 'raydium' || dex?.dex === 'raydiumv4'));
+  const bonded  = isBonded ? '✅ Migrated' : pump?.bonded === false ? '❌ No' : '—';
   const bondPct = pump?.bondedPct ? pump.bondedPct + '%' : null;
   const dev     = pump?.dev ? pump.dev.substring(0,4)+'…'+pump.dev.slice(-4) : '—';
   const age     = dex?.created ? timeAgo(dex.created) : '—';
@@ -1098,7 +1101,7 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
     vol24h:         fmtNum(dex?.vol24h),
     vol1h:          fmtNum(dex?.vol1h),
     liq:            fmtNum(dex?.liq),
-    bonded:         pump?.bonded,
+    bonded:         isBonded,
     bondedPct:      pump?.bondedPct,
     priceChange1h:  dex?.priceChange1h,
     priceChange24h: dex?.priceChange24h,
@@ -1129,7 +1132,7 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
 
   // ── BONDING CURVE ──
   let bondingCurveHtml = '';
-  if (pump?.bonded) {
+  if (isBonded) {
     bondingCurveHtml = `
       <div class="bond-label">Bonding Curve</div>
       <div class="bond-status-ok">✅ Graduated to Raydium</div>
@@ -1472,9 +1475,8 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
         </div>
         <div class="tiq">
           <div class="tiq-val" id="tiq-lp">${
-            pump?.bonded === true  ? '<span style="color:#14F195;">Burned ✓</span>'
+            isBonded                ? '<span style="color:#14F195;">Migrated ✓</span>'
           : pump?.bonded === false ? '<span style="color:#ff9f0a;">Bonding</span>'
-          : dex?.dex === 'raydium' ? '<span style="color:#14F195;">Raydium</span>'
           : dex?.dex              ? `<span style="color:#ff9f0a;">${escHtml(dex.dex)}</span>`
           : '—'
           }</div>
@@ -2706,15 +2708,26 @@ async function fetchTokenInfo(ca, devWallet, dex, pump) {
         const short = devWallet.slice(0,4) + '…' + devWallet.slice(-4);
         if (info.devSold) {
           devEl.innerHTML = `${short} <span style="background:rgba(255,59,48,.15);color:#ff3b30;border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">SOLD</span>`;
-        } else if (info.devPct > 0) {
-          devEl.innerHTML = `${short} <span style="background:rgba(255,159,10,.12);color:#ff9f0a;border:1px solid rgba(255,159,10,.3);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">HOLDS ${info.devPct}%</span>`;
+        } else if (info.devPct != null) {
+          const pctV = parseFloat(info.devPct);
+          const holdStr = pctV >= 0.01 ? info.devPct : '<0.01';
+          devEl.innerHTML = `${short} <span style="background:rgba(255,159,10,.12);color:#ff9f0a;border:1px solid rgba(255,159,10,.3);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">HOLDS ${holdStr}%</span>`;
         }
       } else if (info.mintAuthority) {
-        // Non-pump.fun token — show mint authority as creator
+        // Non-pump.fun token — show mint authority as creator + their holdings (API now auto-queries these)
         const short = info.mintAuthority.slice(0,4) + '…' + info.mintAuthority.slice(-4);
-        const tag   = info.mintRevoked
-          ? `<span style="background:rgba(20,241,149,.1);color:#14F195;border:1px solid rgba(20,241,149,.25);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">REVOKED</span>`
-          : `<span style="background:rgba(100,100,100,.12);color:#999;border:1px solid rgba(100,100,100,.25);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">CREATOR</span>`;
+        let tag;
+        if (info.mintRevoked) {
+          tag = `<span style="background:rgba(20,241,149,.1);color:#14F195;border:1px solid rgba(20,241,149,.25);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">REVOKED</span>`;
+        } else if (info.devSold) {
+          tag = `<span style="background:rgba(255,59,48,.15);color:#ff3b30;border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">SOLD</span>`;
+        } else if (info.devPct != null) {
+          const pctV = parseFloat(info.devPct);
+          const holdStr = pctV >= 0.01 ? info.devPct : '<0.01';
+          tag = `<span style="background:rgba(255,159,10,.12);color:#ff9f0a;border:1px solid rgba(255,159,10,.3);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">HOLDS ${holdStr}%</span>`;
+        } else {
+          tag = `<span style="background:rgba(100,100,100,.12);color:#999;border:1px solid rgba(100,100,100,.25);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">CREATOR</span>`;
+        }
         devEl.innerHTML = `${short}${tag}`;
         // Also trigger dev history for this creator address
         fetchDevHistory(info.mintAuthority);
@@ -2754,13 +2767,14 @@ function calculateSafetyScore(info, dex, pump) {
   }
 
   // Dev sold
+  const devPctNum = parseFloat(info.devPct ?? -1);
   if (info.devSold) {
     score -= 20;
     flags.push({ label: 'Dev wallet is empty — dev sold all tokens', sev: 'high' });
-  } else if (info.devPct > 10) {
+  } else if (devPctNum > 10) {
     score -= 10;
     flags.push({ label: `Dev holds ${info.devPct}% — large dev position`, sev: 'med' });
-  } else if (info.devPct > 0) {
+  } else if (devPctNum >= 0) {
     good.push(`Dev still holds ${info.devPct}%`);
   }
 
@@ -2841,7 +2855,7 @@ function renderSafetyScore({ score, flags, good }, info) {
         <div class="safety-checks">
           <span>${info.mintRevoked ? '✅ Mint revoked' : '❌ Mint active'}</span>
           <span>${info.freezeRevoked ? '✅ Freeze revoked' : '❌ Freeze active'}</span>
-          ${info.devSold ? '<span style="color:#ff3b30;">❌ Dev sold</span>' : info.devPct > 0 ? `<span style="color:#ff9f0a;">⚠️ Dev holds ${info.devPct}%</span>` : ''}
+          ${info.devSold ? '<span style="color:#ff3b30;">❌ Dev sold</span>' : info.devPct != null ? `<span style="color:#ff9f0a;">⚠️ Dev holds ${parseFloat(info.devPct) >= 0.01 ? info.devPct : '<0.01'}%</span>` : ''}
         </div>
       </div>
     </div>

@@ -25,22 +25,16 @@ module.exports = async (req, res) => {
   if (!allowed) return res.status(429).json({ error: 'Rate limit exceeded.' });
 
   const { ca, dev } = req.query;
-  if (!ca || !isValidCA(ca))          return res.status(400).json({ error: 'Invalid token address.' });
-  if (dev && !isValidCA(dev))          return res.status(400).json({ error: 'Invalid dev address.' });
-  if (!HELIUS_KEY)                     return res.status(500).json({ error: 'Service unavailable.' });
+  if (!ca || !isValidCA(ca))  return res.status(400).json({ error: 'Invalid token address.' });
+  if (dev && !isValidCA(dev)) return res.status(400).json({ error: 'Invalid dev address.' });
+  if (!HELIUS_KEY)             return res.status(500).json({ error: 'Service unavailable.' });
 
   try {
-    // Always fetch mint info + actual supply in parallel.
-    // If dev provided, also fetch their token accounts.
-    const calls = [
-      rpc(1, 'getAccountInfo',  [ca, { encoding: 'jsonParsed', commitment: 'confirmed' }]),
+    // Phase 1: mint info + on-chain supply in parallel
+    const [mintInfo, supplyData] = await Promise.all([
+      rpc(1, 'getAccountInfo',     [ca, { encoding: 'jsonParsed', commitment: 'confirmed' }]),
       rpc('sup', 'getTokenSupply', [ca, { commitment: 'confirmed' }]),
-    ];
-    if (dev) {
-      calls.push(rpc(2, 'getTokenAccountsByOwner', [dev, { mint: ca }, { encoding: 'jsonParsed', commitment: 'confirmed' }]));
-    }
-
-    const [mintInfo, supplyData, devTokenInfo] = await Promise.all(calls);
+    ]);
 
     const parsed     = mintInfo?.result?.value?.data?.parsed?.info || {};
     const mintAuth   = parsed.mintAuthority   || null;
@@ -49,8 +43,17 @@ module.exports = async (req, res) => {
     // Use real on-chain supply — critical for non-pump.fun tokens
     const actualSupply = parseFloat(supplyData?.result?.value?.uiAmount || 0) || 1_000_000_000;
 
+    // Phase 2: dev token accounts.
+    // Use explicit dev param if provided; otherwise fall back to mint authority (the on-chain
+    // creator for non-pump.fun tokens). If mint authority is revoked (null) and no dev param,
+    // we have no way to identify the dev wallet — skip the lookup.
+    const devToQuery = dev || mintAuth;
     let devBalance = null, devPct = null, devSold = false;
-    if (dev && devTokenInfo) {
+
+    if (devToQuery) {
+      const devTokenInfo = await rpc(2, 'getTokenAccountsByOwner', [
+        devToQuery, { mint: ca }, { encoding: 'jsonParsed', commitment: 'confirmed' },
+      ]);
       const accounts = devTokenInfo?.result?.value || [];
       const totalRaw = accounts.reduce((sum, a) =>
         sum + parseFloat(a.account?.data?.parsed?.info?.tokenAmount?.uiAmount || 0), 0);
