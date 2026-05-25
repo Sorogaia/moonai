@@ -24,7 +24,10 @@ window.moonaiTsError    = ()      => { _tsToken = null; };
 // Consume the token but do NOT reset here — reset after the API call so the widget
 // has the full response round-trip to generate the next token (prevents 15s stalls)
 async function getTurnstileToken() {
-  const deadline = Date.now() + 8000; // 8s max — fail fast, show a clear error
+  // 12s gives slow networks / Cloudflare cold starts room to deliver a token
+  // before we give up. If Turnstile genuinely failed, the user retries and it
+  // works second try (widget pre-generates the next token in the background).
+  const deadline = Date.now() + 12000;
   while (Date.now() < deadline) {
     if (_tsToken) {
       const token = _tsToken;
@@ -156,13 +159,20 @@ function buildChatSystem() {
     d.description ? `Description: ${d.description}` : '',
   ].filter(Boolean).join('\n');
 
-  return `You are MoonAi — the most advanced Solana memecoin analyst. You ONLY discuss Solana tokens, pump.fun, memecoins, DeFi, and on-chain data. Refuse anything unrelated.
+  return `You are MoonAi — a sharp, friendly Solana token analyst. You're focused on Solana memecoins, pump.fun, on-chain data, trading psychology, and the broader crypto market context that affects them — but you talk like a real degen, not a corporate compliance officer.
 
 ${mode}
 
-Use **bold** for key figures. Be direct and opinionated. Never say you don't have data if it's listed below.
+CONVERSATION STYLE:
+- Casual, direct, opinionated. Take a stance. Don't hedge everything.
+- Bold key figures with **double asterisks**. Use emojis sparingly when they add punch.
+- Banter, jokes, market vibes, comparisons to similar plays — all fair game.
+- It's OK to reference other chains, KOLs, exchanges, market events when relevant context.
+- If asked something genuinely unrelated (recipes, politics, homework), just steer it back warmly: "Let's stay on tokens — what about this one?"
+- Never say "I don't have data" if it's listed below. Use what's provided as ground truth.
+- Don't refuse normal questions about the coin (price predictions, sentiment, comparisons, jokes about the name, what wallets to watch). Be the knowledgeable friend at the trading desk.
 
-LIVE ON-CHAIN DATA (use this as absolute ground truth — answer all questions from this data):
+LIVE ON-CHAIN DATA (ground truth — answer from this):
 ${lines}`;
 }
 
@@ -617,38 +627,43 @@ mainInput.addEventListener('keydown', e => {
 });
 
 /* ══════════════════════════════════════
-   TOPIC GUARD — Solana/memecoin only
+   TOPIC GUARD — minimal client-side check
 ══════════════════════════════════════ */
-const BLOCKED_TOPICS = [
-  // other chains
-  /\b(bitcoin|btc|ethereum|eth|bnb|binance|polygon|matic|avalanche|avax|cardano|ada|xrp|ripple|dogecoin|doge|litecoin|ltc|tron|trx|cosmos|atom|polkadot|dot|chainlink|link|uniswap on eth|arbitrum|optimism|base chain|zksync)\b/i,
-  // finance/stocks
-  /\b(stock|stocks|forex|shares|nasdaq|nyse|s&p|gold|silver|commodity|real estate|property|mortgage|bond|etf(?! on sol)|hedge fund|mutual fund|ipo)\b/i,
-  // general topics
-  /\b(recipe|cook|food|sport|football|soccer|basketball|nba|nfl|movie|music|song|lyric|politic|president|election|war|country|history|science|math|homework|essay|code for me|write code|build an app|help me with my|weather|news)\b/i,
-  // jailbreak attempts
-  /\b(ignore (previous|all|your) (instructions?|rules?|prompt)|pretend you (are|were)|you are now|act as|dan mode|developer mode|jailbreak|bypass|override|forget (your|the) (rules?|instructions?))\b/i,
-  // other AI / identity attacks
-  /\b(you are (chatgpt|gpt|openai|gemini|grok|llama)|reveal (your|the) (system )?prompt|what are your instructions)\b/i,
+// We only block the most obvious attacks client-side. The AI itself handles
+// topic scope much more gracefully than a regex — when a user is mid-analysis
+// we always let the chat through, since 99% of follow-ups will reference the
+// current token even if they don't include "Solana" verbatim.
+const ATTACK_PATTERNS = [
+  // Clear jailbreak attempts
+  /\bignore\s+(previous|all|above|prior|your)\s+(instructions?|rules?|prompt|context)\b/i,
+  /\b(dan\s+mode|developer\s+mode|jailbreak\s+mode)\b/i,
+  /\bforget\s+(everything|all\s+your|all\s+previous|all\s+prior|all\s+instructions)\b/i,
+  // Identity attacks — pretending to be another AI / asking to reveal prompt
+  /\byou\s+are\s+(now\s+)?(chatgpt|gpt|openai|gemini|grok|llama|claude(?!\s+(by|from)))/i,
+  /\b(reveal|show|print|tell\s+me)\s+(your|the)\s+(system\s+)?prompt\b/i,
+  /\bwhat\s+(are|is)\s+your\s+(system\s+)?(prompt|instructions)\b/i,
 ];
 
-const SOLANA_SIGNALS = [
-  /\b(sol|solana|pump\.?fun|memecoin|meme coin|spl|raydium|jupiter|orca|meteora|birdeye|dexscreener|rugcheck|bonk|wif|bome|mew|popcat|token|ca|contract address|wallet|liquidity|lp|mint|freeze|holder|whale|degen|rug|ape|jeet|ngmi|wagmi|moonshot|launchpad|pumpfun|pump fun)\b/i,
-  /[A-Za-z0-9]{32,50}/,  // looks like a CA
-  /pump\.fun/i,
+// Only used when there's NO active analysis (welcome screen). After a token
+// has been analyzed, we trust the AI to redirect off-topic questions.
+const PRE_ANALYSIS_BLOCKS = [
+  // Clearly non-crypto life topics
+  /\b(recipe|cooking|sport(?:s)?\s+(?:scores?|game|match)|football|soccer|basketball|nba|nfl|movie|tv\s+show|song\s+lyrics?|politic(?:s|al)|president|election|relationship\s+advice|dating)\b/i,
+  // "Help me with [non-crypto thing]"
+  /\b(write|build)\s+(me\s+)?(a|an|some)?\s*(app|website|code|essay|homework|script)\b/i,
 ];
 
 function isOffTopic(msg) {
-  const lower = msg.toLowerCase();
-  // If it contains strong Solana signals, always allow
-  if (SOLANA_SIGNALS.some(r => r.test(msg))) return false;
-  // If it matches blocked patterns, block it
-  if (BLOCKED_TOPICS.some(r => r.test(lower))) return true;
-  // Short generic questions with no Solana context — allow (AI will enforce scope)
-  return false;
+  // Always block obvious attacks regardless of context
+  if (ATTACK_PATTERNS.some(r => r.test(msg))) return true;
+  // Once a token is being analyzed, trust the AI to handle topic scope — all
+  // follow-up questions are presumed crypto-related context.
+  if (hasAnalyzed) return false;
+  // Pre-analysis: only block clearly non-crypto life topics
+  return PRE_ANALYSIS_BLOCKS.some(r => r.test(msg));
 }
 
-const OFF_TOPIC_REPLY = `I'm MoonAi — I only analyze Solana tokens and memecoins. 🌙<br><br>Paste a <strong>contract address</strong> or <strong>pump.fun link</strong> to get a full analysis, or ask me anything about Solana trading, rug detection, or tokenomics.`;
+const OFF_TOPIC_REPLY = `Hey — I'm MoonAi, focused on Solana tokens and memecoins. 🌙<br><br>Paste a <strong>contract address</strong> or <strong>pump.fun link</strong> and I'll dig in, or ask me anything about trading, holder intel, rug detection, or the current market.`;
 
 /* ══════════════════════════════════════
    ROUTING — analyze or chat?
@@ -3639,7 +3654,9 @@ async function sendChat(msg, aiPrompt) {
 
     if (!resp.ok) {
       const err = await resp.json().catch(()=>({}));
-      throw new Error(err.error?.message || `HTTP ${resp.status}`);
+      const e   = new Error(err.error?.message || `HTTP ${resp.status}`);
+      e.status  = resp.status;
+      throw e;
     }
 
     const data = await resp.json();
@@ -3649,7 +3666,23 @@ async function sendChat(msg, aiPrompt) {
     aiBubble.innerHTML = `<div class="bubble-ai-lbl">MoonAi</div><div>${formatAlpha(text)}</div>`;
 
   } catch(e) {
-    aiBubble.innerHTML = `<div class="bubble-ai-lbl">MoonAi</div><div style="color:var(--danger)">Error: ${escHtml(e.message)}${e.message?.includes('verification') ? ' — please try again.' : ''}</div>`;
+    // Friendly, actionable error messages by category
+    const raw = e?.message || '';
+    let friendly;
+    if (e?.status === 403 || /verification|turnstile|bot/i.test(raw)) {
+      friendly = 'Couldn\'t verify your session. Hit send again — it usually works on the second try.';
+    } else if (e?.status === 429) {
+      friendly = raw.includes('Daily')
+        ? 'Daily chat limit reached — resets at midnight UTC.'
+        : 'Too many messages — give it a minute and try again.';
+    } else if (e?.status === 503) {
+      friendly = 'Service is busy right now. Try again in a moment.';
+    } else if (/network|fetch|failed to fetch/i.test(raw)) {
+      friendly = 'Network hiccup — check your connection and try again.';
+    } else {
+      friendly = 'Something went sideways — please try again.';
+    }
+    aiBubble.innerHTML = `<div class="bubble-ai-lbl">MoonAi</div><div style="color:var(--danger);font-size:13px;">${escHtml(friendly)}</div>`;
     chatMessages.pop();
   } finally {
     // Reset Turnstile AFTER the API call — widget has had the full round-trip to pre-generate the next token
