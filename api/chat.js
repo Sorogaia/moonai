@@ -1,5 +1,6 @@
 const { checkRateLimit, checkDailyLimit, checkGlobalDaily, checkKillSwitch } = require('./_ratelimit');
 const { getIP }          = require('./_validate');
+const { Readable }       = require('stream');
 
 const ANTHROPIC_KEY  = process.env.ANTHROPIC_API_KEY;
 const MAX_TOKENS_CAP = 4096;
@@ -160,12 +161,32 @@ module.exports = async (req, res) => {
         max_tokens: safeTokens,
         system:     safeSystem,
         messages:   safeMessages,
+        stream:     true,
       }),
     });
 
-    const data = await upstream.json();
-    return res.status(upstream.status).json(data);
+    // If Anthropic rejected the request (auth, bad payload, etc.), the body
+    // is JSON not SSE — surface it to the client as a normal JSON error so
+    // the existing error handler can categorise it.
+    if (!upstream.ok || !upstream.body) {
+      const data = await upstream.json().catch(() => ({ error: { message: `Upstream error (${upstream.status}).` } }));
+      return res.status(upstream.status || 502).json(data);
+    }
+
+    // Stream SSE response chunks straight through to the client.
+    res.setHeader('Content-Type',  'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection',    'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // disable proxy buffering so chunks flush immediately
+
+    // Convert WHATWG ReadableStream → Node stream → pipe into res
+    Readable.fromWeb(upstream.body).pipe(res);
   } catch {
-    return res.status(502).json({ error: { message: 'Service temporarily unavailable.' } });
+    // Only return JSON if headers haven't been sent yet — otherwise the pipe
+    // is mid-stream and we can't change content type.
+    if (!res.headersSent) {
+      return res.status(502).json({ error: { message: 'Service temporarily unavailable.' } });
+    }
+    try { res.end(); } catch {}
   }
 };

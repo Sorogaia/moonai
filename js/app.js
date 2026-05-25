@@ -3659,11 +3659,73 @@ async function sendChat(msg, aiPrompt) {
       throw e;
     }
 
-    const data = await resp.json();
-    const text = data.content?.filter(b=>b.type==='text').map(b=>b.text).join('') || 'No response.';
-    chatMessages.push({ role:'assistant', content: text });
+    // ── Streaming response — parse SSE chunks and append text as it arrives ──
+    // Anthropic delivers `content_block_delta` events with incremental `text_delta`
+    // chunks. We accumulate them, re-render the bubble's body with the running
+    // text (so markdown stays correctly formatted), and show a blinking cursor
+    // until the stream ends.
+    const reader  = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let sseBuffer = '';
+    let fullText  = '';
+    let bodyEl    = null;
+    const renderTick = () => {
+      if (!bodyEl) {
+        // First chunk — replace the typing-dots indicator with a real body element
+        aiBubble.innerHTML = `<div class="bubble-ai-lbl">MoonAi</div><div class="bubble-ai-body"></div>`;
+        bodyEl = aiBubble.querySelector('.bubble-ai-body');
+      }
+      // Re-format the full accumulated text + append a blinking cursor
+      bodyEl.innerHTML = formatAlpha(fullText) + '<span class="typing-cursor">▋</span>';
+      scrollBottom();
+    };
 
-    aiBubble.innerHTML = `<div class="bubble-ai-lbl">MoonAi</div><div>${formatAlpha(text)}</div>`;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      sseBuffer += decoder.decode(value, { stream: true });
+
+      // SSE events are separated by blank lines (\n\n). Split, keep the trailing
+      // incomplete chunk in the buffer for the next iteration.
+      const events = sseBuffer.split('\n\n');
+      sseBuffer = events.pop() || '';
+
+      for (const evt of events) {
+        const line = evt.split('\n').find(l => l.startsWith('data:'));
+        if (!line) continue;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === '[DONE]') continue;
+        try {
+          const data = JSON.parse(payload);
+          if (data.type === 'content_block_delta' && data.delta?.type === 'text_delta') {
+            fullText += data.delta.text;
+            renderTick();
+          } else if (data.type === 'error') {
+            // Anthropic error mid-stream — surface it as a thrown error
+            const e = new Error(data.error?.message || 'Stream error');
+            e.status = 500;
+            throw e;
+          }
+        } catch (parseErr) {
+          // Re-throw real errors; ignore JSON parse failures on partial chunks
+          if (parseErr instanceof Error && parseErr.message !== 'Stream error') {
+            // JSON.parse failed — likely a malformed/partial chunk, skip silently
+            continue;
+          }
+          throw parseErr;
+        }
+      }
+    }
+
+    // Stream finished — remove cursor and finalize
+    if (fullText) {
+      if (bodyEl) bodyEl.innerHTML = formatAlpha(fullText);
+      else aiBubble.innerHTML = `<div class="bubble-ai-lbl">MoonAi</div><div class="bubble-ai-body">${formatAlpha(fullText)}</div>`;
+      chatMessages.push({ role:'assistant', content: fullText });
+    } else {
+      // No text came through at all — show a fallback
+      aiBubble.innerHTML = `<div class="bubble-ai-lbl">MoonAi</div><div class="bubble-ai-body" style="color:var(--text-faint);">No response.</div>`;
+    }
 
   } catch(e) {
     // Friendly, actionable error messages by category
