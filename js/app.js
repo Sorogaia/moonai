@@ -344,10 +344,10 @@ document.addEventListener('click', e => {
     return;
   }
 
-  // Bundle pie legend row — click to show tooltip
-  const bpieLeg = e.target.closest('.bpie-leg-active');
-  if (bpieLeg) {
-    const bi  = parseInt(bpieLeg.dataset.bi);
+  // Bundle row — click to show tooltip
+  const bdlRow = e.target.closest('.bdl-row-active');
+  if (bdlRow) {
+    const bi  = parseInt(bdlRow.dataset.bi);
     const tip = document.getElementById('bundlePieTip');
     if (tip && tip.style.display !== 'none' && parseInt(tip.dataset.bi) === bi) {
       hideBundleTip();
@@ -361,13 +361,16 @@ document.addEventListener('click', e => {
   if (e.target.closest('.bpie-tip-x')) { hideBundleTip(); return; }
 });
 
-// Desktop hover — show bundle pie tooltip on mouseover
+// Desktop hover — show bundle pie tooltip on mouseover segment or row
 document.addEventListener('mouseover', e => {
   if (window.innerWidth <= 768) return; // mobile = tap only
   const seg = e.target.closest('.bpie-seg-active');
+  const row = e.target.closest('.bdl-row-active');
   if (seg) {
     showBundleTip(parseInt(seg.dataset.bi), e.clientX, e.clientY);
-  } else if (!e.target.closest('#bundlePieTip') && !e.target.closest('.bpie-seg-active') && !e.target.closest('.bpie-leg-active')) {
+  } else if (row) {
+    showBundleTip(parseInt(row.dataset.bi), e.clientX, e.clientY);
+  } else if (!e.target.closest('#bundlePieTip')) {
     hideBundleTip();
   }
 });
@@ -2884,17 +2887,16 @@ function renderSafetyScore({ score, flags, good }, info) {
 /* ══════════════════════════════════════
    BUNDLE PIE CHART HELPERS
 ══════════════════════════════════════ */
-function buildBundlePie(bundles, totalPct, cleanPct) {
-  // Stroke-dasharray donut: each segment is a circle with partial stroke
-  // circumference ≈ 100 when r = 100/(2π) ≈ 15.92
-  const R = 15.9159, SW = 6, PAD = 2;
+function buildBundlePie(bundles, totalPct, cleanPct, meta) {
+  // Stroke-dasharray donut: circumference ≈ 100 when r = 100/(2π) ≈ 15.92
+  const R = 15.9159, SW = 7, PAD = 2;
   const VB = (R + SW + PAD) * 2;
   const CX = VB / 2, CY = VB / 2;
   const COLS = ['#ff3b30','#ff6b35','#ff9f0a','#ffb840','#ffd060'];
 
   const segs = [
     ...bundles.map((b, i) => ({ pct: parseFloat(b.pct) || 0, col: COLS[Math.min(i, COLS.length - 1)], bi: i, active: true })),
-    { pct: cleanPct, col: 'rgba(20,241,149,0.3)', bi: -1, active: false },
+    { pct: cleanPct, col: 'rgba(20,241,149,0.35)', bi: -1, active: false },
   ].filter(s => s.pct > 0.1);
 
   // Background ring
@@ -2913,39 +2915,54 @@ function buildBundlePie(bundles, totalPct, cleanPct) {
     cumPct += s.pct;
   });
 
-  // Legend
-  const legendHtml = [
+  // Meta line (bundles count, wallets, jito)
+  const metaParts = [];
+  if (meta?.bundleCount) metaParts.push(`${meta.bundleCount} bundle${meta.bundleCount !== 1 ? 's' : ''}`);
+  if (meta?.wallets)     metaParts.push(`${meta.wallets} wallets`);
+  if (meta?.jitoConfirmed != null) metaParts.push(`Jito: <span style="color:${meta.jitoConfirmed ? '#ff3b30' : '#14F195'};font-weight:700;">${meta.jitoConfirmed ? 'YES' : 'NO'}</span>`);
+  const metaHtml = metaParts.length ? `<div class="bpie-meta">${metaParts.join(' · ')}</div>` : '';
+
+  // Bundle rows — one per bundle + clean row at bottom
+  const rowsHtml = [
     ...bundles.map((b, i) => {
       const still    = b.stillHoldingPct;
       const stillCol = still != null ? (still >= 70 ? '#ff3b30' : still >= 30 ? '#ff9f0a' : '#14F195') : null;
-      const stillBit = still != null
-        ? `<span style="color:${stillCol};font-size:9px;"> · ${b.accumulatedMore ? '+more' : still === 0 ? '✓ dumped' : still + '% held'}</span>`
-        : '';
-      return `<div class="bpie-leg bpie-leg-active" data-bi="${i}">
-        <span class="bpie-dot" style="background:${COLS[Math.min(i, COLS.length - 1)]};"></span>
-        <span class="bpie-lbl">${escHtml(b.label)}</span>
-        <span class="bpie-lpct">${b.pct}%${stillBit}</span>
+      let statusHtml = '';
+      if (still != null) {
+        if (b.accumulatedMore) {
+          statusHtml = `<span class="bdl-status" style="background:rgba(255,59,48,.12);color:#ff3b30;">+more</span>`;
+        } else if (still === 0) {
+          statusHtml = `<span class="bdl-status" style="background:rgba(20,241,149,.1);color:#14F195;">✓ dumped</span>`;
+        } else {
+          const bg = still >= 70 ? 'rgba(255,59,48,.12)' : still >= 30 ? 'rgba(255,159,10,.12)' : 'rgba(20,241,149,.1)';
+          statusHtml = `<span class="bdl-status" style="background:${bg};color:${stillCol};">${still}% held</span>`;
+        }
+      }
+      return `<div class="bdl-row bdl-row-active" data-bi="${i}">
+        <span class="bdl-dot" style="background:${COLS[Math.min(i, COLS.length - 1)]};"></span>
+        <span class="bdl-label">${escHtml(b.label)}</span>
+        <span class="bdl-pct">${b.pct}%</span>
+        ${statusHtml}
       </div>`;
     }),
-    `<div class="bpie-leg">
-      <span class="bpie-dot" style="background:rgba(20,241,149,0.5);"></span>
-      <span class="bpie-lbl">Clean supply</span>
-      <span class="bpie-lpct">${cleanPct.toFixed(1)}%</span>
+    `<div class="bdl-row">
+      <span class="bdl-dot" style="background:rgba(20,241,149,0.5);"></span>
+      <span class="bdl-label" style="color:var(--text-faint);">Clean supply</span>
+      <span class="bdl-pct" style="color:#14F195;">${cleanPct.toFixed(1)}%</span>
     </div>`,
   ].join('');
 
   return `
   <div class="bundle-pie-section">
-    <div class="bpie-wrap">
-      <div class="bpie-svg-wrap">
-        <svg viewBox="0 0 ${VB.toFixed(1)} ${VB.toFixed(1)}" width="${Math.round(VB)}" height="${Math.round(VB)}" id="bundlePieSvg" style="display:block;overflow:visible;">${svgInner}</svg>
-        <div class="bpie-center">
-          <div class="bpie-cv">${totalPct.toFixed(0)}%</div>
-          <div class="bpie-cl">bundled</div>
-        </div>
+    <div class="bpie-donut-wrap">
+      <svg viewBox="0 0 ${VB.toFixed(1)} ${VB.toFixed(1)}" id="bundlePieSvg">${svgInner}</svg>
+      <div class="bpie-center">
+        <div class="bpie-cv">${totalPct.toFixed(0)}%</div>
+        <div class="bpie-cl">bundled</div>
       </div>
-      <div class="bpie-legend">${legendHtml}</div>
     </div>
+    ${metaHtml}
+    <div class="bdl-rows">${rowsHtml}</div>
     <div class="bpie-tip" id="bundlePieTip" style="display:none;position:absolute;"></div>
   </div>`;
 }
@@ -3109,7 +3126,12 @@ async function fetchBundleDetection(ca, devWallet) {
     _lastBundles = data.bundles || [];
 
     const cleanPct = Math.max(0, 100 - pct);
-    const pieHtml  = buildBundlePie(_lastBundles, pct, cleanPct);
+    const pieMeta  = {
+      bundleCount:    data.bundleCount,
+      wallets:        data.wallets,
+      jitoConfirmed:  data.jitoConfirmed,
+    };
+    const pieHtml  = buildBundlePie(_lastBundles, pct, cleanPct, pieMeta);
 
     bodyEl.innerHTML = `
       <div class="bundle-header">
@@ -3117,43 +3139,14 @@ async function fetchBundleDetection(ca, devWallet) {
         ${jitoTag}${devTag}
       </div>
 
-      <div class="bundle-stats">
-        <div class="bstat" style="background:${riskBg};border:1px solid ${riskBd};">
-          <div class="bstat-lbl">Bundled %</div>
-          <div class="bstat-val" style="color:${riskCol};">${pct}%</div>
-        </div>
-        <div class="bstat" style="background:var(--bg-surface);border:1px solid var(--border2);">
-          <div class="bstat-lbl">Bundles</div>
-          <div class="bstat-val">${data.bundleCount}</div>
-        </div>
-        <div class="bstat" style="background:var(--bg-surface);border:1px solid var(--border2);">
-          <div class="bstat-lbl">Still Holding</div>
-          <div class="bstat-val" style="color:${stillCol};">${
-            stillHolding != null
-              ? (data.accumulatedMore ? '~100%' : stillHolding + '%')
-              : '—'
-          }</div>
-        </div>
-        <div class="bstat" style="background:var(--bg-surface);border:1px solid var(--border2);">
-          <div class="bstat-lbl">Dumped</div>
-          <div class="bstat-val" style="color:${dumpedCol};">${
-            data.dumpedPct != null
-              ? (data.accumulatedMore ? '—' : data.dumpedPct + '%')
-              : '—'
-          }</div>
-        </div>
-      </div>
-
-      <div class="bundle-sub-stats">
-        <span style="color:var(--text-faint);font-size:10px;">
-          ${data.wallets} wallets · Jito: <span style="color:${data.jitoConfirmed ? '#ff3b30' : '#14F195'};">${data.jitoConfirmed ? 'YES' : 'NO'}</span>
-          ${data.stillHoldingSupplyPct != null ? ` · currently holds <b style="color:${stillCol};">${data.stillHoldingSupplyPct}%</b> of total supply` : ''}
-        </span>
-      </div>
-
       ${pieHtml}
 
-      <div class="bundle-verdict" style="background:${riskBg};border-color:${riskBd};margin-top:10px;">
+      ${data.stillHoldingSupplyPct != null ? `
+      <div style="text-align:center;font-size:10px;color:var(--text-faint);margin:-4px 0 8px;">
+        currently holds <b style="color:${stillCol};">${data.stillHoldingSupplyPct}%</b> of total supply
+      </div>` : ''}
+
+      <div class="bundle-verdict" style="background:${riskBg};border-color:${riskBd};">
         <span>${pct >= 20 ? '🚨' : pct >= 5 ? '⚠️' : '✅'}</span>
         <div>
           <span style="font-size:12px;font-weight:700;color:${riskCol};">${risk} RISK</span>
