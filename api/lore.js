@@ -23,7 +23,15 @@ const MAX_SYMBOL_LEN  = 20;
 const MAX_DESC_LEN    = 200;
 const MAX_CH_LEN      = 30;
 
-const LORE_SYSTEM = `You are MoonAi — terminally-online Solana trenches degen. Return ONE punchy sentence (max 18 words) capturing this token's vibe or narrative angle. Lowercase ok, degen slang welcome (lmao, kek, cooked, based, ngmi, send it). Tell it like it is — if it's a tired meme copy, roast it; if it's actually creative, give it credit. No price talk, no disclaimers, no "based on the description". Just the vibe in one line.`;
+const LORE_SYSTEM = `Write ONE short factual sentence (max 16 words) describing what this token is — its theme, mascot, or core concept. Neutral tone, no opinions, no jokes, no slang, no roasting, no praising. No price talk, no disclaimers, no "based on the description" preamble. Just the concept in plain language.
+
+Examples of the exact output style:
+- "A Solana memecoin themed around the Doge mascot."
+- "A community-driven token referencing the Wojak meme character."
+- "A pump.fun launch built around the Hat Wif Cat meme."
+- "A Solana token themed around a viral moment from a Twitch stream."
+
+If the token's description gives a concept, use it. If not, describe it from the name and ticker alone in the same neutral one-line format.`;
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);

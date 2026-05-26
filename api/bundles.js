@@ -10,6 +10,16 @@ const MAX_SIG_PAGES = 4;     // up to 4000 signatures paginated
 const LAUNCH_TXNS   = 100;   // enhanced API max per call
 const FUND_DEPTH    = 20;    // trace funding for top N buyers
 
+// Noise filters — anything below these thresholds is excluded from the
+// bundle list. Pump.fun launches have many bot snipers hitting adjacent
+// slots organically; without these floors the UI shows 10+ "Block Sniper"
+// bundles at 0.05% each which is confusing rather than informative.
+const SLOT_BUCKET_SIZE   = 4;       // group buyers in 4-slot windows
+const MIN_SLOT_WALLETS   = 3;       // a "slot bundle" needs 3+ coordinated wallets
+const MIN_FUNDED_WALLETS = 2;       // same-funder bundle threshold (kept low — funder is strong signal)
+const MIN_BUNDLE_PCT     = 0.5;     // bundle must control ≥ 0.5% of total supply
+const MIN_JITO_PCT       = 0.3;     // Jito bundles slightly lower threshold (jito IS the signal)
+
 // All known Jito tip accounts
 const JITO_TIP_ACCOUNTS = new Set([
   '96gYZGLnJYVFmbjzopPSU6QiEV5fGqZNyN9nmNhvrZU5',
@@ -255,10 +265,12 @@ module.exports = async (req, res) => {
       funderGroups[funder].push({ wallet, ...data });
     }
 
-    // 2-slot bucket groups (catches adjacent-slot bundles)
+    // N-slot bucket groups (catches adjacent-slot bundles).
+    // Bucket size and minimum wallets tuned to avoid flagging unrelated
+    // bot snipers that happen to land within the same window.
     const slotBuckets = {};
     for (const [wallet, data] of launchBuyers) {
-      const bucket = Math.floor(data.slot / 2);
+      const bucket = Math.floor(data.slot / SLOT_BUCKET_SIZE);
       if (!slotBuckets[bucket]) slotBuckets[bucket] = [];
       slotBuckets[bucket].push({ wallet, ...data });
     }
@@ -268,51 +280,81 @@ module.exports = async (req, res) => {
     let jitoConfirmedAny = false;
     let devBundled = false;
 
-    // Jito bundles
+    // Track which wallets we've considered for bundles — used for jitoConfirmed
+    // and devBundled flags even when the bundle itself is filtered for size.
+    const allBundleCandidates = new Set();
+    const markCandidate = (w) => {
+      allBundleCandidates.add(w);
+      if (dev && w.toLowerCase() === dev.toLowerCase()) devBundled = true;
+    };
+
+    // Jito bundles — these are inherently coordinated (paid for atomic inclusion)
+    // so we keep a lower supply threshold and only require 1 wallet.
     const jitoBuyers = launchBuyers.filter(([, d]) => d.jitoConfirmed);
     if (jitoBuyers.length >= 1) {
-      jitoConfirmedAny = true;
       const jb = { type: 'JITO', label: '🔴 Jito Bundle', desc: 'Atomic bundle — all wallets bought in a single Jito transaction', wallets: [], fullWallets: [], amount: 0, pct: '0.00', jitoConfirmed: true };
       for (const [wallet, data] of jitoBuyers) {
         if (bundleSet.has(wallet)) continue;
         bundleSet.add(wallet);
+        markCandidate(wallet);
         jb.wallets.push(wallet.slice(0, 4) + '…' + wallet.slice(-4));
         jb.fullWallets.push(wallet);
         jb.amount += data.amount;
-        if (dev && wallet.toLowerCase() === dev.toLowerCase()) devBundled = true;
       }
-      if (jb.wallets.length >= 1) { jb.pct = ((jb.amount / totalSupply) * 100).toFixed(2); bundleList.push(jb); }
+      const jitoPct = (jb.amount / totalSupply) * 100;
+      if (jb.wallets.length >= 1 && jitoPct >= MIN_JITO_PCT) {
+        jb.pct = jitoPct.toFixed(2);
+        jitoConfirmedAny = true;
+        bundleList.push(jb);
+      } else {
+        // Below threshold — release wallets back to bundleSet for slot detection
+        jb.fullWallets.forEach(w => bundleSet.delete(w));
+      }
     }
 
     // Same-funder bundles
     for (const [funder, wallets] of Object.entries(funderGroups)) {
-      if (funder.startsWith('solo_') || wallets.length < 2) continue;
+      if (funder.startsWith('solo_') || wallets.length < MIN_FUNDED_WALLETS) continue;
       const fb = { type: 'FUNDED', label: '🟠 Funded Together', desc: 'Multiple wallets pre-funded from the same source wallet', wallets: [], fullWallets: [], amount: 0, pct: '0.00', funder: funder.slice(0, 4) + '…' + funder.slice(-4), jitoConfirmed: false };
       for (const { wallet, amount } of wallets) {
         if (bundleSet.has(wallet)) continue;
         bundleSet.add(wallet);
+        markCandidate(wallet);
         fb.wallets.push(wallet.slice(0, 4) + '…' + wallet.slice(-4));
         fb.fullWallets.push(wallet);
         fb.amount += amount;
-        if (dev && wallet.toLowerCase() === dev.toLowerCase()) devBundled = true;
       }
-      if (fb.wallets.length >= 2) { fb.pct = ((fb.amount / totalSupply) * 100).toFixed(2); bundleList.push(fb); }
+      const fundedPct = (fb.amount / totalSupply) * 100;
+      if (fb.wallets.length >= MIN_FUNDED_WALLETS && fundedPct >= MIN_BUNDLE_PCT) {
+        fb.pct = fundedPct.toFixed(2);
+        bundleList.push(fb);
+      } else {
+        fb.fullWallets.forEach(w => bundleSet.delete(w));
+      }
     }
 
-    // Same-slot / adjacent-slot bundles
+    // Same-slot / adjacent-slot bundles — require MIN_SLOT_WALLETS and MIN_BUNDLE_PCT
+    // to filter out the dozens of unrelated bot snipers that hit popular launches
+    // in the same window organically.
     for (const [, wallets] of Object.entries(slotBuckets)) {
-      if (wallets.length < 2) continue;
+      if (wallets.length < MIN_SLOT_WALLETS) continue;
       const sb = { type: 'SLOT', label: '🟡 Block Snipers', desc: 'Multiple wallets bought in the same block — coordinated bots', wallets: [], fullWallets: [], amount: 0, pct: '0.00', slot: wallets[0].slot, jitoConfirmed: false };
       for (const { wallet, amount, jitoConfirmed } of wallets) {
         if (bundleSet.has(wallet)) continue;
         bundleSet.add(wallet);
+        markCandidate(wallet);
         sb.wallets.push(wallet.slice(0, 4) + '…' + wallet.slice(-4));
         sb.fullWallets.push(wallet);
         sb.amount += amount;
         sb.jitoConfirmed = sb.jitoConfirmed || jitoConfirmed;
-        if (dev && wallet.toLowerCase() === dev.toLowerCase()) devBundled = true;
       }
-      if (sb.wallets.length >= 2) { sb.pct = ((sb.amount / totalSupply) * 100).toFixed(2); bundleList.push(sb); }
+      const slotPct = (sb.amount / totalSupply) * 100;
+      if (sb.wallets.length >= MIN_SLOT_WALLETS && slotPct >= MIN_BUNDLE_PCT) {
+        sb.pct = slotPct.toFixed(2);
+        bundleList.push(sb);
+      } else {
+        sb.fullWallets.forEach(w => bundleSet.delete(w));
+      }
     }
 
     const totalBundledAmount = bundleList.reduce((s, b) => s + b.amount, 0);

@@ -1545,24 +1545,29 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
       <a href="https://solscan.io/token/${ca}" target="_blank" rel="noopener" class="trade-link" style="color:#9945ff;background:#9945ff18;border:1px solid #9945ff44;">Solscan ↗</a>
       <a href="https://www.geckoterminal.com/solana/pools/${ca}" target="_blank" rel="noopener" class="trade-link" style="color:#86efac;background:#86efac18;border:1px solid #86efac44;">GeckoTerminal ↗</a>
       <a href="https://pump.fun/${ca}" target="_blank" rel="noopener" class="trade-link" style="color:#a78bfa;background:#a78bfa18;border:1px solid #a78bfa44;">pump.fun ↗</a>
-      <button class="chart-toggle-btn" id="chartToggleBtn">📈 Chart</button>
+      ${dex?.pairAddress ? '<button class="chart-toggle-btn" id="chartToggleBtn">📈 Chart</button>' : ''}
     </div>
 
-    <!-- ── CHART (collapsible, lazy-loaded) ── -->
+    <!-- ── CHART (collapsible, lazy-loaded) ──
+         Only mounts the iframe if we have a real DexScreener pairAddress. The
+         /solana/{ca}?embed=1 fallback path doesn't render reliably (iframe X-Frame
+         policy on the redirect target), so we hide the toggle button entirely
+         rather than show a broken loader. -->
+    ${dex?.pairAddress ? `
     <div class="chart-section" id="chartSection" style="display:none;margin-bottom:8px;">
       <div id="chartLoader" class="chart-loader">
         <div class="spinner" style="width:22px;height:22px;"></div>
         <span style="font-size:12px;color:var(--text-faint);margin-top:8px;">Loading chart…</span>
-        <a href="${escHtml(dex?.pairUrl || `https://dexscreener.com/solana/${ca}`)}" target="_blank" rel="noopener" class="chart-fallback-link">Slow? Open in DexScreener ↗</a>
+        <a href="${escHtml(dex.pairUrl || `https://dexscreener.com/solana/${dex.pairAddress}`)}" target="_blank" rel="noopener" class="chart-fallback-link">Slow? Open in DexScreener ↗</a>
       </div>
       <iframe
         id="dexChart"
-        data-src="https://dexscreener.com/solana/${dex?.pairAddress || ca}?embed=1&theme=dark&trades=0&info=0"
+        data-src="https://dexscreener.com/solana/${escHtml(dex.pairAddress)}?embed=1&theme=dark&trades=0&info=0"
         style="width:100%;height:460px;border:none;border-radius:var(--radius-md);display:none;"
         allowfullscreen
-        onload="document.getElementById('chartLoader').style.display='none';this.style.display='block';"
+        loading="lazy"
       ></iframe>
-    </div>
+    </div>` : ''}
 
     <!-- ── LORE BUBBLE ── -->
     <div id="loreBubble" class="lore-bubble">
@@ -1854,14 +1859,30 @@ function toggleChart() {
   const section = document.getElementById('chartSection');
   const btn     = document.getElementById('chartToggleBtn');
   const iframe  = document.getElementById('dexChart');
+  const loader  = document.getElementById('chartLoader');
   if (!section) return;
 
   const isOpen = section.style.display === 'block';
   section.style.display = isOpen ? 'none' : 'block';
   if (btn) btn.textContent = isOpen ? '📈 Chart' : '📉 Hide Chart';
 
-  // Lazy-load: only set src the first time the chart is opened
+  // Lazy-load: only mount the iframe src the first time the chart opens.
+  // Use JS event handlers so a malformed pairAddress doesn't break inline onload.
   if (!isOpen && iframe && iframe.dataset.src && !iframe.src) {
+    const onLoaded = () => {
+      if (loader) loader.style.display = 'none';
+      iframe.style.display = 'block';
+    };
+    iframe.addEventListener('load', onLoaded, { once: true });
+    // Watchdog — if DexScreener never responds (X-Frame block, network), show the
+    // fallback link prominently instead of leaving an infinite spinner.
+    setTimeout(() => {
+      if (loader && loader.style.display !== 'none' && iframe.style.display !== 'block') {
+        loader.innerHTML = `
+          <span style="font-size:12px;color:var(--text-faint);">Chart didn't load — DexScreener may block embedding for this pool.</span>
+          <a href="${escHtml(iframe.dataset.src.replace('?embed=1', '').split('&')[0])}" target="_blank" rel="noopener" class="chart-fallback-link" style="margin-top:8px;">Open in DexScreener ↗</a>`;
+      }
+    }, 10_000);
     iframe.src = iframe.dataset.src;
   }
 }

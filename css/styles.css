@@ -2,8 +2,14 @@
    THEME VARIABLES
 ══════════════════════════════════════ */
 :root {
-  --font:        'Geist', sans-serif;
-  --font-mono:   'Geist', sans-serif;
+  /* Plus Jakarta Sans replaces Geist — warmer, more readable, less techy.
+     --font-mono historically aliased the same sans font (the codebase uses
+     it for labels and stat numbers, not for true monospace). We keep that
+     behaviour to avoid restyling 20 selectors, and add --font-addr for the
+     few places that genuinely benefit from a monospaced face (CAs, wallets). */
+  --font:        'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:   'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-addr:   'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Code', Consolas, monospace;
   --radius-sm:   8px;
   --radius-md:   14px;
   --radius-lg:   18px;
@@ -95,6 +101,11 @@ html, body {
   background: var(--bg);
   color: var(--text);
   overflow-x: hidden;
+  /* Tabular numerals + contextual alternates: numbers line up in columns
+     (price strip, stats grid, holder %s) without forcing a mono font. */
+  font-feature-settings: 'tnum', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   transition: background var(--transition), color var(--transition);
 }
 
@@ -888,7 +899,7 @@ html, body {
 .tok-symbol   { color:var(--text-muted); font-size:1rem; font-weight:400; }
 .king-badge   { font-size:11px; background:rgba(245,158,11,0.13); color:#f59e0b; border:1px solid rgba(245,158,11,0.27); border-radius:var(--radius-pill); padding:2px 8px; margin-left:6px; vertical-align:middle; }
 .tok-ca-row   { display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
-.tok-ca-txt   { font-family:var(--font-mono); font-size:10.5px; color:rgba(255,255,255,0.6); font-weight:400; letter-spacing:0.02em; word-break:break-all; }
+.tok-ca-txt   { font-family:var(--font-addr); font-size:10.5px; color:rgba(255,255,255,0.6); font-weight:400; letter-spacing:0.02em; word-break:break-all; }
 .copy-ca-btn  { flex-shrink:0; font-family:var(--font-mono); font-size:9.5px; font-weight:700; color:var(--text-faint); background:var(--bg-surface); border:1px solid var(--border2); border-radius:var(--radius-pill); padding:2px 8px; cursor:pointer; transition:all .15s; white-space:nowrap; }
 .copy-ca-btn:hover { border-color:var(--accent); color:var(--accent); }
 .tok-meta-row { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
@@ -1105,7 +1116,7 @@ html, body {
 .holder-row-top         { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
 .holder-row-left        { display:flex; align-items:center; gap:6px; }
 .holder-num             { color:var(--text-faint); font-size:11px; min-width:18px; }
-.holder-addr            { font-family:var(--font-mono); color:var(--cyan); text-decoration:none; font-size:11px; font-weight:400; }
+.holder-addr            { font-family:var(--font-addr); color:var(--cyan); text-decoration:none; font-size:11px; font-weight:400; }
 .holder-addr:hover      { text-decoration:underline; color:var(--accent); }
 .holder-pct             { font-family:var(--font-mono); font-weight:700; font-size:13px; }
 .holder-bar             { height:3px; border-radius:2px; background:var(--border2); }
@@ -1518,21 +1529,21 @@ html, body {
 }
 
 .beta-title {
-  font-family: 'Geist', sans-serif;
+  font-family: var(--font);
   font-size: 1.1rem; font-weight: 700;
   color: #ffffff; letter-spacing: -0.02em;
   margin-bottom: 0.3rem;
 }
 
 .beta-subtitle {
-  font-family: 'Geist', sans-serif;
+  font-family: var(--font);
   font-size: 12.5px; color: #888888;
   margin-bottom: 1.4rem; text-align: center;
   line-height: 1.5;
 }
 
 .beta-expired {
-  font-family: 'Geist', sans-serif;
+  font-family: var(--font);
   font-size: 13px; color: #FF3B30;
   text-align: center; margin-top: 0.5rem;
   line-height: 1.5;
@@ -1544,7 +1555,7 @@ html, body {
   width: 100%; background: #0d0d0d;
   border: 1.5px solid #2a2a2a;
   border-radius: 8px; padding: 10px 14px;
-  font-family: 'Geist', sans-serif; font-size: 13px;
+  font-family: var(--font); font-size: 13px;
   color: #ffffff; outline: none;
   caret-color: #14F195;
   margin-bottom: 0.6rem;
@@ -1555,14 +1566,14 @@ html, body {
 .beta-input::placeholder { color: #444444; }
 
 .beta-error {
-  font-family: 'Geist', sans-serif;
+  font-family: var(--font);
   font-size: 12px; color: #FF3B30;
   margin-bottom: 0.6rem;
 }
 
 .beta-btn {
   width: 100%; background: #14F195; color: #000000;
-  font-family: 'Geist', sans-serif; font-weight: 700;
+  font-family: var(--font); font-weight: 700;
   font-size: 13px; padding: 10px;
   border: none; border-radius: 8px;
   cursor: pointer;
