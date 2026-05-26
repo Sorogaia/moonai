@@ -102,13 +102,28 @@ module.exports = async (req, res) => {
     }
     const poolsToScan = [...scanSet];
 
+    // For tokens whose oldest pool was created in the last 24h, the launch
+    // spike is sub-hour — fetch MINUTE candles too (1000m ≈ 16.6h) so we
+    // don't lose the early-pump ATH inside an averaged hour candle.
+    const oldestPoolCreatedAt = oldestPool?.attributes?.pool_created_at
+      ? new Date(oldestPool.attributes.pool_created_at).getTime()
+      : 0;
+    const tokenAgeHrs = oldestPoolCreatedAt > 0 ? (Date.now() - oldestPoolCreatedAt) / 3_600_000 : Infinity;
+    const fetchMinute = tokenAgeHrs < 24;
+
     // ── Step 4: Fetch candles in parallel ─────────────────────────────────
     // HOUR resolution for every scanned pool (high-res for recent intra-day spikes)
     // DAY resolution for the oldest pool only (covers tokens >41 days old + launch ts)
-    const hourPromises = poolsToScan.map(addr => fetchOhlcv(addr, 'hour'));
-    const dayPromise   = oldestPoolAddr ? fetchOhlcv(oldestPoolAddr, 'day') : Promise.resolve([]);
-    const supplyJson   = await supplyPromise; // resolve in parallel with the OHLCV fetches
-    const [hourResults, dayCandles] = await Promise.all([Promise.all(hourPromises), dayPromise]);
+    // MINUTE resolution for every scanned pool IF token is <24h old (catches the early-launch pump)
+    const hourPromises   = poolsToScan.map(addr => fetchOhlcv(addr, 'hour'));
+    const dayPromise     = oldestPoolAddr ? fetchOhlcv(oldestPoolAddr, 'day')    : Promise.resolve([]);
+    const minutePromises = fetchMinute ? poolsToScan.map(addr => fetchOhlcv(addr, 'minute')) : [];
+    const supplyJson     = await supplyPromise; // resolve in parallel with the OHLCV fetches
+    const [hourResults, dayCandles, minuteResults] = await Promise.all([
+      Promise.all(hourPromises),
+      dayPromise,
+      Promise.all(minutePromises),
+    ]);
 
     // ── Step 5: Resolve supply ────────────────────────────────────────────
     const actualSupply  = parseFloat(supplyJson?.result?.value?.uiAmount || 0);
@@ -118,30 +133,32 @@ module.exports = async (req, res) => {
     const supply = actualSupply > 0 ? actualSupply : derivedSupply;
 
     // ── Step 6: Scan ALL candles for ATH ──────────────────────────────────
-    let athPrice = 0, athTs = 0;
+    let athPrice  = 0;
+    let athTs     = 0;
+    let athSource = null;
 
-    // Hour candles from each scanned pool
-    for (let i = 0; i < poolsToScan.length; i++) {
-      const candles = hourResults[i] || [];
+    const considerCandles = (candles, source) => {
       for (const c of candles) {
         const high = parseFloat(c[2]) || 0;
         const ts   = parseInt(c[0], 10) * 1000;
         if (high > athPrice && !isNaN(ts) && ts > 0) {
-          athPrice = high;
-          athTs    = ts;
+          athPrice  = high;
+          athTs     = ts;
+          athSource = source;
         }
       }
-    }
+    };
 
-    // Day candles from oldest pool (deep history fallback for old tokens)
-    for (const c of dayCandles) {
-      const high = parseFloat(c[2]) || 0;
-      const ts   = parseInt(c[0], 10) * 1000;
-      if (high > athPrice && !isNaN(ts) && ts > 0) {
-        athPrice = high;
-        athTs    = ts;
-      }
+    // Minute candles first (highest resolution, only present for <24h tokens)
+    for (let i = 0; i < minuteResults.length; i++) {
+      considerCandles(minuteResults[i] || [], 'minute');
     }
+    // Hour candles
+    for (let i = 0; i < poolsToScan.length; i++) {
+      considerCandles(hourResults[i] || [], 'hour');
+    }
+    // Day candles for deep history
+    considerCandles(dayCandles, 'day');
 
     // ── Step 7: Launch info from oldest pool ──────────────────────────────
     // Prefer day candles (deeper history). Fall back to hour candles.
@@ -164,8 +181,24 @@ module.exports = async (req, res) => {
     const lastCandle   = launchCandles[launchCandles.length - 1];
     const currentPrice = currentPriceFromPool || parseFloat(lastCandle[4]) || 0;
 
-    // ── Step 10: Derived stats ────────────────────────────────────────────
-    const athMc = athPrice * supply;
+    // ── Step 10: Sanity floor — ATH can never be lower than the current value.
+    // If GeckoTerminal missed the actual launch spike (common for very-fresh
+    // pump.fun bonding-curve trades), the highest candle we found can be
+    // *below* what the token is trading at right now. Floor at current so the
+    // ATH displayed is at least as high as where price actually is today.
+    if (currentPrice > athPrice) {
+      athPrice  = currentPrice;
+      athTs     = athTs || Date.now();
+      athSource = athSource ? athSource + '+current-floor' : 'current-floor';
+    }
+
+    // ── Step 11: Derived stats ────────────────────────────────────────────
+    let athMc = athPrice * supply;
+    // Same floor for MC — protects against supply mismatches
+    if (currentMcUsd > athMc) {
+      athMc = currentMcUsd;
+      athSource = (athSource || '') + '+mc-floor';
+    }
 
     const changeSinceLaunch = launchPrice > 0
       ? (((currentPrice - launchPrice) / launchPrice) * 100).toFixed(1)
@@ -187,7 +220,7 @@ module.exports = async (req, res) => {
 
     res.json({
       // ATH
-      athPrice, athMc, athTs,
+      athPrice, athMc, athTs, athSource,
       downFromAth, downFromAthMc,
       // Launch
       launchPrice, launchMc, launchTs, daysSinceLaunch,
@@ -200,6 +233,8 @@ module.exports = async (req, res) => {
       poolAddress:   primaryPool,
       launchPool:    oldestPoolAddr,
       poolsScanned:  poolsToScan.length,
+      tokenAgeHrs:   Number.isFinite(tokenAgeHrs) ? Math.round(tokenAgeHrs * 10) / 10 : null,
+      usedMinute:    fetchMinute,
       supply,
       supplySource:  actualSupply > 0 ? 'helius' : 'derived',
     });

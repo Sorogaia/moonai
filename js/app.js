@@ -2817,11 +2817,18 @@ function startAutoRefresh(ca) {
     const mcRaw = parseFloat(dex.mc) || 0;
     if (mcRaw > 0 && (!sessionATH[ca] || mcRaw > sessionATH[ca].mc)) {
       sessionATH[ca] = { mc: mcRaw, price: dex.price, time: Date.now() };
-      // Only write to the DOM if there's no confirmed real ATH, or current MC exceeds it
+      // Only write to the DOM if current MC exceeds the historical ATH from /api/token-history
       const realAth = _liveData.realAthMc || 0;
       if (mcRaw > realAth) {
-        const athEl = document.getElementById('athMcVal');
-        if (athEl) athEl.textContent = fmtNum(mcRaw);
+        // Update both the displayed value AND the in-memory ATH so the next
+        // refresh tick compares against the new high and the AI system prompt
+        // picks up the new ATH on the next chat message.
+        _liveData.realAthMc = mcRaw;
+        const athEl   = document.getElementById('athMcVal');
+        const priceStr = dex.price >= 1
+          ? '$' + parseFloat(dex.price).toFixed(4)
+          : '$' + parseFloat(dex.price).toPrecision(4);
+        if (athEl) athEl.innerHTML = `${fmtNum(mcRaw)} <span style="font-size:11px;opacity:0.55;font-weight:400;">(${priceStr})</span>`;
       }
     }
 
@@ -3568,8 +3575,15 @@ async function fetchTokenHistory(ca, pairAddress) {
     const data = await res.json();
     if (_isStale(ca) || !res.ok || data.error || !data.athPrice) return;
 
-    // Store real ATH so the 60s auto-refresh cannot overwrite it with a lower current MC
-    if (data.athMc > 0) _liveData.realAthMc = data.athMc;
+    // Final client-side floor: sessionATH[ca] tracks the highest MC observed
+    // since this tab loaded the token (set by both initial render and the
+    // 60s auto-refresh). If the live session already saw a higher MC than the
+    // historical candle scan reflects (e.g. GT's hour candle averaged out a
+    // 2-minute spike we caught live), trust the session number.
+    const sessionMc = sessionATH[ca]?.mc || 0;
+    const flooredAthMc = Math.max(data.athMc || 0, sessionMc);
+    if (flooredAthMc > 0) _liveData.realAthMc = flooredAthMc;
+    if (flooredAthMc > (data.athMc || 0)) data.athMc = flooredAthMc;
 
     // Update ATH MC stat card with real all-time high
     const athEl    = document.getElementById('athMcVal');
