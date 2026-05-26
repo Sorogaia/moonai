@@ -33,16 +33,21 @@ moonai/
 ├── css/styles.css      # All styles — edit here, never inline in JS
 ├── js/app.js           # All frontend logic
 ├── api/
-│   ├── _validate.js    # Shared validation (not a public route)
-│   ├── _ratelimit.js   # Redis + in-memory rate limiting (not a public route)
-│   ├── chat.js         # AI chat proxy (Anthropic)
-│   ├── holders.js      # Top holder analysis (Helius)
-│   ├── bundles.js      # Bundle/sniper detection (Helius)
-│   ├── token-info.js   # Mint/freeze/dev holdings (Helius RPC)
-│   ├── token-history.js# Real ATH + launch data (GeckoTerminal)
-│   ├── fresh-wallets.js# Fresh wallet detection (Helius)
-│   ├── vamps.js        # Copycat token scanner (DexScreener)
-│   └── dev-history.js  # Dev wallet history (pump.fun)
+│   ├── _validate.js     # Shared validation (not a public route)
+│   ├── _ratelimit.js    # Redis + in-memory rate limiting (not a public route)
+│   ├── _anomaly.js      # Upstream-API health watchdog + Telegram alerts (not a public route)
+│   ├── chat.js          # AI chat proxy (Anthropic, streaming SSE)
+│   ├── lore.js          # Fast one-line narrative (Anthropic Haiku, no Turnstile)
+│   ├── trending.js      # Live trenches feed (pump.fun top + DexScreener boosts)
+│   ├── holders.js       # Top holder analysis (Helius)
+│   ├── bundles.js       # Bundle/sniper detection (Helius)
+│   ├── token-info.js    # Mint/freeze/dev holdings (Helius RPC)
+│   ├── token-history.js # Real ATH + launch data (GeckoTerminal, multi-pool scan)
+│   ├── fresh-wallets.js # Fresh wallet detection (Helius)
+│   ├── vamps.js         # Copycat token scanner (DexScreener)
+│   ├── dev-history.js   # Dev wallet history (pump.fun)
+│   ├── dex-paid.js      # DexScreener "paid profile" detection (orders + info signals)
+│   └── beta-gate.js     # Optional beta access gate (HMAC-tokenised 48h sessions)
 ├── vercel.json         # Deployment config + security headers
 └── .env.example        # Required env vars (no real values)
 ```

@@ -35,12 +35,13 @@ MC · Vol 24H · Liquidity · All-Time High MC · Age · Bonded · Holders · Fr
 
 ### 🔍 Bundle Detection
 Multi-layer launch analysis using Helius enhanced transactions:
-- Paginates to the actual token creation transaction
-- **Jito bundle detection** — all known tip accounts
-- **Same funding wallet** — traces buyers to shared source wallets
-- **Block sniper groups** — 2-slot bucket grouping catches coordinated bots
+- Paginates up to 4000 signatures back to the actual token creation transaction
+- **Jito bundle detection** — all known tip accounts (≥0.3% supply threshold)
+- **Same funding wallet** — traces buyers to shared source wallets (≥2 wallets, ≥0.5% supply)
+- **Block sniper groups** — 4-slot bucket grouping (≥3 wallets, ≥0.5% supply — filters out unrelated bot snipers)
 - **Still holding tracker** — shows what % of bundled supply is currently held vs dumped
 - Real on-chain supply via Helius `getTokenSupply`
+- Interactive pie chart visualisation — tap/hover any slice for full per-bundle detail
 
 ### 👥 Top Holders — Deep Intel
 - Real total holder count (all non-zero balance accounts)
@@ -54,10 +55,12 @@ Copycat tokens with the same name/symbol — click any to load full analysis
 Two live circles — Rug Detection + Market Risk (LOW/MED/HIGH)
 
 ### 📖 AI Narrative + Chat
-- Instant one-sentence narrative on load (claude-haiku)
-- Full AI analysis on demand
-- Live token context (MC, vol, holders, bundles, ATH, dev history) auto-seeded
-- Suggestion pills: Red flags · Stop loss · Entry strategy · ROI · Comparable plays
+- **Instant factual one-liner** on load (claude-haiku, dedicated `/api/lore` endpoint, no Turnstile wait — ~1–2s)
+- **Streaming chat** — responses type out word-by-word via Server-Sent Events (Claude-style)
+- **Free-form chat** — works without analysing a token. Ask about tickers, trends, market vibes.
+- **Live trenches feed** — `/api/trending` injects current pump.fun top-MC + just-launched + DexScreener boosted tokens into every chat (refreshed every 60s)
+- Full live token context (MC, vol, holders, bundles, ATH, dev history) auto-seeded when a token is loaded
+- Suggestion pills (token-specific): Red flags · Stop loss · Entry strategy · ROI · Comparable plays
 
 ### 🕵️ Dev History
 All previous tokens by this dev: SERIAL RUGGER / MIXED / BUILDER / CLEAN / NEW DEV
@@ -103,13 +106,16 @@ npx vercel dev               # full stack with APIs
 ### Required Environment Variables
 See `.env.example` for the full list. Set in Vercel dashboard for production — never commit real values.
 
-| Variable | Purpose |
-|---|---|
-| `ANTHROPIC_API_KEY` | Claude AI chat |
-| `HELIUS_API_KEY` | Solana RPC + enhanced tx data |
-| `UPSTASH_REDIS_REST_URL` | Distributed rate limiting |
-| `UPSTASH_REDIS_REST_TOKEN` | Rate limiting auth |
-| `ALLOWED_ORIGIN` | CORS allowed origin (default: https://moonaiapp.xyz) |
+| Variable | Required | Purpose |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | ✅ | Claude AI chat, narrative |
+| `HELIUS_API_KEY` | ✅ | Solana RPC + enhanced tx data |
+| `UPSTASH_REDIS_REST_URL` | ✅ | Distributed rate limiting |
+| `UPSTASH_REDIS_REST_TOKEN` | ✅ | Rate limiting auth |
+| `ALLOWED_ORIGIN` | ✅ | CORS allowed origin (default: https://moonaiapp.xyz) |
+| `TURNSTILE_SECRET_KEY` | ✅ | Cloudflare bot verification (server-side) |
+| `BETA_PASSWORD` + `BETA_CODES` | optional | Gated beta mode — leave unset for an open site (and remove the `<script src="js/beta.js">` line from `index.html`) |
+| `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` | optional | Anomaly alerts to your phone when upstream APIs misbehave |
 
 ---
 
@@ -117,9 +123,9 @@ See `.env.example` for the full list. Set in Vercel dashboard for production —
 
 | Layer | Tech |
 |---|---|
-| Frontend | HTML · CSS · Vanilla JS |
-| Font | Lexend (Google Fonts) |
-| AI | Anthropic Claude — server-side proxy |
+| Frontend | HTML · CSS · Vanilla JS (zero deps) |
+| Font | Plus Jakarta Sans + JetBrains Mono (addresses) — Google Fonts |
+| AI | Anthropic Claude (Sonnet 4.5 chat, Haiku 4.5 narrative) — streamed via SSE |
 | Market data | DexScreener API · GeckoTerminal OHLCV |
 | Token metadata | pump.fun API · Jupiter Token API |
 | On-chain | Helius RPC + Enhanced Transactions API |

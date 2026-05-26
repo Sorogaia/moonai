@@ -2,6 +2,42 @@
 
 ---
 
+## [2.5.0] — 2026-05-26
+
+### Added
+- **Live trenches feed** — new `/api/trending` aggregates pump.fun top-MC, just-launched, and DexScreener top-boosted tokens; cached 60s and injected into every chat as live market context.
+- **Streaming chat** — `/api/chat` now streams Anthropic responses as Server-Sent Events. The bubble types out word-by-word with a blinking cursor, first word in ~500ms instead of waiting 3–8s.
+- **Free-form chat** — chat works without first analysing a token. Ask about tickers, market trends, KOL plays.
+- **Bundle pie chart** — interactive SVG donut with per-bundle tooltip (hover desktop, tap mobile), replaces the old flat list.
+- **`/api/lore`** — dedicated fast-narrative endpoint (1–2s, no Turnstile wait, server-controlled prompt).
+
+### Fixed
+- **Bundle false positives** — 4-slot bucket + 3-wallet minimum + 0.5% supply floor (was 2 slots / 2 wallets / no floor). Eliminates 10+ noise "Block Sniper" bundles on popular launches.
+- **Vamp false positives** — strict regex matching (exact symbol, version variants, word-boundary name matches). MC floor $500 → $5K. Dedup by base CA. No more "WIFI" matching "WIF".
+- **Narrative tone** — rewritten to be factual one-liner ("A Solana memecoin themed around X") with no opinions or roasting.
+- **ATH inaccurate for migrated tokens** — now scans the OLDEST pool (pump.fun bonding curve) plus top-volume pools using HOUR candles + DAY candles for deep history. Catches pre-migration ATHs that the old code missed entirely.
+- **Bonded/Migrated detection** — recognises pumpswap, raydium-clmm, raydium-cpmm, meteora; was only matching `'raydium'`.
+- **DEX Paid false negatives** — dual-signal detection (orders + paid-profile indicators). Matches what Axiom shows.
+- **Dev holding showing `—`** — `/api/token-info` now auto-falls back to mint authority for the dev lookup when no explicit dev param.
+- **Race condition** — `_isStale(ca)` guards after every `await` in per-token fetches; old token's results no longer overwrite new token's UI when user switches fast.
+- **Chart embed fail** — chart toggle only renders when `dex.pairAddress` exists; iframe gets a 10s watchdog with a clear fallback message.
+
+### Changed
+- **Font**: Geist → Plus Jakarta Sans (warmer, less techy). Addresses use JetBrains Mono via new `--font-addr` variable. Global tabular-numerals for stat alignment without going full mono.
+- **Chat tone**: degen-trenches voice (lmao, ngmi, cooked, based, exit liquidity) for free-form chat and token analysis. Narrative stays neutral and factual.
+- **Mobile audit**: iOS 100vh → 100dvh, input font 15px → 16px (stops iOS auto-zoom), notch-aware header padding, 44×44 tap targets, theme-color meta, format-detection telephone=no.
+- **Ticker polling** pauses when tab hidden.
+
+### Security
+- **Timing-safe** beta password comparison via `crypto.timingSafeEqual`.
+- **`.env.example` expanded** to document `TURNSTILE_SECRET_KEY`, `BETA_PASSWORD`, `BETA_CODES`, with a clear note on how to disable the beta gate for self-hosting.
+
+### Removed
+- Dead `loadExample()` function from `js/app.js`.
+- Outdated `Geist, sans-serif` references in `js/beta.js` and `css/styles.css` beta-gate styles.
+
+---
+
 ## [2.3.0] — 2026-05-17
 
 ### Added

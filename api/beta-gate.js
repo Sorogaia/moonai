@@ -133,7 +133,17 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: false });
     }
 
-    if (!BETA_PASSWORD || password !== BETA_PASSWORD) {
+    // Timing-safe password comparison — prevents response-time side channels
+    let pwOk = false;
+    try {
+      if (BETA_PASSWORD && password.length === BETA_PASSWORD.length) {
+        pwOk = crypto.timingSafeEqual(
+          Buffer.from(password, 'utf8'),
+          Buffer.from(BETA_PASSWORD, 'utf8'),
+        );
+      }
+    } catch { pwOk = false; }
+    if (!pwOk) {
       console.log(`[beta] auth ref=${ref} name=${codes[ref]} ip=${ip} ts=${ts} result=wrong_password`);
       return res.status(200).json({ ok: false });
     }
