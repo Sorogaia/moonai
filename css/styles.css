@@ -486,21 +486,26 @@ html, body {
 ══════════════════════════════════════ */
 .welcome {
   display: flex; flex-direction: column; align-items: center;
-  justify-content: center; text-align: center;
-  min-height: 60vh; padding: 2rem 1rem;
-  animation: fadeUp 0.5s ease;
+  text-align: center;
+  padding: 2rem 1rem 2.5rem;
+  gap: 1.75rem;
+  animation: fadeUp 0.45s ease;
 }
+
+/* Hero block */
+.welcome-hero { display: flex; flex-direction: column; align-items: center; }
 .welcome-logo {
-  font-size: 2.8rem; margin-bottom: 1rem;
-  filter: drop-shadow(0 0 16px rgba(20,241,149,0.2));
+  margin-bottom: 1rem;
+  filter: drop-shadow(0 0 20px rgba(20,241,149,0.25));
 }
 [data-mode="advanced"] .welcome-logo {
-  filter: drop-shadow(0 0 14px rgba(245,158,11,0.18));
+  filter: drop-shadow(0 0 18px rgba(245,158,11,0.22));
 }
 .welcome h1 {
-  font-family: var(--font); font-size: clamp(1.4rem, 3.5vw, 2.2rem);
+  font-family: var(--font);
+  font-size: clamp(1.7rem, 4vw, 2.6rem);
   font-weight: 800; letter-spacing: -0.03em;
-  margin-bottom: 0.5rem; line-height: 1.2;
+  margin-bottom: 0.55rem; line-height: 1.15;
 }
 .welcome h1 em { color: var(--logo-color); font-style: normal; }
 [data-mode="trencher"] .welcome h1 em {
@@ -513,31 +518,137 @@ html, body {
 }
 .welcome-sub {
   font-size: 14px; color: var(--text-muted);
-  max-width: 440px; margin: 0 auto 1.75rem; line-height: 1.7;
+  max-width: 420px; margin: 0; line-height: 1.65;
 }
-.feature-row {
-  display: flex; gap: 8px; justify-content: center;
-  flex-wrap: wrap; max-width: 520px; margin: 0 auto;
+
+/* ══════════════════════════════════════
+   LIVE TRENCHES CARD (welcome screen)
+══════════════════════════════════════ */
+.trenches-card {
+  width: 100%; max-width: 700px;
+  background: var(--bg-card);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  animation: fadeUp 0.5s ease 0.1s both;
 }
-.feat-chip {
-  display: flex; align-items: center; gap: 6px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 8px 12px; font-size: 12px;
-  color: var(--text-muted);
+[data-mode="trencher"] .trenches-card {
+  background: rgba(17,17,17,0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-color: rgba(20,241,149,0.13);
+  box-shadow: 0 0 40px rgba(20,241,149,0.04), 0 8px 32px rgba(0,0,0,0.5);
+}
+
+/* Tab bar */
+.trenches-head {
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.18);
+}
+.trenches-tabs { display: flex; }
+.tc-tab {
+  font-family: var(--font); font-size: 11.5px; font-weight: 600;
+  color: var(--text-faint); background: none; border: none;
+  padding: 11px 16px; cursor: pointer; position: relative;
+  transition: color var(--transition); white-space: nowrap;
+}
+.tc-tab:hover { color: var(--text-muted); }
+.tc-tab.tc-tab-active { color: var(--accent); }
+.tc-tab.tc-tab-active::after {
+  content: ''; position: absolute;
+  bottom: 0; left: 16px; right: 16px;
+  height: 2px; background: var(--accent);
+  border-radius: 2px 2px 0 0;
+}
+[data-mode="advanced"] .tc-tab.tc-tab-active { color: var(--accent); }
+[data-mode="advanced"] .tc-tab.tc-tab-active::after { background: var(--accent); }
+
+.tc-meta {
+  display: flex; align-items: center; gap: 5px;
+  padding-right: 16px; font-size: 9px; font-weight: 700;
+  color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase;
+}
+
+/* Token rows */
+.trenches-body { display: flex; flex-direction: column; }
+.tc-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: background var(--transition);
 }
-.feat-chip:hover {
-  border-color: var(--accent);
-  color: var(--text);
-  box-shadow: var(--glow);
-  background: rgba(20,241,149,0.06);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+.tc-row:last-child { border-bottom: none; }
+.tc-row:hover { background: rgba(255,255,255,0.04); }
+[data-mode="trencher"] .tc-row:hover {
+  background: rgba(20,241,149,0.04);
 }
-.feat-chip-icon { font-size: 14px; }
+.tc-rank {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--text-faint); min-width: 16px; text-align: right;
+  flex-shrink: 0;
+}
+.tc-sym {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+  color: var(--accent); min-width: 62px; text-align: left;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+[data-mode="advanced"] .tc-sym { color: var(--accent); }
+.tc-name {
+  font-size: 11.5px; color: var(--text-muted);
+  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  min-width: 0; text-align: left;
+}
+.tc-mc {
+  font-family: var(--font-mono); font-size: 11.5px; font-weight: 700;
+  color: var(--text); min-width: 52px; text-align: right; flex-shrink: 0;
+}
+.tc-age {
+  font-size: 10px; color: var(--text-faint);
+  min-width: 34px; text-align: right; flex-shrink: 0;
+}
+.tc-badge {
+  font-size: 9px; font-weight: 700; padding: 2px 7px;
+  border-radius: var(--radius-pill); letter-spacing: 0.05em;
+  white-space: nowrap; flex-shrink: 0;
+}
+.tc-badge-green { background: rgba(20,241,149,0.1);  color: var(--accent); border: 1px solid rgba(20,241,149,0.22); }
+.tc-badge-cyan  { background: rgba(0,212,255,0.1);   color: var(--cyan);   border: 1px solid rgba(0,212,255,0.22);  }
+.tc-badge-amber { background: rgba(255,159,10,0.1);  color: var(--amber);  border: 1px solid rgba(255,159,10,0.22); }
+.tc-badge-red   { background: rgba(255,59,48,0.1);   color: var(--danger); border: 1px solid rgba(255,59,48,0.22);  }
+
+/* Skeleton loading rows */
+.tc-skel-wrap { display: flex; flex-direction: column; }
+.tc-skel {
+  height: 44px;
+  background: linear-gradient(90deg, var(--border) 25%, var(--border2) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+.tc-skel:not(:last-child) { border-bottom: 1px solid var(--bg-surface); }
+
+/* Empty state */
+.tc-empty {
+  padding: 2rem 1rem; font-size: 12px; color: var(--text-faint);
+  text-align: center;
+}
+
+/* Footer */
+.trenches-foot {
+  padding: 9px 14px; font-size: 10px; font-weight: 500;
+  color: var(--text-faint); text-align: center;
+  border-top: 1px solid var(--border);
+  letter-spacing: 0.04em; text-transform: uppercase;
+}
+
+/* Mobile */
+@media (max-width: 520px) {
+  .tc-age { display: none; }
+  .tc-name { font-size: 11px; }
+  .welcome h1 { font-size: 1.7rem; }
+}
 
 /* ══════════════════════════════════════
    RESULT AREA
@@ -1473,9 +1584,11 @@ html, body {
   .main-input::placeholder { font-size: 15px; }
   .send-btn { width: 44px; height: 44px; }
 
-  /* Welcome screen vertically centered with more breathing room */
-  .welcome { min-height: 70vh; padding: 2rem 1.25rem; }
-  .welcome h1 { font-size: 1.6rem; }
+  /* Welcome screen */
+  .welcome { padding: 1.25rem 0.75rem 1.5rem; gap: 1.25rem; }
+  .welcome h1 { font-size: 1.65rem; }
+  .trenches-card { border-radius: var(--radius-md); }
+  .tc-tab { padding: 10px 12px; font-size: 11px; }
 
   /* Bottom bar: keep blur but reduce memory pressure on mobile */
   .bottom-bar { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }

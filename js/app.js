@@ -104,12 +104,103 @@ async function fetchTrenchesSnapshot() {
     const data = await r.json();
     _trenchesCache   = { ts: Date.now(), data };
     _trenchesSnippet = _formatTrenchesSnippet(data);
+    renderTrenchesWelcome();
   } catch {}
 }
 
 // Pre-fetch on app load + refresh every minute (visible tab only)
 fetchTrenchesSnapshot();
 setInterval(() => { if (!document.hidden) fetchTrenchesSnapshot(); }, 60_000);
+
+/* ══════════════════════════════════════
+   WELCOME — LIVE TRENCHES FEED
+══════════════════════════════════════ */
+let _activeTrenchTab = 'topMC';
+
+function _fmtAge(ageMin) {
+  if (ageMin == null) return '?';
+  if (ageMin < 60)  return `${ageMin}m`;
+  const h = Math.floor(ageMin / 60), m = ageMin % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+function renderTrenchesWelcome(tab) {
+  const body = document.getElementById('trenchesBody');
+  if (!body) return;
+  // Don't overwrite results once user has analyzed a token
+  if (document.getElementById('welcomeView')?.style.display === 'none') return;
+
+  if (tab) _activeTrenchTab = tab;
+
+  // Sync tab active state
+  document.querySelectorAll('.tc-tab').forEach(t =>
+    t.classList.toggle('tc-tab-active', t.dataset.tab === _activeTrenchTab));
+
+  const data = _trenchesCache?.data;
+  if (!data) return; // still loading — skeleton already shown
+
+  let items = [];
+
+  if (_activeTrenchTab === 'topMC') {
+    items = (data.topMC || []).slice(0, 7).map((t, i) => {
+      const bonded = t.bonded;
+      const pct    = t.bondedPct != null ? parseFloat(t.bondedPct) : null;
+      const badge  = bonded ? 'BONDED'
+                   : pct != null ? `${pct.toFixed(0)}%`
+                   : '—';
+      const cls    = bonded           ? 'tc-badge-green'
+                   : pct != null && pct >= 80 ? 'tc-badge-cyan'
+                   : pct != null && pct >= 50 ? 'tc-badge-amber'
+                   : 'tc-badge-red';
+      return { rank: i + 1, ca: t.ca, sym: `$${t.symbol}`, name: t.name,
+               mc: _fmtMcAbbrev(t.mc), age: _fmtAge(t.ageMin), badge, cls };
+    });
+
+  } else if (_activeTrenchTab === 'fresh') {
+    items = (data.fresh || []).slice(0, 7).map((t, i) => {
+      const pct = t.bondedPct != null ? parseFloat(t.bondedPct) : 0;
+      const cls = pct >= 80 ? 'tc-badge-cyan'
+                : pct >= 50 ? 'tc-badge-amber'
+                : 'tc-badge-red';
+      return { rank: i + 1, ca: t.ca, sym: `$${t.symbol}`, name: t.name,
+               mc: _fmtMcAbbrev(t.mc), age: _fmtAge(t.ageMin),
+               badge: `${pct.toFixed(0)}%`, cls };
+    });
+
+  } else if (_activeTrenchTab === 'boosts') {
+    items = (data.boosts || []).filter(b => b.symbol).slice(0, 7).map((b, i) => {
+      const ch  = b.ch24 != null ? `${b.ch24 >= 0 ? '+' : ''}${b.ch24}%` : '—';
+      const cls = b.ch24 == null ? 'tc-badge-amber'
+                : b.ch24 >= 0   ? 'tc-badge-green' : 'tc-badge-red';
+      return { rank: i + 1, ca: b.ca, sym: `$${b.symbol}`, name: b.name,
+               mc: _fmtMcAbbrev(b.mc), age: `⚡${b.boosts}`, badge: ch, cls };
+    });
+  }
+
+  if (!items.length) {
+    body.innerHTML = `<div class="tc-empty">No data — try again in a moment</div>`;
+    return;
+  }
+
+  body.innerHTML = items.map(it => `
+    <div class="tc-row" data-ca="${escHtml(it.ca)}" title="Analyze ${escHtml(it.sym)}">
+      <span class="tc-rank">${it.rank}</span>
+      <span class="tc-sym">${escHtml(it.sym)}</span>
+      <span class="tc-name">${escHtml(it.name)}</span>
+      <span class="tc-mc">${escHtml(it.mc)}</span>
+      <span class="tc-age">${escHtml(it.age)}</span>
+      <span class="tc-badge ${it.cls}">${escHtml(it.badge)}</span>
+    </div>`).join('');
+}
+
+// Delegated clicks on the trenches card (tabs + token rows)
+document.addEventListener('click', e => {
+  const tab = e.target.closest('.tc-tab[data-tab]');
+  if (tab) { renderTrenchesWelcome(tab.dataset.tab); return; }
+
+  const row = e.target.closest('.tc-row[data-ca]');
+  if (row?.dataset.ca) { runAnalysis(row.dataset.ca); return; }
+});
 
 /* ══════════════════════════════════════
    THEME TOGGLE
