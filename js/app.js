@@ -309,7 +309,7 @@ LIMITS (keep these intact):
     d.totalVolAllTime    ? `All-time volume: ${d.totalVolAllTime}` : '',
     d.daysSinceLaunch    != null ? `Days since launch: ${d.daysSinceLaunch}` : '',
     // Bonding
-    d.bonded != null ? `Bonded: ${d.bonded ? 'YES — migrated to Raydium' : `NO — bonding curve ${d.bondedPct != null ? d.bondedPct + '% filled' : 'unknown'}`}` : '',
+    d.bonded != null ? `Bonded: ${d.bonded ? 'YES — graduated off the bonding curve' : `NO — bonding curve ${d.bondedPct != null ? d.bondedPct + '% filled' : 'unknown'}`}` : '',
     // Dev
     d.devWallet  ? `Dev wallet: ${d.devWallet}` : '',
     d.devPct     != null ? `Dev current holding: ${d.devPct}% of supply` : '',
@@ -642,6 +642,7 @@ function newAnalysis() {
 
   document.getElementById('feedArea').style.display    = 'none';
   document.getElementById('welcomeView').style.display = 'block';
+  _setHeroVideo(true);
   document.getElementById('exampleRow').style.display  = '';
   document.getElementById('suggestionsRow').style.display = 'none';
   document.getElementById('degenRow').style.display = 'none';
@@ -929,9 +930,19 @@ function handleSend() {
 /* ══════════════════════════════════════
    SHOW FEED
 ══════════════════════════════════════ */
+// Pause/resume the ambient hero video so it never burns CPU while hidden
+function _setHeroVideo(play) {
+  const v = document.querySelector('.welcome-bg-vid');
+  if (!v) return;
+  if (play && !document.hidden) v.play?.().catch(() => {});
+  else v.pause?.();
+}
+document.addEventListener('visibilitychange', () => _setHeroVideo(!hasAnalyzed));
+
 function showFeed() {
   document.getElementById('welcomeView').style.display = 'none';
   document.getElementById('feedArea').style.display   = 'block';
+  _setHeroVideo(false);
   document.getElementById('exampleRow').style.display = 'none';
   // Suggestion pills are all token-specific (Safety Score, ROI, etc.) — only
   // show them once a token has actually been analyzed and we have live data.
@@ -1333,12 +1344,16 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
                    || dexId.startsWith('raydium')
                    || dexId.startsWith('meteora');
   const isBonded = pump?.bonded === true || isBondedDex;
+  // Actual post-graduation venue (PumpSwap is the default since mid-2025, not Raydium)
+  const venue = dexId === 'pumpswap'        ? 'PumpSwap'
+              : dexId.startsWith('raydium') ? 'Raydium'
+              : dexId.startsWith('meteora') ? 'Meteora'
+              : 'a DEX';
   const bonded   = isBonded ? '✅ Migrated' : pump?.bonded === false ? '❌ No' : '—';
   const bondPct = pump?.bondedPct ? pump.bondedPct + '%' : null;
   const dev     = pump?.dev ? pump.dev.substring(0,4)+'…'+pump.dev.slice(-4) : '—';
   const age     = dex?.created ? timeAgo(dex.created) : '—';
   const price   = fmtPrice(dex?.price);
-  const supply  = '1B'; // pump.fun tokens always have 1B fixed supply
   const holders = pump?.holders ? pump.holders.toLocaleString() : '—';
   const ch24    = fmtChange(dex?.priceChange24h);
   const ch1     = fmtChange(dex?.priceChange1h);
@@ -1391,7 +1406,7 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
     mc:             fmtNum(dex?.mc || pump?.mc),
     vol24h:         fmtNum(dex?.vol24h),
     vol1h:          fmtNum(dex?.vol1h),
-    liq:            fmtNum(dex?.liq),
+    liq:            fmtNum(liqRaw),
     bonded:         isBonded,
     bondedPct:      pump?.bondedPct,
     priceChange1h:  dex?.priceChange1h,
@@ -1426,7 +1441,7 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
   if (isBonded) {
     bondingCurveHtml = `
       <div class="bond-label">Bonding Curve</div>
-      <div class="bond-status-ok">✅ Graduated to Raydium</div>
+      <div class="bond-status-ok">✅ Graduated to ${venue}</div>
       <div class="bond-sub">Migrated from pump.fun</div>`;
   } else if (pump?.bondedPct !== undefined && pump?.bondedPct !== null) {
     const bPct    = parseFloat(pump.bondedPct) || 0;
@@ -2335,7 +2350,7 @@ async function runAnalysis(raw) {
         `Vol 24h: ${fmtNum(dex?.vol24h)}`,
         `Vol 1h: ${fmtNum(dex?.vol1h)}`,
         `Liquidity: ${fmtNum(dex?.liq)}`,
-        `Bonded: ${pump?.bonded ? 'Yes — migrated to Raydium' : 'No — still on bonding curve'}`,
+        `Bonded: ${pump?.bonded ? 'Yes — graduated off the bonding curve' : 'No — still on bonding curve'}`,
         `Bonding curve: ${pump?.bondedPct ? pump.bondedPct+'% filled' : 'unknown'}`,
         `1h change: ${dex?.priceChange1h ? dex.priceChange1h+'%' : '—'}`,
         `24h change: ${dex?.priceChange24h ? dex.priceChange24h+'%' : '—'}`,
@@ -3145,7 +3160,7 @@ function calculateSafetyScore(info, dex, pump) {
   // Bonded status
   if (pump?.bonded === true) {
     score += 5;
-    good.push('Token bonded / migrated to Raydium');
+    good.push('Token bonded / graduated off the bonding curve');
   } else if (pump?.bonded === false) {
     score -= 5;
     flags.push({ label: 'Token not yet bonded — still on pump.fun curve', sev: 'low' });
