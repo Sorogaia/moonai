@@ -100,16 +100,117 @@ async function fetchTrenchesSnapshot() {
   if (_trenchesCache && Date.now() - _trenchesCache.ts < TRENCHES_TTL_MS) return;
   try {
     const r = await fetch('/api/trending');
-    if (!r.ok) return;
+    if (!r.ok) { _trenchesFeedError(); return; }
     const data = await r.json();
     _trenchesCache   = { ts: Date.now(), data };
     _trenchesSnippet = _formatTrenchesSnippet(data);
-  } catch {}
+    renderTrenchesWelcome();
+  } catch { _trenchesFeedError(); }
+}
+
+// Feed fetch failed with nothing cached → replace the shimmering skeleton
+// with a quiet message instead of letting it shimmer forever. The 60s poll
+// retries and re-renders if the API recovers.
+function _trenchesFeedError() {
+  if (_trenchesCache?.data) return; // stale data still on screen — fine
+  const body = document.getElementById('trenchesBody');
+  if (!body || !body.querySelector('.tc-skel-wrap')) return;
+  body.innerHTML = '<div style="padding:1.2rem;text-align:center;font-size:12px;color:var(--text-faint);">Live feed unavailable — retrying…</div>';
 }
 
 // Pre-fetch on app load + refresh every minute (visible tab only)
 fetchTrenchesSnapshot();
 setInterval(() => { if (!document.hidden) fetchTrenchesSnapshot(); }, 60_000);
+
+/* ══════════════════════════════════════
+   WELCOME — LIVE TRENCHES FEED
+══════════════════════════════════════ */
+let _activeTrenchTab = 'topMC';
+
+function _fmtAge(ageMin) {
+  if (ageMin == null) return '?';
+  if (ageMin < 60)  return `${ageMin}m`;
+  const h = Math.floor(ageMin / 60), m = ageMin % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+function renderTrenchesWelcome(tab) {
+  const body = document.getElementById('trenchesBody');
+  if (!body) return;
+  // Don't overwrite results once user has analyzed a token
+  if (document.getElementById('welcomeView')?.style.display === 'none') return;
+
+  if (tab) _activeTrenchTab = tab;
+
+  // Sync tab active state
+  document.querySelectorAll('.tc-tab').forEach(t =>
+    t.classList.toggle('tc-tab-active', t.dataset.tab === _activeTrenchTab));
+
+  const data = _trenchesCache?.data;
+  if (!data) return; // still loading — skeleton already shown
+
+  let items = [];
+
+  if (_activeTrenchTab === 'topMC') {
+    items = (data.topMC || []).slice(0, 7).map((t, i) => {
+      const bonded = t.bonded;
+      const pct    = t.bondedPct != null ? parseFloat(t.bondedPct) : null;
+      const badge  = bonded ? 'BONDED'
+                   : pct != null ? `${pct.toFixed(0)}%`
+                   : '—';
+      const cls    = bonded           ? 'tc-badge-green'
+                   : pct != null && pct >= 80 ? 'tc-badge-cyan'
+                   : pct != null && pct >= 50 ? 'tc-badge-amber'
+                   : 'tc-badge-red';
+      return { rank: i + 1, ca: t.ca, sym: `$${t.symbol}`, name: t.name,
+               mc: _fmtMcAbbrev(t.mc), age: _fmtAge(t.ageMin), badge, cls };
+    });
+
+  } else if (_activeTrenchTab === 'fresh') {
+    items = (data.fresh || []).slice(0, 7).map((t, i) => {
+      const pct = t.bondedPct != null ? parseFloat(t.bondedPct) : 0;
+      const cls = pct >= 80 ? 'tc-badge-cyan'
+                : pct >= 50 ? 'tc-badge-amber'
+                : 'tc-badge-red';
+      return { rank: i + 1, ca: t.ca, sym: `$${t.symbol}`, name: t.name,
+               mc: _fmtMcAbbrev(t.mc), age: _fmtAge(t.ageMin),
+               badge: `${pct.toFixed(0)}%`, cls };
+    });
+
+  } else if (_activeTrenchTab === 'boosts') {
+    items = (data.boosts || []).filter(b => b.symbol).slice(0, 7).map((b, i) => {
+      const ch  = b.ch24 != null ? `${b.ch24 >= 0 ? '+' : ''}${b.ch24}%` : '—';
+      const cls = b.ch24 == null ? 'tc-badge-amber'
+                : b.ch24 >= 0   ? 'tc-badge-green' : 'tc-badge-red';
+      return { rank: i + 1, ca: b.ca, sym: `$${b.symbol}`, name: b.name,
+               mc: _fmtMcAbbrev(b.mc), age: `⚡${b.boosts}`, badge: ch, cls };
+    });
+  }
+
+  if (!items.length) {
+    body.innerHTML = `<div class="tc-empty">No data — try again in a moment</div>`;
+    return;
+  }
+
+  body.innerHTML = items.map(it => `
+    <div class="tc-row" data-ca="${escHtml(it.ca)}" title="Analyze ${escHtml(it.sym)}">
+      <span class="tc-rank">${it.rank}</span>
+      <span class="tc-sym">${escHtml(it.sym)}</span>
+      <span class="tc-name">${escHtml(it.name)}</span>
+      <span class="tc-mc">${escHtml(it.mc)}</span>
+      <span class="tc-age">${escHtml(it.age)}</span>
+      <span class="tc-badge ${it.cls}">${escHtml(it.badge)}</span>
+    </div>`).join('');
+}
+
+// Delegated clicks on the trenches card (tabs + token rows)
+document.addEventListener('click', e => {
+  const tab = e.target.closest('.tc-tab[data-tab]');
+  if (tab) { renderTrenchesWelcome(tab.dataset.tab); return; }
+
+  const row = e.target.closest('.tc-row[data-ca]');
+  if (row?.dataset.ca) { runAnalysis(row.dataset.ca); return; }
+});
 
 /* ══════════════════════════════════════
    THEME TOGGLE
@@ -343,6 +444,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('pillSafetyScore')?.addEventListener('click', revealSafetyScore);
   document.getElementById('pillROI')?.addEventListener('click', revealROI);
 
+  // Degen feature pills
+  document.getElementById('pillSendIt')?.addEventListener('click', renderSendItCard);
+  document.getElementById('pillNarrative')?.addEventListener('click', runNarrativeMatch);
+  document.getElementById('pillDevDNA')?.addEventListener('click', runDevDNA);
+  document.getElementById('pillWhaleIntel')?.addEventListener('click', runWhaleIntel);
+  document.getElementById('pillRugClock')?.addEventListener('click', runRugClock);
+  document.getElementById('pillProfitSim')?.addEventListener('click', runProfitSim);
+
   // Logo image error fallbacks
   document.querySelectorAll('img.logo-img-moon').forEach(img =>
     img.addEventListener('error', function () { this.outerHTML = '🌙'; }));
@@ -535,6 +644,7 @@ function newAnalysis() {
   document.getElementById('welcomeView').style.display = 'block';
   document.getElementById('exampleRow').style.display  = '';
   document.getElementById('suggestionsRow').style.display = 'none';
+  document.getElementById('degenRow').style.display = 'none';
   document.getElementById('chatFeed').innerHTML = '';
   document.getElementById('resultZone').innerHTML = '';
   document.getElementById('mainInput').value = '';
@@ -827,6 +937,8 @@ function showFeed() {
   // show them once a token has actually been analyzed and we have live data.
   const sugRow = document.getElementById('suggestionsRow');
   if (sugRow) sugRow.style.display = currentCA ? 'flex' : 'none';
+  const degenRow = document.getElementById('degenRow');
+  if (degenRow) degenRow.style.display = currentCA ? 'flex' : 'none';
   hasAnalyzed = true;
 }
 
@@ -3959,6 +4071,159 @@ function formatAlpha(text) {
     .replace(/\*(.+?)\*/g,'<em>$1</em>')
     .replace(/\n\n/g,'<br><br>')
     .replace(/\n/g,'<br>');
+}
+
+/* ══════════════════════════════════════
+   DEGEN FEATURE PILLS
+══════════════════════════════════════ */
+
+function computeSendItScore() {
+  const d = _liveData;
+  if (!d || !d.ca) return null;
+
+  let score = 50;
+  const factors = [];
+
+  // Mint / Freeze authority
+  if (d.mintRevoked === true)        { score += 8;  factors.push({ label: 'Mint Revoked', t: 'good' }); }
+  else if (d.mintRevoked === false)  { score -= 12; factors.push({ label: 'Mint Active', t: 'bad' }); }
+  if (d.freezeRevoked === false)     { score -= 8;  factors.push({ label: 'Freeze Active', t: 'bad' }); }
+
+  // Dev behavior
+  if (d.devSold === true) {
+    score -= 22;
+    factors.push({ label: 'Dev Sold 💀', t: 'bad' });
+  } else if (d.devSold === false && d.devPct != null && d.devPct > 0) {
+    if (d.devPct > 15) { score -= 10; factors.push({ label: `Dev ${d.devPct}% (high)`, t: 'bad' }); }
+    else if (d.devPct > 8) { score -= 4; factors.push({ label: `Dev ${d.devPct}%`, t: 'neu' }); }
+    else { factors.push({ label: `Dev ${d.devPct}%`, t: 'good' }); }
+  }
+
+  // Bundles
+  if (d.bundled === false) {
+    score += 10;
+    factors.push({ label: 'Clean Launch', t: 'good' });
+  } else if (d.bundled === true && d.bundlePct != null) {
+    const bp = parseFloat(d.bundlePct);
+    if      (bp > 50) { score -= 20; factors.push({ label: `${bp}% Bundled ☠️`, t: 'bad' }); }
+    else if (bp > 30) { score -= 12; factors.push({ label: `${bp}% Bundled`, t: 'bad' }); }
+    else if (bp > 15) { score -= 6;  factors.push({ label: `${bp}% Bundled`, t: 'neu' }); }
+    else              { score -= 2;  factors.push({ label: `${bp}% Bundled`, t: 'neu' }); }
+  }
+
+  // Momentum
+  if (d.priceChange1h != null) {
+    const c = parseFloat(d.priceChange1h);
+    if      (c > 20)  { score += 8; factors.push({ label: `+${c.toFixed(0)}% 1h 🔥`, t: 'good' }); }
+    else if (c > 5)   { score += 4; factors.push({ label: `+${c.toFixed(0)}% 1h`, t: 'good' }); }
+    else if (c < -20) { score -= 8; factors.push({ label: `${c.toFixed(0)}% 1h`, t: 'bad' }); }
+    else if (c < -8)  { score -= 4; factors.push({ label: `${c.toFixed(0)}% 1h`, t: 'bad' }); }
+  }
+  if (d.priceChange5m != null) {
+    const c5 = parseFloat(d.priceChange5m);
+    if (c5 > 5)  score += 3;
+    if (c5 < -5) score -= 3;
+  }
+
+  // Holder concentration
+  if (d.top10pct != null) {
+    const t10 = parseFloat(d.top10pct);
+    if      (t10 > 60) { score -= 10; factors.push({ label: `${t10}% Top 10`, t: 'bad' }); }
+    else if (t10 > 40) { score -= 4; }
+    else if (t10 < 20) { score += 5;  factors.push({ label: 'Distributed Supply', t: 'good' }); }
+  }
+
+  // Fresh wallets
+  if (d.freshWalletPct != null) {
+    const fw = parseFloat(d.freshWalletPct);
+    if      (fw > 50) { score -= 8; factors.push({ label: `${fw.toFixed(0)}% Fresh Wallets`, t: 'bad' }); }
+    else if (fw < 20) { score += 3; factors.push({ label: 'Low Fresh Wallets', t: 'good' }); }
+  }
+
+  // DEX paid + socials + bonded
+  if (d.dexPaid === true)  { score += 5; factors.push({ label: 'DEX Paid ✅', t: 'good' }); }
+  if (d.bonded === true)   { score += 6; factors.push({ label: 'Bonded ✅', t: 'good' }); }
+  if (d.twitter && d.telegram) score += 4;
+  else if (d.twitter || d.telegram) score += 2;
+
+  // Dev history
+  if (d.devPrevLaunched > 0) {
+    const rate = (d.devPrevBonded || 0) / d.devPrevLaunched;
+    if (rate > 0.5 && d.devPrevLaunched >= 2) {
+      score += 6;
+      factors.push({ label: `Dev ${(rate*100).toFixed(0)}% Bond Rate`, t: 'good' });
+    } else if (rate < 0.1 && d.devPrevLaunched >= 3) {
+      score -= 8;
+      factors.push({ label: 'Serial Rugger 🚩', t: 'bad' });
+    }
+  }
+
+  // Safety score nudge
+  if (d.safetyScore != null) score += (d.safetyScore - 50) * 0.15;
+
+  const final = Math.max(0, Math.min(100, Math.round(score)));
+
+  let verdict, emoji, color, borderColor;
+  if      (final >= 78) { verdict = 'WAGMI';      emoji = '🚀'; color = '#14F195'; borderColor = 'rgba(20,241,149,0.55)'; }
+  else if (final >= 62) { verdict = 'SEND IT';    emoji = '🔥'; color = '#14F195'; borderColor = 'rgba(20,241,149,0.4)'; }
+  else if (final >= 44) { verdict = 'DEGEN PLAY'; emoji = '👀'; color = '#FF9F0A'; borderColor = 'rgba(255,159,10,0.45)'; }
+  else if (final >= 26) { verdict = 'HIGH RISK';  emoji = '🚩'; color = '#FF3B30'; borderColor = 'rgba(255,59,48,0.45)'; }
+  else                  { verdict = 'NGMI';        emoji = '☠️'; color = '#FF3B30'; borderColor = 'rgba(255,59,48,0.6)'; }
+
+  return { score: final, verdict, emoji, color, borderColor, factors: factors.slice(0, 9) };
+}
+
+function renderSendItCard() {
+  const result = computeSendItScore();
+  if (!result) {
+    sendSuggestion('Give me a quick verdict on this token — should I send it or not? Be brutally honest.');
+    return;
+  }
+
+  const { score, verdict, emoji, color, borderColor, factors } = result;
+  const factorsHTML = factors.map(f => {
+    const cls = f.t === 'good' ? 'sf-good' : f.t === 'bad' ? 'sf-bad' : 'sf-neu';
+    return `<span class="sendit-factor ${cls}">${f.label}</span>`;
+  }).join('');
+
+  const card = document.createElement('div');
+  card.className = 'sendit-card';
+  card.innerHTML = `
+    <div class="sendit-ring" style="border-color:${borderColor};box-shadow:0 0 28px ${color}25;">
+      <span class="sendit-num" style="color:${color}">${score}</span>
+      <span class="sendit-denom" style="color:${color}">/100</span>
+    </div>
+    <div class="sendit-right">
+      <div class="sendit-verdict" style="color:${color}">${emoji} ${verdict}</div>
+      <div class="sendit-factors">${factorsHTML || '<span style="font-size:11px;color:var(--text-faint)">Scanning signals…</span>'}</div>
+    </div>`;
+
+  document.getElementById('chatFeed').appendChild(card);
+  document.getElementById('feedArea').style.display = 'block';
+  scrollBottom();
+
+  const aiPrompt = `I just computed a Send It Score of **${score}/100** — "${verdict}" for this token. In 2-3 sentences, give me your honest take on whether that score feels right. Back it with the specific numbers that stand out most to you.`;
+  setTimeout(() => sendChat(aiPrompt), 250);
+}
+
+function runNarrativeMatch() {
+  sendSuggestion(`Based on everything you know about this token — the chart trajectory, holder behavior, dev actions, bundle situation, and on-chain signals — which historical Solana plays does it most remind you of? Give me the 2-3 closest comparisons and what happened to those plays. Would you have sent it on them at this stage?`);
+}
+
+function runDevDNA() {
+  sendSuggestion(`Give me a full dev DNA breakdown. What kind of dev are we dealing with — serial rugger, first-timer, or actual builder? What does their launch history tell you? Do they have a recognizable pattern? Would you trust this dev with your bag overnight?`);
+}
+
+function runWhaleIntel() {
+  sendSuggestion(`Break down the whale situation on this token. Who are the biggest wallets and what are they doing — accumulating or waiting to exit? Any wallets that look suspicious or connected to each other? What's the distribution risk look like right now and should I be watching any specific wallet?`);
+}
+
+function runRugClock() {
+  sendSuggestion(`Give me a rug clock. Based on the bundle behavior, dev holdings, sell pressure, and holder patterns — when do you think the big wallets realistically exit? Hours? Days? Is the sell pressure already building? What are the specific warning signs I should be watching for?`);
+}
+
+function runProfitSim() {
+  sendSuggestion(`Run a profit simulation for this token. Give me realistic outcomes for a $100, $500, and $1000 bag at the current MC. What are the 2x, 5x, and 10x MC targets in dollar terms? What's the realistic ceiling based on this token's profile? And what does the full rug scenario look like — how fast and how hard?`);
 }
 
 /* ══════════════════════════════════════

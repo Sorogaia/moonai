@@ -181,21 +181,40 @@
     <div class="main" id="mainScroll">
       <!-- Welcome shown until first analysis -->
       <div class="welcome" id="welcomeView">
-        <div class="welcome-logo">
-          <img src="logo.png" alt="MoonAi" class="logo-img-moon" style="height:96px;width:96px;object-fit:contain;">
+
+        <!-- Hero -->
+        <div class="welcome-hero">
+          <div class="welcome-logo">
+            <img src="logo.png" alt="MoonAi" class="logo-img-moon" style="height:72px;width:72px;object-fit:contain;">
+          </div>
+          <h1>Welcome to <em>MoonAi</em></h1>
+          <p class="welcome-sub">The Solana trenches, analyzed instantly. Paste a CA or tap any token below.</p>
         </div>
-        <h1>Welcome to <em>MoonAi</em></h1>
-        <p class="welcome-sub">
-          Paste a <strong>contract address</strong> for a full on-chain breakdown — or just <strong>chat</strong> about any Solana coin, ticker, or what's trending.
-        </p>
-        <div class="feature-row">
-          <div class="feat-chip"><span class="feat-chip-icon">⚡</span> Live MC &amp; Volume</div>
-          <div class="feat-chip"><span class="feat-chip-icon">🔗</span> pump.fun &amp; DexScreener</div>
-          <div class="feat-chip"><span class="feat-chip-icon">🐋</span> Holder Intel</div>
-          <div class="feat-chip"><span class="feat-chip-icon">🔍</span> Rug Detection</div>
-          <div class="feat-chip"><span class="feat-chip-icon">💬</span> Free Solana Chat</div>
+
+        <!-- Live trenches feed -->
+        <div class="trenches-card" id="trenchesCard">
+          <div class="trenches-head">
+            <div class="trenches-tabs">
+              <button class="tc-tab tc-tab-active" data-tab="topMC">🔥 Top MC</button>
+              <button class="tc-tab" data-tab="fresh">⚡ Just In</button>
+              <button class="tc-tab" data-tab="boosts">🚀 Boosted</button>
+            </div>
+            <div class="tc-meta">
+              <span class="live-dot"></span>
+              <span>LIVE</span>
+            </div>
+          </div>
+          <div class="trenches-body" id="trenchesBody">
+            <div class="tc-skel-wrap">
+              <div class="tc-skel"></div><div class="tc-skel"></div>
+              <div class="tc-skel"></div><div class="tc-skel"></div>
+              <div class="tc-skel"></div><div class="tc-skel"></div>
+            </div>
+          </div>
+          <div class="trenches-foot">tap any token to analyze it instantly</div>
         </div>
         <p class="welcome-disclaimer">Analysis is informational only — not financial advice. <a href="terms.html">Terms &amp; Disclaimer</a></p>
+
       </div>
 
       <!-- Results + chat feed injected here -->
@@ -207,6 +226,29 @@
 
     <!-- BOTTOM BAR -->
     <div class="bottom-bar">
+
+      <!-- Degen feature pills — shown after token analysis -->
+      <div class="degen-row" id="degenRow" style="display:none;">
+        <button class="degen-pill" id="pillSendIt">
+          <span class="degen-pill-icon">🚀</span>Send It?
+        </button>
+        <button class="degen-pill" id="pillNarrative">
+          <span class="degen-pill-icon">📊</span>Narrative Match
+        </button>
+        <button class="degen-pill" id="pillDevDNA">
+          <span class="degen-pill-icon">🧬</span>Dev DNA
+        </button>
+        <button class="degen-pill" id="pillWhaleIntel">
+          <span class="degen-pill-icon">🐋</span>Whale Intel
+        </button>
+        <button class="degen-pill" id="pillRugClock">
+          <span class="degen-pill-icon">⏰</span>Rug Clock
+        </button>
+        <button class="degen-pill" id="pillProfitSim">
+          <span class="degen-pill-icon">💰</span>Profit Sim
+        </button>
+      </div>
+
       <div class="suggestions" id="suggestionsRow" style="display:none;">
         <span class="sug-pill" id="pillSafetyScore">🔒 Safety Score?</span>
         <span class="sug-pill" id="pillROI">💸 Quick ROI?</span>
