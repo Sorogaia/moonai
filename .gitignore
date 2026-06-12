@@ -51,3 +51,9 @@ build/
 
 # ── Claude Code local settings ────────────────────────────────
 .claude/
+
+# ── Raw source media (only the optimized hero.*/moon.png ship) ─
+Screenshots/
+images/
+videos/1.mp4
+videos/2.mp4
