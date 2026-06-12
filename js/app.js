@@ -643,7 +643,6 @@ function newAnalysis() {
 
   document.getElementById('feedArea').style.display    = 'none';
   document.getElementById('welcomeView').style.display = 'block';
-  _setHeroVideo(true);
   document.getElementById('exampleRow').style.display  = '';
   document.getElementById('suggestionsRow').style.display = 'none';
   document.getElementById('degenRow').style.display = 'none';
@@ -1095,19 +1094,9 @@ function handleSend() {
 /* ══════════════════════════════════════
    SHOW FEED
 ══════════════════════════════════════ */
-// Pause/resume the ambient hero video so it never burns CPU while hidden
-function _setHeroVideo(play) {
-  const v = document.querySelector('.welcome-bg-vid');
-  if (!v) return;
-  if (play && !document.hidden) v.play?.().catch(() => {});
-  else v.pause?.();
-}
-document.addEventListener('visibilitychange', () => _setHeroVideo(!hasAnalyzed));
-
 function showFeed() {
   document.getElementById('welcomeView').style.display = 'none';
   document.getElementById('feedArea').style.display   = 'block';
-  _setHeroVideo(false);
   document.getElementById('exampleRow').style.display = 'none';
   // Suggestion pills are all token-specific (Safety Score, ROI, etc.) — only
   // show them once a token has actually been analyzed and we have live data.
