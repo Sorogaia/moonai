@@ -2315,6 +2315,10 @@ async function runAnalysis(raw) {
               </div>
             </div>
           </div>`;
+        // No token data → token-specific pill rows make no sense here
+        currentCA = '';
+        document.getElementById('suggestionsRow').style.display = 'none';
+        document.getElementById('degenRow').style.display = 'none';
         return;
       }
 
