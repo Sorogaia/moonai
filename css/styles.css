@@ -2,13 +2,17 @@
    THEME VARIABLES
 ══════════════════════════════════════ */
 :root {
-  /* Plus Jakarta Sans replaces Geist — warmer, more readable, less techy.
-     --font-mono historically aliased the same sans font (the codebase uses
-     it for labels and stat numbers, not for true monospace). We keep that
-     behaviour to avoid restyling 20 selectors, and add --font-addr for the
-     few places that genuinely benefit from a monospaced face (CAs, wallets). */
-  --font:        'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-mono:   'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Sleek web3 type system (Phantom/Jupiter-tier):
+       --font-display  Space Grotesk — distinctive techy grotesk for headings,
+                       the logo wordmark, and section/tab labels.
+       --font          Inter — clean neutral body & UI text.
+       --font-mono     JetBrains Mono — true monospace for all stat values and
+                       uppercase micro-labels; tabular figures read as a real
+                       trading tool, not a generic SaaS template.
+       --font-addr     JetBrains Mono — CAs / wallet addresses. */
+  --font-display:'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font:        'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:   'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Code', Consolas, monospace;
   --font-addr:   'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Code', Consolas, monospace;
   --radius-sm:   8px;
   --radius-md:   14px;
@@ -108,6 +112,10 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
   transition: background var(--transition), color var(--transition);
 }
+
+/* Space Grotesk gives every heading the distinctive web3 grotesk character
+   that Inter (body) deliberately doesn't. Applied app-wide for cohesion. */
+h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
 
 /* Trencher: subtle grid + noise */
 [data-mode="trencher"] body::before {
@@ -507,25 +515,39 @@ html, body {
 .welcome {
   display: flex; flex-direction: column; align-items: center;
   text-align: center;
-  padding: 2rem 1rem 2.5rem;
-  gap: 1.75rem;
+  padding: 3rem 1rem 2.5rem;
+  gap: 2.25rem;
   animation: fadeUp 0.45s ease;
 }
 
 /* Hero block */
 .welcome-hero { display: flex; flex-direction: column; align-items: center; }
 .welcome-logo {
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
   filter: drop-shadow(0 0 20px rgba(20,241,149,0.25));
 }
 [data-mode="advanced"] .welcome-logo {
   filter: drop-shadow(0 0 18px rgba(245,158,11,0.22));
 }
+/* Eyebrow — small uppercase status chip above the wordmark */
+.welcome-eyebrow {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 5px 12px; margin-bottom: 1.1rem;
+  border: 1px solid var(--border2); border-radius: var(--radius-pill);
+  background: rgba(255,255,255,0.015);
+}
+[data-mode="trencher"] .welcome-eyebrow {
+  border-color: rgba(20,241,149,0.18); color: var(--accent);
+  background: var(--pill-bg);
+}
 .welcome h1 {
-  font-family: var(--font);
-  font-size: clamp(1.7rem, 4vw, 2.6rem);
-  font-weight: 800; letter-spacing: -0.03em;
-  margin-bottom: 0.55rem; line-height: 1.15;
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 5.5vw, 3.4rem);
+  font-weight: 700; letter-spacing: -0.035em;
+  margin-bottom: 0.7rem; line-height: 1.05;
 }
 .welcome h1 em { color: var(--logo-color); font-style: normal; }
 [data-mode="trencher"] .welcome h1 em {
@@ -537,8 +559,9 @@ html, body {
   animation: gradientShift 4s ease-in-out infinite;
 }
 .welcome-sub {
-  font-size: 14px; color: var(--text-muted);
-  max-width: 420px; margin: 0; line-height: 1.65;
+  font-size: 15px; color: var(--text-muted);
+  max-width: 440px; margin: 0; line-height: 1.6;
+  font-weight: 400;
 }
 
 /* ══════════════════════════════════════
@@ -568,11 +591,13 @@ html, body {
 }
 .trenches-tabs { display: flex; }
 .tc-tab {
+  display: inline-flex; align-items: center; gap: 6px;
   font-family: var(--font); font-size: 11.5px; font-weight: 600;
   color: var(--text-faint); background: none; border: none;
-  padding: 11px 16px; cursor: pointer; position: relative;
+  padding: 11px 15px; cursor: pointer; position: relative;
   transition: color var(--transition); white-space: nowrap;
 }
+.tc-tab-ic { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.9; }
 .tc-tab:hover { color: var(--text-muted); }
 .tc-tab.tc-tab-active { color: var(--accent); }
 .tc-tab.tc-tab-active::after {
@@ -677,6 +702,30 @@ html, body {
 }
 .welcome-disclaimer a { color: var(--text-faint); text-decoration: underline; }
 .welcome-disclaimer a:hover { color: var(--text-muted); }
+
+/* Recommendation bubbles — tap to ask MoonAi without a CA */
+.rec-bubbles {
+  display: flex; justify-content: center; flex-wrap: wrap;
+  gap: 8px; margin-top: 1rem; width: 100%; max-width: 560px;
+}
+.rec-bubble {
+  font-family: var(--font); font-size: 12px; font-weight: 500;
+  color: var(--text-muted); background: var(--bg-surface);
+  border: 1px solid var(--border2); border-radius: var(--radius-pill);
+  padding: 7px 14px; cursor: pointer; white-space: nowrap;
+  transition: all var(--transition);
+}
+.rec-bubble:hover {
+  color: var(--text); border-color: var(--accent);
+  background: var(--pill-bg); box-shadow: var(--glow);
+  transform: translateY(-1px);
+}
+.rec-bubble:active { transform: translateY(0); }
+[data-mode="trencher"] .rec-bubble:hover { border-color: rgba(20,241,149,0.55); }
+
+@media (max-width: 520px) {
+  .rec-bubble { font-size: 11px; padding: 6px 11px; }
+}
 
 /* ══════════════════════════════════════
    RESULT AREA

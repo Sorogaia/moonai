@@ -68,21 +68,25 @@ function _fmtMcAbbrev(n) {
   return '$' + Math.round(n);
 }
 
+function _fmtAgeShort(ageMin) {
+  if (ageMin == null) return '?';
+  return ageMin < 60 ? ageMin + 'm' : Math.floor(ageMin / 60) + 'h';
+}
+
 function _formatTrenchesSnippet(data) {
   if (!data) return '';
   const lines = [];
+  const fmtCh = c => c != null ? ` ${c >= 0 ? '+' : ''}${c}%24h` : '';
   if (data.topMC?.length) {
-    lines.push('PUMP.FUN — top by MC right now:');
+    lines.push('SOLANA — trending tokens right now (sorted by market cap):');
     data.topMC.slice(0, 10).forEach(t => {
-      const status = t.bonded ? '✓bonded' : (t.bondedPct != null ? `${t.bondedPct.toFixed(0)}%curve` : '');
-      const age    = t.ageMin != null ? `${t.ageMin < 60 ? t.ageMin + 'm' : Math.floor(t.ageMin/60) + 'h'}` : '?';
-      lines.push(`  $${t.symbol} (${t.name}) · ${_fmtMcAbbrev(t.mc)} · ${age} old · ${t.holders || '?'} hldrs · ${status} · CA:${t.ca}`);
+      lines.push(`  $${t.symbol} (${t.name}) · ${_fmtMcAbbrev(t.mc)}${fmtCh(t.ch24)} · ${_fmtAgeShort(t.ageMin)} old · vol ${_fmtMcAbbrev(t.vol24h)} · CA:${t.ca}`);
     });
   }
   if (data.fresh?.length) {
-    lines.push('\nPUMP.FUN — just launched:');
+    lines.push('\nSOLANA — just launched (newest pools):');
     data.fresh.slice(0, 6).forEach(t => {
-      lines.push(`  $${t.symbol} (${t.name}) · ${_fmtMcAbbrev(t.mc)} · ${t.ageMin}m old · CA:${t.ca}`);
+      lines.push(`  $${t.symbol} (${t.name}) · ${_fmtMcAbbrev(t.mc)}${fmtCh(t.ch24)} · ${_fmtAgeShort(t.ageMin)} old · CA:${t.ca}`);
     });
   }
   if (data.boosts?.length) {
@@ -150,31 +154,24 @@ function renderTrenchesWelcome(tab) {
   if (!data) return; // still loading — skeleton already shown
 
   let items = [];
+  // 24h price-change badge — green up / red down / amber unknown
+  const chBadge = (ch24, fallback = '—') => {
+    if (ch24 == null) return { badge: fallback, cls: 'tc-badge-amber' };
+    return { badge: `${ch24 >= 0 ? '+' : ''}${ch24}%`, cls: ch24 >= 0 ? 'tc-badge-green' : 'tc-badge-red' };
+  };
 
   if (_activeTrenchTab === 'topMC') {
     items = (data.topMC || []).slice(0, 7).map((t, i) => {
-      const bonded = t.bonded;
-      const pct    = t.bondedPct != null ? parseFloat(t.bondedPct) : null;
-      const badge  = bonded ? 'BONDED'
-                   : pct != null ? `${pct.toFixed(0)}%`
-                   : '—';
-      const cls    = bonded           ? 'tc-badge-green'
-                   : pct != null && pct >= 80 ? 'tc-badge-cyan'
-                   : pct != null && pct >= 50 ? 'tc-badge-amber'
-                   : 'tc-badge-red';
+      const { badge, cls } = chBadge(t.ch24);
       return { rank: i + 1, ca: t.ca, sym: `$${t.symbol}`, name: t.name,
                mc: _fmtMcAbbrev(t.mc), age: _fmtAge(t.ageMin), badge, cls };
     });
 
   } else if (_activeTrenchTab === 'fresh') {
     items = (data.fresh || []).slice(0, 7).map((t, i) => {
-      const pct = t.bondedPct != null ? parseFloat(t.bondedPct) : 0;
-      const cls = pct >= 80 ? 'tc-badge-cyan'
-                : pct >= 50 ? 'tc-badge-amber'
-                : 'tc-badge-red';
+      const { badge, cls } = chBadge(t.ch24, 'NEW');
       return { rank: i + 1, ca: t.ca, sym: `$${t.symbol}`, name: t.name,
-               mc: _fmtMcAbbrev(t.mc), age: _fmtAge(t.ageMin),
-               badge: `${pct.toFixed(0)}%`, cls };
+               mc: _fmtMcAbbrev(t.mc), age: _fmtAge(t.ageMin), badge, cls };
     });
 
   } else if (_activeTrenchTab === 'boosts') {
@@ -203,13 +200,16 @@ function renderTrenchesWelcome(tab) {
     </div>`).join('');
 }
 
-// Delegated clicks on the trenches card (tabs + token rows)
+// Delegated clicks on the trenches card (tabs + token rows) + welcome rec bubbles
 document.addEventListener('click', e => {
   const tab = e.target.closest('.tc-tab[data-tab]');
   if (tab) { renderTrenchesWelcome(tab.dataset.tab); return; }
 
   const row = e.target.closest('.tc-row[data-ca]');
   if (row?.dataset.ca) { runAnalysis(row.dataset.ca); return; }
+
+  const rec = e.target.closest('.rec-bubble[data-prompt]');
+  if (rec?.dataset.prompt) { sendSuggestion(rec.dataset.prompt); return; }
 });
 
 /* ══════════════════════════════════════

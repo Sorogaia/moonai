@@ -31,7 +31,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
@@ -187,17 +187,21 @@
           <div class="welcome-logo">
             <img src="logo.png" alt="MoonAi" class="logo-img-moon" style="height:72px;width:72px;object-fit:contain;">
           </div>
-          <h1>Welcome to <em>MoonAi</em></h1>
-          <p class="welcome-sub">The Solana trenches, analyzed instantly. Paste a CA or tap any token below.</p>
+          <span class="welcome-eyebrow"><span class="live-dot"></span>Live Solana intelligence</span>
+          <h1><em>MoonAi</em></h1>
+          <p class="welcome-sub">The Solana trenches, analyzed instantly. Paste a contract address or tap any token below.</p>
         </div>
 
         <!-- Live trenches feed -->
         <div class="trenches-card" id="trenchesCard">
           <div class="trenches-head">
             <div class="trenches-tabs">
-              <button class="tc-tab tc-tab-active" data-tab="topMC">🔥 Top MC</button>
-              <button class="tc-tab" data-tab="fresh">⚡ Just In</button>
-              <button class="tc-tab" data-tab="boosts">🚀 Boosted</button>
+              <button class="tc-tab tc-tab-active" data-tab="topMC">
+                <svg class="tc-tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg>Top MC</button>
+              <button class="tc-tab" data-tab="fresh">
+                <svg class="tc-tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Just In</button>
+              <button class="tc-tab" data-tab="boosts">
+                <svg class="tc-tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>Boosted</button>
             </div>
             <div class="tc-meta">
               <span class="live-dot"></span>
@@ -213,6 +217,16 @@
           </div>
           <div class="trenches-foot">tap any token to analyze it instantly</div>
         </div>
+
+        <!-- Recommendation bubbles — tap to ask MoonAi (no CA needed) -->
+        <div class="rec-bubbles" id="recBubbles">
+          <button class="rec-bubble" data-prompt="What's pumping in the Solana trenches right now? Hit me with the hottest plays and why they're running.">What's pumping rn?</button>
+          <button class="rec-bubble" data-prompt="Find me an early gem in the trenches right now — something low MC with a real shot at running. What looks good and what's the thesis?">Find me a gem</button>
+          <button class="rec-bubble" data-prompt="Teach me how to spot a rug before I ape. What are the biggest red flags on a fresh Solana launch?">Spot a rug</button>
+          <button class="rec-bubble" data-prompt="What's the biggest Solana gainer today, and is it too late to ape or is there still room left?">Biggest gainer today?</button>
+          <button class="rec-bubble" data-prompt="How does MoonAi work? What can you tell me about a token once I paste its contract address?">How does this work?</button>
+        </div>
+
         <p class="welcome-disclaimer">Analysis is informational only — not financial advice. <a href="terms.html">Terms &amp; Disclaimer</a></p>
 
       </div>
