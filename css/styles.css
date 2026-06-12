@@ -1820,6 +1820,38 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
 }
 
 /* ══════════════════════════════════════
+   WALLET CONNECT + HOLDER GATE
+══════════════════════════════════════ */
+.wallet-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--font); font-size: 12px; font-weight: 600;
+  color: var(--text-muted); background: var(--bg-surface);
+  border: 1px solid var(--border2); border-radius: var(--radius-pill);
+  padding: 6px 13px; cursor: pointer; white-space: nowrap;
+  transition: color var(--transition), border-color var(--transition),
+              background var(--transition), box-shadow var(--transition);
+}
+.wallet-btn:hover { color: var(--text); border-color: var(--accent); box-shadow: var(--glow); }
+.wallet-btn-ic { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.9; }
+.wallet-btn.wallet-unlocked {
+  color: var(--accent); border-color: rgba(20,241,149,0.4); background: var(--pill-bg);
+}
+.wallet-btn.wallet-unlocked .wallet-btn-ic { opacity: 1; }
+
+/* Gated (holder-only) pill — lock icon swaps to open when unlocked */
+.gated-feature .lock-open  { display: none; }
+.gated-feature.gate-unlocked .lock-closed { display: none; }
+.gated-feature.gate-unlocked .lock-open   { display: inline; }
+.gated-feature.gate-unlocked {
+  color: var(--accent); border-color: rgba(20,241,149,0.4); background: var(--pill-bg);
+}
+
+@media (max-width: 520px) {
+  .wallet-btn-text { display: none; }
+  .wallet-btn { padding: 7px 9px; }
+}
+
+/* ══════════════════════════════════════
    SEND IT SCORE CARD
 ══════════════════════════════════════ */
 .sendit-card {

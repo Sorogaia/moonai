@@ -166,6 +166,10 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
       <div class="header-right">
+        <button class="wallet-btn" id="walletBtn" title="Connect Phantom to unlock holder features">
+          <svg class="wallet-btn-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+          <span class="wallet-btn-text">Connect</span>
+        </button>
         <div class="live-badge"><div class="live-dot"></div>LIVE · SOL</div>
         <div class="mode-toggle-wrap" title="Switch between Trencher and Advanced mode">
           <span class="mode-label active" id="labelTrencher">Trencher</span>
@@ -268,6 +272,12 @@
         </button>
         <button class="degen-pill" id="pillProfitSim">
           <span class="degen-pill-icon"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Profit Sim
+        </button>
+        <button class="degen-pill gated-feature" id="pillVerdict" title="Holder-only — connect a wallet holding 300+ $MOONAI">
+          <span class="degen-pill-icon">
+            <svg class="lock-closed" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <svg class="lock-open" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+          </span>Full Verdict
         </button>
       </div>
 

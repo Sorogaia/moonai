@@ -451,6 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('pillWhaleIntel')?.addEventListener('click', runWhaleIntel);
   document.getElementById('pillRugClock')?.addEventListener('click', runRugClock);
   document.getElementById('pillProfitSim')?.addEventListener('click', runProfitSim);
+  document.getElementById('pillVerdict')?.addEventListener('click', requestVerdict);
 
   // Logo image error fallbacks
   document.querySelectorAll('img.logo-img-moon').forEach(img =>
@@ -820,6 +821,170 @@ function showToast(msg) {
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 2500);
 }
+
+/* ══════════════════════════════════════
+   WALLET CONNECT (Phantom) + HOLDER GATE
+   Connect Phantom → sign a challenge → backend verifies ownership + checks
+   the wallet holds ≥ GATE_MIN $MOONAI → issues a short pass that unlocks the
+   holder-only Full AI Risk Verdict (/api/verdict). Gate is enforced server-
+   side; the client flag is only for UI state.
+══════════════════════════════════════ */
+const GATE_MIN = 300; // display only — real threshold enforced in /api/_gate
+let _wallet = { address: null, pass: null, unlocked: false, balance: 0 };
+try {
+  const saved = JSON.parse(sessionStorage.getItem('moonai_wallet') || 'null');
+  if (saved?.pass && saved?.address) _wallet = { address: saved.address, pass: saved.pass, unlocked: !!saved.unlocked, balance: saved.balance || 0 };
+} catch {}
+
+function _phantom() {
+  const p = window.phantom?.solana || (window.solana?.isPhantom ? window.solana : null);
+  return p?.isPhantom ? p : null;
+}
+function _saveWallet() { try { sessionStorage.setItem('moonai_wallet', JSON.stringify(_wallet)); } catch {} }
+function _fmtAddr(a)   { return a ? a.slice(0, 4) + '…' + a.slice(-4) : ''; }
+
+function updateWalletUI() {
+  const btn = document.getElementById('walletBtn');
+  if (btn) {
+    const txt = btn.querySelector('.wallet-btn-text');
+    if (_wallet.address) {
+      if (txt) txt.textContent = _fmtAddr(_wallet.address);
+      btn.classList.toggle('wallet-unlocked', _wallet.unlocked);
+      btn.title = _wallet.unlocked
+        ? `Holder unlocked · ${Math.floor(_wallet.balance).toLocaleString()} $MOONAI`
+        : `Connected · ${Math.floor(_wallet.balance).toLocaleString()} $MOONAI (need ${GATE_MIN})`;
+    } else {
+      if (txt) txt.textContent = 'Connect';
+      btn.classList.remove('wallet-unlocked');
+      btn.title = 'Connect Phantom to unlock holder features';
+    }
+  }
+  document.querySelectorAll('.gated-feature').forEach(el =>
+    el.classList.toggle('gate-unlocked', _wallet.unlocked));
+}
+
+async function connectWallet() {
+  const provider = _phantom();
+  if (!provider) {
+    showToast('Phantom not found — opening phantom.app');
+    window.open('https://phantom.app/', '_blank', 'noopener');
+    return false;
+  }
+  try {
+    const resp    = await provider.connect();
+    const address = (resp?.publicKey || provider.publicKey)?.toString();
+    if (!address) throw new Error('No public key');
+    _wallet.address = address;
+    updateWalletUI();
+
+    // Prove ownership with a fresh, app-scoped, time-stamped challenge
+    const message = [
+      'MoonAi — wallet verification',
+      'Domain: moonaiapp.xyz',
+      'Unlock holder-only features (Full AI Risk Verdict).',
+      'Nonce: ' + Math.random().toString(36).slice(2),
+      'Issued: ' + Date.now(),
+    ].join('\n');
+    const signed    = await provider.signMessage(new TextEncoder().encode(message), 'utf8');
+    const sigBytes  = new Uint8Array(signed.signature || signed);
+    const signature = btoa(String.fromCharCode(...sigBytes));
+
+    const r    = await fetch('/api/token-gate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address, signature, message }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) { showToast(data.error || 'Verification failed'); return false; }
+
+    _wallet.unlocked = !!data.unlocked;
+    _wallet.balance  = data.balance || 0;
+    _wallet.pass     = data.pass || null;
+    _saveWallet();
+    updateWalletUI();
+
+    if (data.reason === 'not-configured') showToast('Holder features unlock with the $MOONAI token — soon');
+    else if (_wallet.unlocked)            showToast(`Unlocked · ${Math.floor(_wallet.balance).toLocaleString()} $MOONAI`);
+    else                                  showToast(`Need ${data.threshold || GATE_MIN} $MOONAI — you hold ${Math.floor(_wallet.balance).toLocaleString()}`);
+    return _wallet.unlocked;
+  } catch (e) {
+    showToast(/reject|cancel/i.test(e?.message || '') ? 'Connection cancelled' : 'Wallet connect failed');
+    return false;
+  }
+}
+
+// Compact ground-truth summary from accumulated scan data for the verdict AI
+function buildVerdictContext() {
+  const d = _liveData || {};
+  const L = [];
+  const add = (k, v) => { if (v != null && v !== '' && v !== '—') L.push(`${k}: ${v}`); };
+  add('Token', `${d.name || '—'} ($${d.symbol || '—'})`);
+  add('CA', d.ca || currentCA);
+  add('Price', d.price); add('Market cap', d.mc); add('Liquidity', d.liq);
+  add('Volume 24h', d.vol24h); add('Volume 1h', d.vol1h);
+  add('Change 5m', d.priceChange5m != null ? d.priceChange5m + '%' : null);
+  add('Change 1h', d.priceChange1h != null ? d.priceChange1h + '%' : null);
+  add('Change 24h', d.priceChange24h != null ? d.priceChange24h + '%' : null);
+  add('Buys/Sells 24h', d.buys24h != null ? `${d.buys24h}/${d.sells24h}` : null);
+  add('Momentum', d.momentumLabel);
+  add('All-time-high MC', d.athMc);
+  add('Down from ATH MC', d.downFromAthMc ? '-' + d.downFromAthMc + '%' : null);
+  add('Bonded', d.bonded === true ? 'yes — graduated off bonding curve'
+              : d.bonded === false ? `no — curve ${d.bondedPct != null ? d.bondedPct + '% filled' : 'unknown'}` : null);
+  add('Dev wallet', d.devWallet);
+  add('Dev holding', d.devPct != null ? d.devPct + '%' : null);
+  add('Dev sold', d.devSold === true ? 'yes' : d.devSold === false ? 'no' : null);
+  add('Safety score', d.safetyScore != null ? `${d.safetyScore}/100 (${d.safetyVerdict || ''})` : null);
+  add('Mint authority', d.mintRevoked === true ? 'revoked' : d.mintRevoked === false ? 'ACTIVE (risk)' : null);
+  add('Freeze authority', d.freezeRevoked === true ? 'revoked' : d.freezeRevoked === false ? 'ACTIVE (risk)' : null);
+  if (d.safetyFlags?.length) add('Red flags', d.safetyFlags.join('; '));
+  if (d.bundled != null) add('Bundles', d.bundled
+    ? `${d.bundlePct}% bundled at launch (${d.bundleRisk} risk), ${d.bundleCount} bundles/${d.bundleWallets} wallets${d.bundleStillHolding != null ? `, still holding ${d.bundleStillHolding}%, dumped ${d.bundleDumped}%` : ''}`
+    : 'clean — none detected');
+  add('Fresh wallets in top holders', d.freshWalletPct != null ? `${d.freshWalletPct.toFixed(0)}%` : null);
+  add('Top 10 holders', d.top10pct != null ? d.top10pct + '%' : null);
+  add('Dev reputation', d.devReputation);
+  if (d.devPrevLaunched != null) add('Dev history', `${d.devPrevLaunched} launches — ${d.devPrevAlive} alive, ${d.devPrevBonded} bonded, ${d.devPrevDead} dead/rugged`);
+  add('DEX paid', d.dexPaid === true ? 'yes' : d.dexPaid === false ? 'no' : null);
+  add('Description', d.description);
+  return L.join('\n');
+}
+
+async function requestVerdict() {
+  if (!currentCA || !hasAnalyzed) { showToast('Analyze a token first'); return; }
+  if (!_wallet.unlocked || !_wallet.pass) {
+    const ok = await connectWallet();
+    if (!ok) return; // locked / not enough / cancelled — toast already shown
+  }
+  if (!hasAnalyzed) showFeed();
+  const feed  = document.getElementById('chatFeed');
+  const userB = document.createElement('div');
+  userB.className = 'bubble-user';
+  userB.textContent = 'Full AI Risk Verdict';
+  const ai = document.createElement('div');
+  ai.className = 'bubble-ai';
+  ai.innerHTML = `<div class="bubble-ai-lbl">Full Risk Verdict</div>
+    <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+  feed.appendChild(userB); feed.appendChild(ai); scrollBottom();
+  try {
+    const r    = await fetch('/api/verdict', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pass: _wallet.pass, ca: currentCA, context: buildVerdictContext() }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      if (r.status === 403) { _wallet.unlocked = false; _wallet.pass = null; _saveWallet(); updateWalletUI(); }
+      ai.innerHTML = `<div class="bubble-ai-lbl">Full Risk Verdict</div><div class="bubble-ai-body">${escHtml(data.error || 'Verdict failed — try again')}</div>`;
+      return;
+    }
+    ai.innerHTML = `<div class="bubble-ai-lbl">Full Risk Verdict</div><div class="bubble-ai-body">${formatAlpha(data.verdict || '')}</div>`;
+    scrollBottom();
+  } catch {
+    ai.innerHTML = `<div class="bubble-ai-lbl">Full Risk Verdict</div><div class="bubble-ai-body">Verdict failed — try again</div>`;
+  }
+}
+
+document.getElementById('walletBtn')?.addEventListener('click', connectWallet);
+updateWalletUI();
 
 /* ══════════════════════════════════════
    INPUT — auto-resize textarea
