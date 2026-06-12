@@ -2924,6 +2924,7 @@ async function fetchTopHolders(ca, devWallet, solPrice, mcRaw) {
     updateVerdictBadge();
 
   } catch {
+    if (_isStale(ca)) return; // user switched tokens — don't touch the new token's UI
     bodyEl.textContent = 'Holder data unavailable.';
     if (badgeEl) { badgeEl.textContent = 'ERROR'; badgeEl.className = 'card-badge'; }
     updateRiskStrip(); // resolve risk circles past "Scanning…" even on failure
@@ -3037,7 +3038,7 @@ async function fetchFreshWallets(ca, tokenCreatedAt) {
     updateRiskStrip();
     updateTokenIntel();
     updateVerdictBadge();
-  } catch { showUnavailable(); updateRiskStrip(); }
+  } catch { if (_isStale(ca)) return; showUnavailable(); updateRiskStrip(); }
 }
 
 /* ══════════════════════════════════════
@@ -3102,6 +3103,7 @@ async function fetchTokenInfo(ca, devWallet, dex, pump) {
     renderSafetyScore(score, info);
 
   } catch (e) {
+    if (_isStale(ca)) return; // user switched tokens — don't touch the new token's UI
     if (bodyEl) bodyEl.innerHTML = `<span style="color:var(--text-faint);font-size:12px;">Safety check unavailable.</span>`;
     updateRiskStrip(); // resolve risk circles past "Scanning…" even on failure
   }
@@ -3543,6 +3545,7 @@ async function fetchBundleDetection(ca, devWallet) {
     updateVerdictBadge();
 
   } catch (e) {
+    if (_isStale(ca)) return; // user switched tokens — don't touch the new token's UI
     if (bodyEl) bodyEl.innerHTML = `<span class="no-data">Bundle detection unavailable.</span>`;
     if (badgeEl) { badgeEl.textContent = 'ERROR'; badgeEl.className = 'card-badge'; }
     updateRiskStrip(); // resolve risk circles past "Scanning…" even on failure
