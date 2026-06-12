@@ -128,12 +128,18 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
   background-size: 40px 40px, 40px 40px, auto;
   opacity: 0.5;
 }
-/* Trencher: radial green top glow */
+/* Trencher: radial green top glow — slow "breathing" aurora (sleek, subtle) */
 [data-mode="trencher"] body::after {
   content: '';
-  position: fixed; top: 0; left: 0; right: 0; height: 40vh;
+  position: fixed; top: 0; left: 0; right: 0; height: 45vh;
   z-index: 0; pointer-events: none;
   background: radial-gradient(ellipse 70% 40% at 50% 0%, rgba(20,241,149,0.05) 0%, transparent 70%);
+  will-change: opacity, transform;
+  animation: auroraBreath 9s ease-in-out infinite;
+}
+@keyframes auroraBreath {
+  0%, 100% { opacity: 0.65; transform: translateY(0) scale(1); }
+  50%      { opacity: 1;    transform: translateY(8px) scale(1.08); }
 }
 
 /* Advanced: subtle radial glow */
@@ -623,7 +629,16 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
   border-bottom: 1px solid var(--border);
   cursor: pointer;
   transition: background var(--transition);
+  /* Staggered reveal — replays on each tab switch for a live, fresh feel */
+  animation: fadeUp 0.4s ease both;
 }
+.tc-row:nth-child(1) { animation-delay: 0.03s; }
+.tc-row:nth-child(2) { animation-delay: 0.06s; }
+.tc-row:nth-child(3) { animation-delay: 0.09s; }
+.tc-row:nth-child(4) { animation-delay: 0.12s; }
+.tc-row:nth-child(5) { animation-delay: 0.15s; }
+.tc-row:nth-child(6) { animation-delay: 0.18s; }
+.tc-row:nth-child(7) { animation-delay: 0.21s; }
 .tc-row:last-child { border-bottom: none; }
 .tc-row:hover { background: rgba(255,255,255,0.04); }
 [data-mode="trencher"] .tc-row:hover {
@@ -1055,7 +1070,8 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
   animation: fadeIn 0.2s ease;
 }
 .bubble-ai-lbl {
-  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: var(--font-mono);
+  font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
   color: var(--accent); margin-bottom: 6px; font-weight: 700;
 }
 .bubble-ai strong, .bubble-ai b { color: var(--cyan); font-weight: 700; }
@@ -1760,7 +1776,9 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
               background var(--transition), box-shadow var(--transition),
               transform var(--transition);
 }
-.degen-pill-icon { font-size: 13px; line-height: 1; }
+.degen-pill-icon { display: inline-flex; align-items: center; line-height: 1; }
+.degen-pill-icon svg { width: 14px; height: 14px; stroke-width: 2; opacity: 0.9; }
+.degen-pill:hover .degen-pill-icon svg { opacity: 1; }
 
 [data-mode="trencher"] .degen-pill:hover {
   color: var(--text);
