@@ -114,7 +114,6 @@ See `.env.example` for the full list. Set in Vercel dashboard for production —
 | `UPSTASH_REDIS_REST_TOKEN` | ✅ | Rate limiting auth |
 | `ALLOWED_ORIGIN` | ✅ | CORS allowed origin (default: https://moonaiapp.xyz) |
 | `TURNSTILE_SECRET_KEY` | ✅ | Cloudflare bot verification (server-side) |
-| `BETA_PASSWORD` + `BETA_CODES` | optional | Gated beta mode — leave unset for an open site (and remove the `<script src="js/beta.js">` line from `index.html`) |
 | `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` | optional | Anomaly alerts to your phone when upstream APIs misbehave |
 
 ---

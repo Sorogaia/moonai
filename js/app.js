@@ -1171,22 +1171,24 @@ function calculateMoonScore(dex, pump, momentumScore) {
 ══════════════════════════════════════ */
 async function fetchJupiterMeta(ca) {
   try {
-    const res = await fetch(`https://tokens.jup.ag/token/${encodeURIComponent(ca)}`);
+    // tokens.jup.ag was decommissioned — lite-api.jup.ag/tokens/v2 is the replacement.
+    // v2 has no extensions (socials/description); DexScreener + pump.fun cover those.
+    const res = await fetch(`https://lite-api.jup.ag/tokens/v2/search?query=${encodeURIComponent(ca)}`);
     if (!res.ok) return null;
-    const d = await res.json();
-    if (!d || !d.address) return null;
-    const ext = d.extensions || {};
+    const list = await res.json();
+    const d = Array.isArray(list) ? list.find(t => t.id === ca) : null;
+    if (!d) return null;
     return {
-      name:        d.name        || null,
-      symbol:      d.symbol      || null,
-      image:       d.logoURI     || null,
-      description: ext.description || null,
-      twitter:     ext.twitter     || null,
-      telegram:    ext.telegram    || null,
-      discord:     ext.discord     || null,
-      website:     ext.website     || null,
-      coingeckoId: ext.coingeckoId || null,
-      tags:        d.tags          || [],
+      name:        d.name   || null,
+      symbol:      d.symbol || null,
+      image:       d.icon   || null,
+      description: null,
+      twitter:     null,
+      telegram:    null,
+      discord:     null,
+      website:     null,
+      coingeckoId: null,
+      tags:        d.tags   || [],
     };
   } catch { return null; }
 }
@@ -2065,8 +2067,9 @@ function updateRiskStrip() {
 
   if (d.devBundled) { rugScore += 2; rugSigs.push({ ok: false, txt: 'Dev bundled at launch' }); }
 
-  const rugLevel = rugScore <= 2 ? 'LOW' : rugScore <= 5 ? 'MED' : 'HIGH';
-  const rugCol   = rugScore <= 2 ? '#14F195' : rugScore <= 5 ? '#ff9f0a' : '#ff3b30';
+  // No signals at all (every scan failed) → neutral N/A, not a misleading LOW
+  const rugLevel = !rugSigs.length ? 'N/A' : rugScore <= 2 ? 'LOW' : rugScore <= 5 ? 'MED' : 'HIGH';
+  const rugCol   = !rugSigs.length ? '#666' : rugScore <= 2 ? '#14F195' : rugScore <= 5 ? '#ff9f0a' : '#ff3b30';
 
   // ── MARKET RISK ────────────────────────────────────────────
   let mktScore = 0;
@@ -2093,8 +2096,8 @@ function updateRiskStrip() {
     else                               mktSigs.push({ ok: true,  txt: 'Clean launch' });
   }
 
-  const mktLevel = mktScore <= 2 ? 'LOW' : mktScore <= 5 ? 'MED' : 'HIGH';
-  const mktCol   = mktScore <= 2 ? '#14F195' : mktScore <= 5 ? '#ff9f0a' : '#ff3b30';
+  const mktLevel = !mktSigs.length ? 'N/A' : mktScore <= 2 ? 'LOW' : mktScore <= 5 ? 'MED' : 'HIGH';
+  const mktCol   = !mktSigs.length ? '#666' : mktScore <= 2 ? '#14F195' : mktScore <= 5 ? '#ff9f0a' : '#ff3b30';
 
   // ── Update DOM ─────────────────────────────────────────────
   const sigHtml = (sigs) => sigs.slice(0, 4).map(s => {
@@ -2110,13 +2113,15 @@ function updateRiskStrip() {
   const mktValEl    = document.getElementById('mktRiskVal');
   const mktSigsEl   = document.getElementById('mktRiskSignals');
 
+  const NO_SIG = '<span class="rsig rsig-neu">· Scan data unavailable</span>';
+
   if (rugCircleEl) rugCircleEl.style.borderColor = rugCol;
   if (rugValEl)    { rugValEl.textContent = rugLevel; rugValEl.style.color = rugCol; }
-  if (rugSigsEl && rugSigs.length) rugSigsEl.innerHTML = sigHtml(rugSigs);
+  if (rugSigsEl)   rugSigsEl.innerHTML = rugSigs.length ? sigHtml(rugSigs) : NO_SIG;
 
   if (mktCircleEl) mktCircleEl.style.borderColor = mktCol;
   if (mktValEl)    { mktValEl.textContent = mktLevel; mktValEl.style.color = mktCol; }
-  if (mktSigsEl && mktSigs.length) mktSigsEl.innerHTML = sigHtml(mktSigs);
+  if (mktSigsEl)   mktSigsEl.innerHTML = mktSigs.length ? sigHtml(mktSigs) : NO_SIG;
 }
 
 function statCard(label, value, colorClass) {
@@ -2184,6 +2189,22 @@ async function runAnalysis(raw) {
       document.getElementById('ls0').querySelector('.lstep-icon').textContent = '✓';
       document.getElementById('ls1').classList.add('show','done');
       document.getElementById('ls1').querySelector('.lstep-icon').textContent = '✓';
+
+      // Valid address shape but no data source knows it → friendly not-found
+      // instead of a dash-filled card + 7 pointless scans
+      if (!dex && !pump && !jup) {
+        document.getElementById('resultZone').innerHTML = `
+          <div class="card">
+            <div class="card-head"><div class="card-title"><div class="card-title-dot" style="background:var(--danger)"></div>Token Not Found</div><span class="card-badge">NO DATA</span></div>
+            <div class="card-body">
+              <div class="alpha-content">
+                No market data found for this address. It may be brand new (no pool yet),
+                delisted, or not a token mint. Double-check the CA and try again.
+              </div>
+            </div>
+          </div>`;
+        return;
+      }
 
       await new Promise(r => setTimeout(r, 300));
       renderTrencher(currentCA, dex, pump, solPrice, jup);
@@ -2319,12 +2340,20 @@ Use the live data above for MC, VOL, LIQUIDITY, DEV WALLET, BONDED status, and S
 
   } catch(e) {
     clearInterval(doneTimer);
+    // Server messages are already friendly ("Rate limit exceeded — try again in a
+    // minute."); only bare HTTP codes / fetch errors need translating.
+    const raw = e?.message || '';
+    const friendly =
+      /^HTTP 5/.test(raw)                        ? 'The AI service hit a snag.' :
+      /^HTTP 4/.test(raw)                        ? 'The request couldn\'t be processed.' :
+      /network|fetch|failed to fetch/i.test(raw) ? 'Network hiccup — check your connection.' :
+      raw || 'Something went sideways.';
     document.getElementById('resultZone').innerHTML = `
       <div class="card">
         <div class="card-head"><div class="card-title"><div class="card-title-dot" style="background:var(--danger)"></div>Error</div><span class="card-badge badge-red">FAILED</span></div>
         <div class="card-body">
           <div class="alpha-content" style="border-color:rgba(255,59,48,.2);background:rgba(255,59,48,.04)">
-            <b style="color:var(--danger)">Analysis failed:</b> ${escHtml(e.message)}<br><br>
+            <b style="color:var(--danger)">Analysis failed:</b> ${escHtml(friendly)}<br><br>
             Common fixes:<br>
             • Check your network connection<br>
             • Try again in a moment
@@ -2781,6 +2810,7 @@ async function fetchTopHolders(ca, devWallet, solPrice, mcRaw) {
   } catch {
     bodyEl.textContent = 'Holder data unavailable.';
     if (badgeEl) { badgeEl.textContent = 'ERROR'; badgeEl.className = 'card-badge'; }
+    updateRiskStrip(); // resolve risk circles past "Scanning…" even on failure
   }
 }
 
@@ -2891,7 +2921,7 @@ async function fetchFreshWallets(ca, tokenCreatedAt) {
     updateRiskStrip();
     updateTokenIntel();
     updateVerdictBadge();
-  } catch { showUnavailable(); }
+  } catch { showUnavailable(); updateRiskStrip(); }
 }
 
 /* ══════════════════════════════════════
@@ -2957,6 +2987,7 @@ async function fetchTokenInfo(ca, devWallet, dex, pump) {
 
   } catch (e) {
     if (bodyEl) bodyEl.innerHTML = `<span style="color:var(--text-faint);font-size:12px;">Safety check unavailable.</span>`;
+    updateRiskStrip(); // resolve risk circles past "Scanning…" even on failure
   }
 }
 
@@ -3398,6 +3429,7 @@ async function fetchBundleDetection(ca, devWallet) {
   } catch (e) {
     if (bodyEl) bodyEl.innerHTML = `<span class="no-data">Bundle detection unavailable.</span>`;
     if (badgeEl) { badgeEl.textContent = 'ERROR'; badgeEl.className = 'card-badge'; }
+    updateRiskStrip(); // resolve risk circles past "Scanning…" even on failure
   }
 }
 

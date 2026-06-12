@@ -7,7 +7,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/itsyaboihomelander/moonai.git"
+    "url": "https://github.com/Sorogaia/moonai.git"
   },
   "keywords": [
     "solana",
@@ -19,7 +19,7 @@
     "defi",
     "web3"
   ],
-  "author": "itsyaboihomelander",
+  "author": "Sorogaia",
   "license": "MIT",
   "homepage": "https://moonaiapp.xyz"
 }

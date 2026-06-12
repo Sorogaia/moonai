@@ -9,7 +9,7 @@ Thanks for your interest in contributing.
 1. Fork the repository
 2. Clone your fork:
    ```bash
-   git clone https://github.com/itsyaboihomelander/moonai.git
+   git clone https://github.com/Sorogaia/moonai.git
    cd moonai
    ```
 3. Install nothing — no build tools required

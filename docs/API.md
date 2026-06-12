@@ -69,10 +69,6 @@ DexScreener "paid profile" detection.
 - Dual signal: orders endpoint + pair `info.header`/`info.openGraph`
 - Returns: `{ paid, type }` where type is `takeover` / `boosted` / `profile`
 
-### `GET|POST /api/beta-gate` (optional)
-Invite-only beta access gate. Only active when `BETA_PASSWORD` + `BETA_CODES`
-env vars are set. HMAC-tokenised 48h sessions, timing-safe password compare.
-
 ---
 
 ## Public APIs Used (Free, No Key Required)

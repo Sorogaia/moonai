@@ -13,7 +13,7 @@ No API key needed. No signup. No install.
 ## Running Locally
 
 ```bash
-git clone https://github.com/itsyaboihomelander/moonai.git
+git clone https://github.com/Sorogaia/moonai.git
 cd moonai
 npx live-server .
 ```
