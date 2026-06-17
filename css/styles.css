@@ -1065,7 +1065,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
 }
 
 /* Suggestions */
-.suggestions { display: flex; flex-wrap: nowrap; gap: 6px; margin-bottom: 0.65rem; width: 100%; max-width: 1000px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+.suggestions { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 0.65rem; width: 100%; max-width: 1000px; }
 .suggestions::-webkit-scrollbar { display: none; }
 .sug-pill {
   font-family: var(--font); font-size: 12px; font-weight: 500;

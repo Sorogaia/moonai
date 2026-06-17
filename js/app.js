@@ -2715,8 +2715,33 @@ Use the live data above for MC, VOL, LIQUIDITY, DEV WALLET, BONDED status, and S
       throw new Error(err.error?.message || `HTTP ${resp.status}`);
     }
 
-    const data = await resp.json();
-    const text = data.content?.filter(b=>b.type==='text').map(b=>b.text).join('') || '';
+    // /api/chat streams SSE — accumulate the full report text, then render once.
+    // (Advanced mode renders the finished report in one pass, not incrementally.)
+    const reader  = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let sseBuffer = '';
+    let text      = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      sseBuffer += decoder.decode(value, { stream: true });
+      const events = sseBuffer.split('\n\n');
+      sseBuffer = events.pop() || '';
+      for (const evt of events) {
+        const line = evt.split('\n').find(l => l.startsWith('data:'));
+        if (!line) continue;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === '[DONE]') continue;
+        try {
+          const d = JSON.parse(payload);
+          if (d.type === 'content_block_delta' && d.delta?.type === 'text_delta') text += d.delta.text;
+          else if (d.type === 'error') throw new Error(d.error?.message || 'Stream error');
+        } catch (parseErr) {
+          if (parseErr instanceof SyntaxError) continue; // partial chunk — wait for more
+          throw parseErr;
+        }
+      }
+    }
     if (!text) throw new Error('Empty response from API');
 
     chatMessages.push({ role:'user', content: userMsg });

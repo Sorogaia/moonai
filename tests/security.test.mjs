@@ -212,7 +212,7 @@ describe('Rate limiting — _ratelimit.js', () => {
   });
 
   test('checkGlobalDaily blocks when over global cap', async () => {
-    global.fetch = async () => ({ ok: true, json: async () => [{ result: 1001 }, { result: 1 }] });
+    global.fetch = async () => ({ ok: true, json: async () => [{ result: 10001 }, { result: 1 }] });
     const result = await checkGlobalDaily('chat');
     assert.equal(result, false);
   });
@@ -357,7 +357,7 @@ describe('Chat handler — api/chat.js', () => {
       if (url.includes('/pipeline')) {
         callCount++;
         // First = per-minute (allow), second = daily IP (allow), third = global (block)
-        const count = callCount <= 2 ? 1 : 1001;
+        const count = callCount <= 2 ? 1 : 10001;
         return { ok: true, json: async () => [{ result: count }, { result: 1 }] };
       }
       return { ok: true, json: async () => ({}) };

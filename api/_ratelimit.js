@@ -15,9 +15,10 @@
 const UPSTASH_URL   = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 
-// Daily limits for AI (chat) endpoint
-const DAILY_PER_IP     = 100;   // max AI requests per IP per day
-const DAILY_GLOBAL     = 1000;  // max AI requests across ALL users per day (~$3-5 worst case)
+// Daily limits for AI (chat) endpoint — both tunable from the Vercel dashboard
+// (no redeploy) so caps can be raised instantly under launch-day load.
+const DAILY_PER_IP     = parseInt(process.env.DAILY_PER_IP_CAP)  || 100;    // max AI requests per IP per day
+const DAILY_GLOBAL     = parseInt(process.env.DAILY_GLOBAL_CAP)  || 10000;  // max AI requests across ALL users per day (~$30-50 worst case)
 const KILL_SWITCH_KEY  = 'moonai:kill';
 
 // In-memory fallback store: key → { count, resetAt }
