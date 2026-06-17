@@ -19,7 +19,7 @@ let _tsToken = null;
 
 window.moonaiTsCallback = (token) => { _tsToken = token; };
 window.moonaiTsExpired  = ()      => { _tsToken = null; try { turnstile.reset(); } catch {} };
-window.moonaiTsError    = ()      => { _tsToken = null; };
+window.moonaiTsError    = ()      => { _tsToken = null; try { turnstile.reset(); } catch {} };
 
 // Consume the token but do NOT reset here — reset after the API call so the widget
 // has the full response round-trip to generate the next token (prevents 15s stalls)
@@ -4269,8 +4269,7 @@ async function sendChat(msg, aiPrompt) {
           }
         } catch (parseErr) {
           // Re-throw real errors; ignore JSON parse failures on partial chunks
-          if (parseErr instanceof Error && parseErr.message !== 'Stream error') {
-            // JSON.parse failed — likely a malformed/partial chunk, skip silently
+          if (parseErr instanceof SyntaxError) {
             continue;
           }
           throw parseErr;

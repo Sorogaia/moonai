@@ -1065,12 +1065,13 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
 }
 
 /* Suggestions */
-.suggestions { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; margin-bottom: 0.65rem; width: 100%; max-width: 1000px; }
+.suggestions { display: flex; flex-wrap: nowrap; gap: 6px; margin-bottom: 0.65rem; width: 100%; max-width: 1000px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+.suggestions::-webkit-scrollbar { display: none; }
 .sug-pill {
   font-family: var(--font); font-size: 12px; font-weight: 500;
   color: var(--text-muted); background: var(--chip-bg);
   border: 1px solid var(--chip-border); border-radius: var(--radius-pill);
-  padding: 7px 14px; cursor: pointer;
+  padding: 7px 14px; cursor: pointer; flex-shrink: 0;
   transition: all var(--transition); white-space: nowrap;
 }
 .sug-pill:hover { color: var(--text); border-color: var(--chip-border-hover); background: var(--pill-bg); box-shadow: var(--glow); }
@@ -1089,8 +1090,8 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
 /* Input — Gemini-style pill */
 .input-wrap {
   display: flex; align-items: center; gap: 10px;
-  background: var(--bg-input);
-  border: 1.5px solid var(--border2);
+  background: rgba(20,241,149,0.04);
+  border: 1.5px solid rgba(20,241,149,0.22);
   border-radius: 999px;
   padding: 10px 10px 10px 20px;
   transition: border-color var(--transition), box-shadow var(--transition);
@@ -1099,6 +1100,10 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
 .input-wrap:focus-within {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(20,241,149,0.10), 0 0 28px rgba(20,241,149,0.10), 0 0 60px rgba(20,241,149,0.04);
+}
+[data-mode="advanced"] .input-wrap {
+  background: rgba(245,158,11,0.04);
+  border-color: rgba(245,158,11,0.22);
 }
 [data-mode="advanced"] .input-wrap:focus-within {
   border-color: var(--accent);

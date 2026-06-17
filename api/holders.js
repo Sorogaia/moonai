@@ -106,23 +106,27 @@ module.exports = async (req, res) => {
   if (!HELIUS_KEY)            return res.status(500).json({ error: 'Service unavailable.' });
 
   try {
-    // Step 1: get top 20 token accounts + supply + REAL total holder count in parallel
+    // Step 1: get top 20 token accounts + supply + REAL total holder count in parallel.
+    // getProgramAccounts fetches ALL token accounts — for popular tokens this can be
+    // 100K+ accounts and take 15-20s, blowing the 30s function timeout. Cap it at 8s
+    // so a slow count never kills the entire holders response.
     const [largestData, supplyData, allAccountsData] = await Promise.all([
       rpc(1, 'getTokenLargestAccounts', [ca, { commitment: 'confirmed' }]),
       rpc(2, 'getTokenSupply',          [ca, { commitment: 'confirmed' }]),
-      // Real holder count: getProgramAccounts with minimal data slice (just the 8-byte balance)
-      // dataSlice reduces bandwidth — we only need to know if balance > 0
-      rpc(3, 'getProgramAccounts', [
-        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
-        {
-          filters: [
-            { dataSize: 165 },
-            { memcmp: { offset: 0, bytes: ca } },
-          ],
-          dataSlice: { offset: 64, length: 8 },
-          encoding: 'base64',
-          commitment: 'confirmed',
-        },
+      Promise.race([
+        rpc(3, 'getProgramAccounts', [
+          'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+          {
+            filters: [
+              { dataSize: 165 },
+              { memcmp: { offset: 0, bytes: ca } },
+            ],
+            dataSlice: { offset: 64, length: 8 },
+            encoding: 'base64',
+            commitment: 'confirmed',
+          },
+        ]),
+        new Promise(resolve => setTimeout(() => resolve(null), 8000)),
       ]),
     ]);
 
@@ -158,10 +162,14 @@ module.exports = async (req, res) => {
 
     // Resolve token account → owner, then DEDUPLICATE by wallet.
     // A wallet can have multiple token accounts — merge their amounts.
-    const rawHolders = accounts.map((acct, i) => ({
-      owner:  infos[i]?.data?.parsed?.info?.owner || acct.address,
-      amount: parseFloat(acct.uiAmount) || 0,
-    }));
+    // Skip accounts where the owner couldn't be resolved — falling back to the
+    // token account address itself would show a garbage address as a "holder".
+    const rawHolders = accounts
+      .map((acct, i) => ({
+        owner:  infos[i]?.data?.parsed?.info?.owner,
+        amount: parseFloat(acct.uiAmount) || 0,
+      }))
+      .filter(h => h.owner);
 
     const ownerMap = {};
     for (const { owner, amount } of rawHolders) {
