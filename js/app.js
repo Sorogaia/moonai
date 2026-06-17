@@ -841,166 +841,6 @@ function showToast(msg) {
   setTimeout(() => t.remove(), 2500);
 }
 
-/* ══════════════════════════════════════
-   WALLET CONNECT (Phantom) + HOLDER GATE
-   Connect Phantom → sign a challenge → backend verifies ownership + checks
-   the wallet holds ≥ GATE_MIN $MOONAI → issues a short pass that unlocks the
-   holder-only Full AI Risk Verdict (/api/verdict). Gate is enforced server-
-   side; the client flag is only for UI state.
-══════════════════════════════════════ */
-const GATE_MIN       = 300; // display only — real threshold enforced in /api/_gate
-const CHAT_FREE_LIMIT = 3;  // free messages per session for non-holders
-
-let _chatCount = parseInt(sessionStorage.getItem('moonai_chat_count') || '0', 10);
-
-function _chatGated() {
-  return !_wallet.unlocked && _chatCount >= CHAT_FREE_LIMIT;
-}
-
-function _incrementChat() {
-  if (_wallet.unlocked) return; // holders never count
-  _chatCount++;
-  sessionStorage.setItem('moonai_chat_count', String(_chatCount));
-  updateChatGate();
-}
-
-function updateChatGate() {
-  const degenRow  = document.getElementById('degenRow');
-  const gateRow   = document.getElementById('chatGateRow');
-  const sugRow    = document.getElementById('suggestionsRow');
-  const counter   = document.getElementById('chatCounter');
-  const input     = document.getElementById('mainInput');
-  const sendBtn   = document.getElementById('sendBtn');
-  const gated     = _chatGated();
-  const remaining = Math.max(0, CHAT_FREE_LIMIT - _chatCount);
-
-  // Counter — show after first use, hide for holders and when fully gated (banner takes over)
-  if (counter) {
-    if (_wallet.unlocked || _chatCount === 0 || gated) {
-      counter.style.display = 'none';
-    } else {
-      counter.style.display = 'flex';
-      counter.textContent   = `${remaining} free message${remaining !== 1 ? 's' : ''} left`;
-      counter.className     = 'chat-counter' + (remaining === 1 ? ' chat-counter-warn' : '');
-    }
-  }
-
-  if (gated) {
-    // Gate banner replaces degen row
-    if (degenRow) degenRow.style.display = 'none';
-    if (gateRow)  gateRow.style.display  = 'flex';
-    // Grey out suggestion pills
-    if (sugRow) sugRow.querySelectorAll('.sug-pill').forEach(p => p.classList.add('pill-gated'));
-    // Disable input
-    if (input)   { input.disabled = true; input.placeholder = '3 free messages used — connect wallet to continue'; }
-    if (sendBtn) sendBtn.disabled = true;
-  } else {
-    if (gateRow) gateRow.style.display = 'none';
-    // Restore suggestion pills
-    if (sugRow) sugRow.querySelectorAll('.sug-pill').forEach(p => p.classList.remove('pill-gated'));
-    // Re-enable input (only if not disabled for another reason like mid-request)
-    if (input && input.disabled && input.placeholder.includes('3 free messages')) {
-      input.disabled    = false;
-      input.placeholder = 'Paste a CA or pump.fun link, or ask a follow-up question…';
-    }
-    if (sendBtn && sendBtn.disabled) sendBtn.disabled = false;
-    // Degen row visibility is controlled by showFeed() — don't touch it here
-  }
-}
-
-let _wallet = { address: null, pass: null, unlocked: false, balance: 0 };
-try {
-  const saved = JSON.parse(sessionStorage.getItem('moonai_wallet') || 'null');
-  if (saved?.pass && saved?.address) _wallet = { address: saved.address, pass: saved.pass, unlocked: !!saved.unlocked, balance: saved.balance || 0 };
-} catch {}
-
-// Returns the first available Solana wallet provider (Phantom, Solflare, Backpack)
-function _getSolanaProvider() {
-  // Phantom
-  const phantom = window.phantom?.solana || (window.solana?.isPhantom ? window.solana : null);
-  if (phantom?.isPhantom) return { provider: phantom, name: 'Phantom', url: 'https://phantom.app/' };
-  // Solflare
-  if (window.solflare?.isSolflare) return { provider: window.solflare, name: 'Solflare', url: 'https://solflare.com/' };
-  // Backpack
-  if (window.backpack?.isBackpack) return { provider: window.backpack, name: 'Backpack', url: 'https://backpack.app/' };
-  // Generic Solana adapter (other wallets that inject window.solana)
-  if (window.solana?.isConnected !== undefined) return { provider: window.solana, name: 'Wallet', url: 'https://phantom.app/' };
-  return null;
-}
-function _saveWallet() { try { sessionStorage.setItem('moonai_wallet', JSON.stringify(_wallet)); } catch {} }
-function _fmtAddr(a)   { return a ? a.slice(0, 4) + '…' + a.slice(-4) : ''; }
-
-function updateWalletUI() {
-  const btn = document.getElementById('walletBtn');
-  if (btn) {
-    const txt = btn.querySelector('.wallet-btn-text');
-    if (_wallet.address) {
-      if (txt) txt.textContent = _fmtAddr(_wallet.address);
-      btn.classList.toggle('wallet-unlocked', _wallet.unlocked);
-      btn.title = _wallet.unlocked
-        ? `Holder unlocked · ${Math.floor(_wallet.balance).toLocaleString()} $MOONAI`
-        : `Connected · ${Math.floor(_wallet.balance).toLocaleString()} $MOONAI (need ${GATE_MIN})`;
-    } else {
-      if (txt) txt.textContent = 'Connect';
-      btn.classList.remove('wallet-unlocked');
-      btn.title = 'Connect wallet (Phantom, Solflare, Backpack) to unlock holder features';
-    }
-  }
-  document.querySelectorAll('.gated-feature').forEach(el =>
-    el.classList.toggle('gate-unlocked', _wallet.unlocked));
-  updateChatGate();
-}
-
-async function connectWallet() {
-  const wallet = _getSolanaProvider();
-  if (!wallet) {
-    showToast('No Solana wallet found — install Phantom, Solflare, or Backpack');
-    window.open('https://phantom.app/', '_blank', 'noopener');
-    return false;
-  }
-  const { provider, name } = wallet;
-  try {
-    const resp    = await provider.connect();
-    const address = (resp?.publicKey || provider.publicKey)?.toString();
-    if (!address) throw new Error('No public key');
-    _wallet.address = address;
-    updateWalletUI();
-
-    // Prove ownership with a fresh, app-scoped, time-stamped challenge
-    const message = [
-      'MoonAi — wallet verification',
-      'Domain: moonaiapp.xyz',
-      'Unlock holder-only features (Full AI Risk Verdict).',
-      'Nonce: ' + Math.random().toString(36).slice(2),
-      'Issued: ' + Date.now(),
-    ].join('\n');
-    const signed    = await provider.signMessage(new TextEncoder().encode(message), 'utf8');
-    const sigBytes  = new Uint8Array(signed.signature || signed);
-    const signature = btoa(String.fromCharCode(...sigBytes));
-
-    const r    = await fetch('/api/token-gate', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ address, signature, message }),
-    });
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok) { showToast(data.error || 'Verification failed'); return false; }
-
-    _wallet.unlocked = !!data.unlocked;
-    _wallet.balance  = data.balance || 0;
-    _wallet.pass     = data.pass || null;
-    _saveWallet();
-    updateWalletUI();
-
-    if (data.reason === 'not-configured') showToast('Holder features unlock with the $MOONAI token — soon');
-    else if (_wallet.unlocked)            showToast(`Unlocked · ${Math.floor(_wallet.balance).toLocaleString()} $MOONAI`);
-    else                                  showToast(`Need ${data.threshold || GATE_MIN} $MOONAI — you hold ${Math.floor(_wallet.balance).toLocaleString()}`);
-    return _wallet.unlocked;
-  } catch (e) {
-    showToast(/reject|cancel/i.test(e?.message || '') ? 'Connection cancelled' : `${name} connect failed`);
-    return false;
-  }
-}
-
 // Compact ground-truth summary from accumulated scan data for the verdict AI
 function buildVerdictContext() {
   const d = _liveData || {};
@@ -1040,10 +880,6 @@ function buildVerdictContext() {
 
 async function requestVerdict() {
   if (!currentCA || !hasAnalyzed) { showToast('Analyze a token first'); return; }
-  if (!_wallet.unlocked || !_wallet.pass) {
-    const ok = await connectWallet();
-    if (!ok) return; // locked / not enough / cancelled — toast already shown
-  }
   if (!hasAnalyzed) showFeed();
   const feed  = document.getElementById('chatFeed');
   const userB = document.createElement('div');
@@ -1057,11 +893,10 @@ async function requestVerdict() {
   try {
     const r    = await fetch('/api/verdict', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pass: _wallet.pass, ca: currentCA, context: buildVerdictContext() }),
+      body: JSON.stringify({ ca: currentCA, context: buildVerdictContext() }),
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
-      if (r.status === 403) { _wallet.unlocked = false; _wallet.pass = null; _saveWallet(); updateWalletUI(); }
       ai.innerHTML = `<div class="bubble-ai-lbl">Full Risk Verdict</div><div class="bubble-ai-body">${escHtml(data.error || 'Verdict failed — try again')}</div>`;
       return;
     }
@@ -1071,11 +906,6 @@ async function requestVerdict() {
     ai.innerHTML = `<div class="bubble-ai-lbl">Full Risk Verdict</div><div class="bubble-ai-body">Verdict failed — try again</div>`;
   }
 }
-
-document.getElementById('walletBtn')?.addEventListener('click', connectWallet);
-document.getElementById('chatGateConnectBtn')?.addEventListener('click', connectWallet);
-updateWalletUI();
-updateChatGate();
 
 /* ══════════════════════════════════════
    INPUT — auto-resize textarea
@@ -1193,11 +1023,10 @@ function showFeed() {
   // Suggestion pills are all token-specific (Safety Score, ROI, etc.) — only
   // show them once a token has actually been analyzed and we have live data.
   const sugRow = document.getElementById('suggestionsRow');
-  if (sugRow) sugRow.style.display = (currentCA && !_chatGated()) ? 'flex' : 'none';
+  if (sugRow) sugRow.style.display = currentCA ? 'flex' : 'none';
   const degenRow = document.getElementById('degenRow');
-  if (degenRow) degenRow.style.display = (currentCA && !_chatGated()) ? 'flex' : 'none';
+  if (degenRow) degenRow.style.display = currentCA ? 'flex' : 'none';
   hasAnalyzed = true;
-  updateChatGate();
 }
 
 function scrollBottom() {
@@ -4184,10 +4013,6 @@ Be direct, detailed and opinionated. This is alpha.`;
 async function sendChat(msg, aiPrompt) {
   msg = msg || mainInput.value.trim();
   if (!msg) return;
-
-  // Chat gate — non-holders limited to CHAT_FREE_LIMIT messages per session
-  if (_chatGated()) { updateChatGate(); return; }
-  _incrementChat();
 
   const promptToSend = aiPrompt || msg; // display msg in chat, send aiPrompt to AI
 

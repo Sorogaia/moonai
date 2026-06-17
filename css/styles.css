@@ -103,13 +103,13 @@ a, button, [onclick], .sug-pill, .ex-pill, .tc-row, .tc-tab,
 .dev-tok-row, .vamp-tok-row, .expand-btn, .copy-ca-btn,
 .analysis-btn, .send-btn, .toggle-track,
 .bdl-row-active, .bpie-seg-active, .sidebar-item, .sidebar-nav-item,
-.rec-bubble, .wallet-btn, .sidebar-backdrop {
+.rec-bubble, .sidebar-backdrop {
   touch-action: manipulation;
 }
 
 /* Suppress iOS grey tap flash on custom interactive elements */
 a, button, .sug-pill, .ex-pill, .tc-row, .rec-bubble,
-.sidebar-item, .sidebar-nav-item, .wallet-btn, .toggle-track {
+.sidebar-item, .sidebar-nav-item, .toggle-track {
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -734,46 +734,6 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
   .tc-name { font-size: 11px; }
   .welcome h1 { font-size: 1.7rem; }
 }
-
-/* ══════════════════════════════════════
-   CHAT GATE — counter + banner
-══════════════════════════════════════ */
-.chat-counter {
-  font-size: 11px; color: var(--text-faint); letter-spacing: 0.05em;
-  text-align: center; width: 100%; max-width: 1000px;
-  margin-bottom: 4px; display: flex; align-items: center; justify-content: center; gap: 5px;
-}
-.chat-counter-warn { color: var(--amber); }
-
-.chat-gate-row {
-  width: 100%; max-width: 1000px; margin-bottom: 0.5rem;
-}
-.chat-gate-inner {
-  display: flex; align-items: center; gap: 12px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-left: 3px solid var(--accent);
-  border-radius: var(--radius-md); padding: 10px 14px;
-}
-.chat-gate-icon { font-size: 1.1rem; flex-shrink: 0; }
-.chat-gate-text { flex: 1; min-width: 0; }
-.chat-gate-title {
-  display: block; font-size: 13px; font-weight: 700;
-  color: var(--text); letter-spacing: -0.01em;
-}
-.chat-gate-sub { display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-.chat-gate-sub strong { color: var(--accent); }
-.chat-gate-btn {
-  flex-shrink: 0; font-family: var(--font); font-size: 12px; font-weight: 700;
-  color: #000; background: var(--accent); border: none;
-  border-radius: var(--radius-pill); padding: 7px 16px; cursor: pointer;
-  transition: opacity var(--transition), transform var(--transition);
-  white-space: nowrap;
-}
-.chat-gate-btn:hover { opacity: 0.85; transform: translateY(-1px); }
-
-/* Disabled state for pills when chat is gated */
-.pill-gated { opacity: 0.3 !important; pointer-events: none !important; cursor: default !important; }
 
 /* Ghost degen-pill hint row — shown on welcome, faded, non-interactive */
 .degen-hint-row {
@@ -1891,38 +1851,6 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
   color: var(--text);
   border-color: var(--accent);
   background: rgba(245,158,11,0.07);
-}
-
-/* ══════════════════════════════════════
-   WALLET CONNECT + HOLDER GATE
-══════════════════════════════════════ */
-.wallet-btn {
-  display: inline-flex; align-items: center; gap: 7px;
-  font-family: var(--font); font-size: 12px; font-weight: 500;
-  color: var(--text-muted); background: var(--chip-bg);
-  border: 1px solid var(--chip-border); border-radius: var(--radius-pill);
-  padding: 7px 13px; cursor: pointer; white-space: nowrap; line-height: 1;
-  transition: color var(--transition), border-color var(--transition),
-              background var(--transition), box-shadow var(--transition);
-}
-.wallet-btn:hover { color: var(--text); border-color: var(--chip-border-hover); background: var(--pill-bg); box-shadow: var(--glow); }
-.wallet-btn-ic { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.9; display: block; }
-.wallet-btn.wallet-unlocked {
-  color: var(--accent); border-color: rgba(20,241,149,0.4); background: var(--pill-bg);
-}
-.wallet-btn.wallet-unlocked .wallet-btn-ic { opacity: 1; }
-
-/* Gated (holder-only) pill — lock icon swaps to open when unlocked */
-.gated-feature .lock-open  { display: none; }
-.gated-feature.gate-unlocked .lock-closed { display: none; }
-.gated-feature.gate-unlocked .lock-open   { display: inline; }
-.gated-feature.gate-unlocked {
-  color: var(--accent); border-color: rgba(20,241,149,0.4); background: var(--pill-bg);
-}
-
-@media (max-width: 520px) {
-  .wallet-btn-text { display: none; }
-  .wallet-btn { padding: 7px 9px; }
 }
 
 /* ══════════════════════════════════════

@@ -51,6 +51,7 @@ See `.env.example` for the full list with descriptions.
 | Endpoint | Purpose |
 |---|---|
 | `POST /api/chat` | AI chat proxy (Anthropic Claude) |
+| `POST /api/verdict` | Full AI Risk Verdict — deep structured analysis (free, open to all) |
 | `GET /api/holders` | Top 10 holders + buy/sell history |
 | `GET /api/bundles` | Bundle/sniper detection |
 | `GET /api/token-info` | Mint/freeze auth + dev holdings |

@@ -58,6 +58,8 @@ Two live circles — Rug Detection + Market Risk (LOW/MED/HIGH)
 - **Instant factual one-liner** on load (claude-haiku, dedicated `/api/lore` endpoint, no Turnstile wait — ~1–2s)
 - **Streaming chat** — responses type out word-by-word via Server-Sent Events (Claude-style)
 - **Free-form chat** — works without analysing a token. Ask about tickers, trends, market vibes.
+- **Free & unlimited** — no wallet, no signup, no token to hold. Unlimited prompts for everyone.
+- **Full AI Risk Verdict** — deeper structured risk breakdown (`/api/verdict`), open to all.
 - **Live trenches feed** — `/api/trending` injects current pump.fun top-MC + just-launched + DexScreener boosted tokens into every chat (refreshed every 60s)
 - Full live token context (MC, vol, holders, bundles, ATH, dev history) auto-seeded when a token is loaded
 - Suggestion pills (token-specific): Red flags · Stop loss · Entry strategy · ROI · Comparable plays
