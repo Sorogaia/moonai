@@ -2,18 +2,21 @@
    THEME VARIABLES
 ══════════════════════════════════════ */
 :root {
-  /* Sleek web3 type system (Phantom/Jupiter-tier):
-       --font-display  Space Grotesk — distinctive techy grotesk for headings,
-                       the logo wordmark, and section/tab labels.
-       --font          Inter — clean neutral body & UI text.
-       --font-mono     JetBrains Mono — true monospace for all stat values and
-                       uppercase micro-labels; tabular figures read as a real
-                       trading tool, not a generic SaaS template.
-       --font-addr     JetBrains Mono — CAs / wallet addresses. */
-  --font-display:'Space Grotesk', 'Inter', system-ui, sans-serif;
-  --font:        'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-mono:   'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Code', Consolas, monospace;
-  --font-addr:   'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Code', Consolas, monospace;
+  /* Modern web3 type system — DM Sans everywhere, DM Mono for addresses only.
+     Deliberately drops the code-terminal/techy feel of the old Space Grotesk +
+     JetBrains Mono pairing.
+       --font-display  DM Sans — headings, the logo wordmark, section/tab labels.
+       --font          DM Sans — clean modern body & UI text.
+       --font-mono     DM Sans — stat values and uppercase micro-labels. Kept as a
+                       var (not a true mono) so numbers read modern, not techy;
+                       tabular figures (font-feature-settings: 'tnum') keep columns
+                       aligned without a monospace look.
+       --font-addr     DM Mono — CAs / wallet addresses only, where fixed-width
+                       genuinely aids reading long hashes. */
+  --font-display:'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font:        'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:   'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-addr:   'DM Mono', ui-monospace, 'SF Mono', 'Cascadia Code', Consolas, monospace;
   --radius-sm:   8px;
   --radius-md:   14px;
   --radius-lg:   18px;
@@ -113,15 +116,15 @@ html, body {
   overflow-x: hidden;
   /* Tabular numerals + contextual alternates: numbers line up in columns
      (price strip, stats grid, holder %s) without forcing a mono font. */
-  font-feature-settings: 'tnum', 'cv11';
+  font-feature-settings: 'tnum';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background var(--transition), color var(--transition);
 }
 
-/* Space Grotesk gives every heading the distinctive web3 grotesk character
-   that Inter (body) deliberately doesn't. Applied app-wide for cohesion. */
-h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
+/* Headings share DM Sans with the body for a clean, cohesive modern look;
+   tighter tracking + heavier weights give them their hierarchy instead. */
+h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
 
 /* Trencher: subtle grid + noise */
 [data-mode="trencher"] body::before {
