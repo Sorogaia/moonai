@@ -810,7 +810,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
 .rec-bubble {
   font-family: var(--font); font-size: 12px; font-weight: 500;
   color: var(--text-muted); background: var(--chip-bg);
-  border: 1px solid var(--chip-border); border-radius: var(--radius-pill);
+  border: 1px solid rgba(20,241,149,0.3); border-radius: var(--radius-pill);
   padding: 7px 14px; cursor: pointer; white-space: nowrap;
   transition: all var(--transition);
 }
@@ -1091,21 +1091,22 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
 .input-wrap {
   display: flex; align-items: center; gap: 10px;
   background: var(--bg-input);
-  border: 1.5px solid rgba(20,241,149,0.4);
+  border: 1px solid rgba(20,241,149,0.45);
   border-radius: 999px;
   padding: 10px 10px 10px 20px;
   transition: none;
   width: 100%; max-width: 1000px;
 }
 .input-wrap:focus-within {
-  border-color: rgba(20,241,149,0.4);
+  border-color: rgba(20,241,149,0.45);
   box-shadow: none;
+  outline: none;
 }
 [data-mode="advanced"] .input-wrap {
-  border-color: rgba(245,158,11,0.4);
+  border-color: rgba(245,158,11,0.45);
 }
 [data-mode="advanced"] .input-wrap:focus-within {
-  border-color: rgba(245,158,11,0.4);
+  border-color: rgba(245,158,11,0.45);
   box-shadow: none;
 }
 .main-input {
@@ -1858,7 +1859,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
   align-items: center;
   gap: 6px;
   background: var(--chip-bg);
-  border: 1px solid var(--chip-border);
+  border: 1px solid rgba(20,241,149,0.3);
   border-radius: var(--radius-pill);
   padding: 7px 14px 7px 11px;
   font-family: var(--font);
