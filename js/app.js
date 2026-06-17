@@ -412,10 +412,15 @@ function revealROI() {
 }
 
 function openV2Modal() {
+  if (sessionStorage.getItem('moonai_v2_seen')) {
+    showToast('Advanced mode dropping soon — follow @Moonai_webApp 🚀');
+    return;
+  }
   document.getElementById('v2Modal').classList.add('open');
 }
 function closeV2Modal() {
   document.getElementById('v2Modal').classList.remove('open');
+  sessionStorage.setItem('moonai_v2_seen', '1');
 }
 document.addEventListener('DOMContentLoaded', () => {
   // V2 modal — backdrop + buttons
@@ -694,7 +699,11 @@ function renderSidebarRecents() {
     container.innerHTML = recents.map(r => {
       const label    = r.symbol ? `$${escHtml(r.symbol)} — ${escHtml(r.name)}` : escHtml(r.name);
       const isActive = r.ca === currentCA;
+      const imgHtml  = r.imgUrl
+        ? `<img class="sidebar-item-img img-fb-hide" src="${escHtml(r.imgUrl)}" alt="" width="18" height="18">`
+        : `<span class="sidebar-item-icon">🪙</span>`;
       return `<div class="sidebar-item${isActive ? ' active' : ''}" data-ca="${escHtml(r.ca)}" title="${escHtml(r.name)}">
+        ${imgHtml}
         <span class="sidebar-item-name">${label}</span>
       </div>`;
     }).join('');
@@ -2238,7 +2247,14 @@ function updateVerdictBadge() {
   const textEl  = document.getElementById('verdictText');
   const subEl   = document.getElementById('verdictSub');
 
-  if (stripEl) { stripEl.style.background = bg; stripEl.style.borderColor = border; }
+  if (stripEl) {
+    stripEl.style.background = bg;
+    stripEl.style.borderColor = border;
+    stripEl.classList.remove('verdict-strip-safe', 'verdict-strip-caution', 'verdict-strip-danger');
+    if (risk <= 15)      stripEl.classList.add('verdict-strip-safe');
+    else if (risk <= 40) stripEl.classList.add('verdict-strip-caution');
+    else                 stripEl.classList.add('verdict-strip-danger');
+  }
   if (iconEl)  iconEl.textContent = icon;
   if (textEl)  { textEl.textContent = verdict; textEl.style.color = col; }
   if (subEl)   subEl.textContent = signals;

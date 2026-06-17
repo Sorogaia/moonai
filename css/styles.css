@@ -392,10 +392,19 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
 
 /* recent item — plain text row (Gemini-style) */
 .sidebar-item {
-  display: flex; align-items: center;
+  display: flex; align-items: center; gap: 8px;
   padding: 8px 12px; border-radius: 10px;
   cursor: pointer; transition: background var(--transition);
   min-width: 0; overflow: hidden;
+}
+.sidebar-item-img {
+  width: 18px; height: 18px; border-radius: 50%; object-fit: cover;
+  flex-shrink: 0; opacity: 0.8;
+}
+.sidebar-item-icon {
+  width: 18px; height: 18px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; opacity: 0.6;
 }
 .sidebar-item:hover { background: rgba(255,255,255,0.05); }
 .sidebar-item.active { background: rgba(20,241,149,0.08); }
@@ -726,10 +735,27 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
   .welcome h1 { font-size: 1.7rem; }
 }
 
+/* Ghost degen-pill hint row — shown on welcome, faded, non-interactive */
+.degen-hint-row {
+  display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
+  gap: 6px; opacity: 0.3; pointer-events: none; user-select: none;
+  animation: fadeUp 0.5s ease 0.3s both;
+}
+.degen-hint-label {
+  font-size: 10px; color: var(--text-faint);
+  letter-spacing: 0.09em; text-transform: uppercase; white-space: nowrap;
+  margin-right: 2px;
+}
+.degen-hint-pill {
+  font-size: 11px; color: var(--text-muted);
+  background: var(--chip-bg); border: 1px solid var(--chip-border);
+  border-radius: var(--radius-pill); padding: 4px 10px; white-space: nowrap;
+}
+
 /* Disclaimer under the trenches card */
 .welcome-disclaimer {
   font-size: 11px; color: var(--text-faint);
-  margin-top: 1.5rem;
+  margin-top: 0.75rem;
 }
 .welcome-disclaimer a { color: var(--text-faint); text-decoration: underline; }
 .welcome-disclaimer a:hover { color: var(--text-muted); }
@@ -1192,8 +1218,8 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
 .king-badge   { font-size:11px; background:rgba(245,158,11,0.13); color:#f59e0b; border:1px solid rgba(245,158,11,0.27); border-radius:var(--radius-pill); padding:2px 8px; margin-left:6px; vertical-align:middle; }
 .tok-ca-row   { display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
 .tok-ca-txt   { font-family:var(--font-addr); font-size:10.5px; color:rgba(255,255,255,0.6); font-weight:400; letter-spacing:0.02em; word-break:break-all; }
-.copy-ca-btn  { flex-shrink:0; font-family:var(--font-mono); font-size:9.5px; font-weight:700; color:var(--text-faint); background:var(--bg-surface); border:1px solid var(--border2); border-radius:var(--radius-pill); padding:2px 8px; cursor:pointer; transition:all .15s; white-space:nowrap; }
-.copy-ca-btn:hover { border-color:var(--accent); color:var(--accent); }
+.copy-ca-btn  { flex-shrink:0; font-family:var(--font-mono); font-size:9.5px; font-weight:700; color:var(--accent); background:rgba(20,241,149,0.07); border:1px solid rgba(20,241,149,0.28); border-radius:var(--radius-pill); padding:3px 10px; cursor:pointer; transition:all .15s; white-space:nowrap; }
+.copy-ca-btn:hover { background:rgba(20,241,149,0.13); border-color:rgba(20,241,149,0.55); box-shadow:0 0 10px rgba(20,241,149,0.15); }
 .tok-meta-row { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
 .tok-meta     { color:var(--text-faint); font-size:11px; }
 .tok-live     { color:var(--accent); font-size:10px; }
@@ -1207,10 +1233,14 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
   gap: 12px; padding: 10px 14px;
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.1);
+  border-left-width: 3px;
   border-radius: var(--radius-md);
   margin-bottom: 8px;
-  transition: background .5s ease, border-color .5s ease;
+  transition: background .5s ease, border-color .5s ease, border-left-color .5s ease;
 }
+.verdict-strip-safe    { border-left-color: var(--accent) !important; }
+.verdict-strip-caution { border-left-color: var(--amber)  !important; }
+.verdict-strip-danger  { border-left-color: var(--danger) !important; }
 [data-mode="trencher"] .verdict-strip {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);

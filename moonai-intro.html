@@ -3,19 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MoonAi — Solana Token Analyzer</title>
-<meta name="description" content="Paste any Solana CA or pump.fun link. Get live market data, AI narrative analysis, holder intel, and trading alpha instantly.">
-<meta property="og:title" content="MoonAi — Solana Token Analyzer">
-<meta property="og:description" content="Paste any Solana CA or pump.fun link. Get live market data, AI narrative analysis, holder intel, and trading alpha instantly.">
-<meta property="og:image" content="https://moonaiapp.xyz/logo.png">
-<meta property="og:url" content="https://moonaiapp.xyz/">
-<meta property="og:type" content="website">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="MoonAi — Solana Token Analyzer">
-<meta name="twitter:description" content="Paste any Solana CA or pump.fun link. Get live market data, AI narrative analysis, holder intel, and trading alpha instantly.">
-<meta name="twitter:image" content="https://moonaiapp.xyz/logo.png">
-<link rel="icon" href="logo.png" type="image/png">
-<link rel="apple-touch-icon" href="logo.png">
+<title>MoonAI — Boot</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%2300110a'/%3E%3Ctext x='50' y='70' font-size='62' text-anchor='middle' fill='%2300ff9c' font-family='monospace'%3E&gt;%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -266,7 +255,7 @@
 </div>
 
 <button id="skip" onclick="skipBoot()">SKIP ▸</button>
-<button id="replay" onclick="sessionStorage.setItem('moonai_intro_replay','1'); location.reload();">↺ REPLAY</button>
+<button id="replay" onclick="location.reload()">↺ REPLAY</button>
 
 <div id="flash"></div>
 <div id="sweep"></div>
@@ -275,12 +264,6 @@
 <div id="crt"></div>
 
 <script>
-// Skip intro for returning visitors unless they hit Replay
-if (localStorage.getItem('moonai_intro_seen') && !sessionStorage.getItem('moonai_intro_replay')) {
-  window.location.replace('./app.html');
-}
-sessionStorage.removeItem('moonai_intro_replay');
-
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const term = document.getElementById('terminal');
 const ui = document.getElementById('ui');
@@ -1354,9 +1337,8 @@ function skipBoot(){ if(booted)return; clearAll(); if(tickerInterval)clearInterv
 function enterClick(){
   const flash=document.getElementById('flash');
   flash.style.transition='opacity 80ms ease'; flash.style.opacity='0.7';
+  T(()=>{ flash.style.transition='opacity 400ms ease'; flash.style.opacity='0'; },80);
   glitchPulse(2); bootHit();
-  localStorage.setItem('moonai_intro_seen','1');
-  T(()=>{ window.location.href='./app.html'; }, 420);
 }
 
 function startInstant(){
@@ -1391,9 +1373,9 @@ const MOON_START = 1.1, MOON_SPREAD = 0.0;    // (kept for line-reveal timing co
 const FORM_DONE  = 1.5;                        // greeting rolls in once the field is established
 
 if (reduceMotion) {
-  // skip the ceremony for reduced motion — go straight to app
-  localStorage.setItem('moonai_intro_seen','1');
-  window.location.replace('./app.html');
+  // skip the ceremony for reduced motion
+  document.getElementById('wake-gate').style.display = 'none';
+  startInstant();
 } else {
   startSwarm();
   // greeting + prompt now fire AFTER the moon has formed (driven from swarmLoop timing)
