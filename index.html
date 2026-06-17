@@ -1315,7 +1315,7 @@ function showUI() {
     countUp(document.getElementById('s1'), 24817, 1200);
     countUp(document.getElementById('s2'), 3042, 1200);
   }, settleAt+600);
-  T(()=>reveal(document.getElementById('enter'),'translateY(0)'), settleAt+950);
+  T(()=>{ ui.style.pointerEvents='auto'; reveal(document.getElementById('enter'),'translateY(0)'); }, settleAt+950);
 
   T(()=>{ document.getElementById('skip').style.display='none'; document.getElementById('replay').style.opacity='1'; }, settleAt+1150);
 
