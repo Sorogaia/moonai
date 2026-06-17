@@ -27,7 +27,6 @@ const TURNSTILE_SECRET  = process.env.TURNSTILE_SECRET_KEY;
 const TURNSTILE_VERIFY  = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
 async function verifyTurnstile(token, ip) {
-  console.log('[TURNSTILE] secret set:', !!TURNSTILE_SECRET, '| token received:', !!token, '| token length:', token?.length ?? 0);
   if (!TURNSTILE_SECRET) {
     console.warn('[TURNSTILE] TURNSTILE_SECRET_KEY env var not set — skipping verification');
     return true;
@@ -41,7 +40,6 @@ async function verifyTurnstile(token, ip) {
     if (ip && ip !== 'unknown') body.append('remoteip', ip);
     const res  = await fetch(TURNSTILE_VERIFY, { method: 'POST', body });
     const data = await res.json();
-    console.log('[TURNSTILE] Cloudflare response:', JSON.stringify({ success: data.success, errors: data['error-codes'] ?? [] }));
     return data.success === true;
   } catch (e) {
     console.error('[TURNSTILE] Fetch error:', e.message);
