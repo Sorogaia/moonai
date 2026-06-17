@@ -102,8 +102,15 @@
 a, button, [onclick], .sug-pill, .ex-pill, .tc-row, .tc-tab,
 .dev-tok-row, .vamp-tok-row, .expand-btn, .copy-ca-btn,
 .analysis-btn, .send-btn, .toggle-track,
-.bdl-row-active, .bpie-seg-active, .sidebar-item, .sidebar-nav-item {
+.bdl-row-active, .bpie-seg-active, .sidebar-item, .sidebar-nav-item,
+.rec-bubble, .wallet-btn, .sidebar-backdrop {
   touch-action: manipulation;
+}
+
+/* Suppress iOS grey tap flash on custom interactive elements */
+a, button, .sug-pill, .ex-pill, .tc-row, .rec-bubble,
+.sidebar-item, .sidebar-nav-item, .wallet-btn, .toggle-track {
+  -webkit-tap-highlight-color: transparent;
 }
 
 html, body {
@@ -1412,7 +1419,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
 .holder-row-top         { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
 .holder-row-left        { display:flex; align-items:center; gap:6px; }
 .holder-num             { color:var(--text-faint); font-size:11px; min-width:18px; }
-.holder-addr            { font-family:var(--font-addr); color:var(--cyan); text-decoration:none; font-size:11px; font-weight:400; }
+.holder-addr            { font-family:var(--font-addr); color:var(--cyan); text-decoration:none; font-size:11px; font-weight:400; padding:4px 0; display:inline-block; }
 .holder-addr:hover      { text-decoration:underline; color:var(--accent); }
 .holder-pct             { font-family:var(--font-mono); font-weight:700; font-size:13px; }
 .holder-bar             { height:3px; border-radius:2px; background:var(--border2); }
@@ -1690,6 +1697,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
   .input-wrap { padding: 6px 6px 6px 16px; }
   .main-input { font-size: 16px; }
   .main-input::placeholder { font-size: 15px; }
+  .modal-input { font-size: 16px; }
   .send-btn { width: 44px; height: 44px; }
 
   /* Welcome screen */
