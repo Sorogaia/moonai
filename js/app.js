@@ -2596,7 +2596,7 @@ Use the live data above for MC, VOL, LIQUIDITY, DEV WALLET, BONDED status, and S
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
+        model: 'claude-sonnet-4-6',
         max_tokens: 2000,
         system: buildSystemPrompt(),
         messages: [{ role: 'user', content: userMsg }],
@@ -4093,7 +4093,7 @@ async function sendChat(msg, aiPrompt) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
+        model: 'claude-sonnet-4-6',
         max_tokens: 700,
         system: buildChatSystem(),
         messages: chatMessages,

@@ -309,7 +309,7 @@ describe('Chat handler — api/chat.js', () => {
     };
     const res = mockRes();
     await handler(mockReq({ messages: [{ role: 'user', content: 'test' }], model: 'gpt-4-evil' }), res);
-    assert.ok(['claude-sonnet-4-5', 'claude-haiku-4-5'].includes(captured.model));
+    assert.ok(['claude-sonnet-4-6', 'claude-haiku-4-5'].includes(captured.model));
   });
 
   test('kill switch ON returns 503', async () => {

@@ -12,7 +12,7 @@ const { verifyPass }     = require('./_gate');
 
 const ANTHROPIC_KEY  = process.env.ANTHROPIC_API_KEY;
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://moonaiapp.xyz';
-const MODEL          = 'claude-sonnet-4-5';
+const MODEL          = 'claude-sonnet-4-6';
 const MAX_CTX        = 4000;
 
 const INJECTION_RE = /ignore\s+(previous|all|above|prior|your)\s+(instructions?|rules?|prompt|context)|you\s+are\s+(now|actually|no longer)|dan\s+mode|jailbreak|forget\s+(all|everything|your|prior|previous)|new\s+instructions?|system\s+override|disregard\s+(prior|previous|all)/gi;

@@ -7,7 +7,7 @@ const MAX_TOKENS_CAP = 4096;
 const MAX_MESSAGES   = 20;
 const MAX_MSG_LENGTH = 4000;
 const MAX_CTX_LENGTH = 3000; // client-supplied token context
-const ALLOWED_MODELS = ['claude-sonnet-4-5', 'claude-haiku-4-5'];
+const ALLOWED_MODELS = ['claude-sonnet-4-6', 'claude-haiku-4-5'];
 
 // Prompt injection patterns — stripped from any client-supplied context
 const INJECTION_RE = /ignore\s+(previous|all|above|prior|your)\s+(instructions?|rules?|prompt|context)|you\s+are\s+(now|actually|no longer)|act\s+as\s+(?!a\s+(?:token|crypto|solana|analyst))|dan\s+mode|jailbreak|forget\s+(all|everything|your|prior|previous)|new\s+instructions?|system\s+override|disregard\s+(prior|previous|all)|pretend\s+you|roleplay\s+as/gi;
