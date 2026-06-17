@@ -735,6 +735,46 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
   .welcome h1 { font-size: 1.7rem; }
 }
 
+/* ══════════════════════════════════════
+   CHAT GATE — counter + banner
+══════════════════════════════════════ */
+.chat-counter {
+  font-size: 11px; color: var(--text-faint); letter-spacing: 0.05em;
+  text-align: center; width: 100%; max-width: 1000px;
+  margin-bottom: 4px; display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.chat-counter-warn { color: var(--amber); }
+
+.chat-gate-row {
+  width: 100%; max-width: 1000px; margin-bottom: 0.5rem;
+}
+.chat-gate-inner {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md); padding: 10px 14px;
+}
+.chat-gate-icon { font-size: 1.1rem; flex-shrink: 0; }
+.chat-gate-text { flex: 1; min-width: 0; }
+.chat-gate-title {
+  display: block; font-size: 13px; font-weight: 700;
+  color: var(--text); letter-spacing: -0.01em;
+}
+.chat-gate-sub { display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.chat-gate-sub strong { color: var(--accent); }
+.chat-gate-btn {
+  flex-shrink: 0; font-family: var(--font); font-size: 12px; font-weight: 700;
+  color: #000; background: var(--accent); border: none;
+  border-radius: var(--radius-pill); padding: 7px 16px; cursor: pointer;
+  transition: opacity var(--transition), transform var(--transition);
+  white-space: nowrap;
+}
+.chat-gate-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+/* Disabled state for pills when chat is gated */
+.pill-gated { opacity: 0.3 !important; pointer-events: none !important; cursor: default !important; }
+
 /* Ghost degen-pill hint row — shown on welcome, faded, non-interactive */
 .degen-hint-row {
   display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
