@@ -135,6 +135,18 @@ module.exports = async (req, res) => {
       return res.status(200).json({ bundled: false, pct: '0.00', bundleCount: 0, wallets: 0, jitoConfirmed: false, bundles: [] });
     }
 
+    // If we hit the page cap we never reached the actual launch window —
+    // returning "CLEAN" would be a false negative. Signal the frontend instead.
+    const hitPageCap = allSigsNewestFirst.length >= MAX_SIG_PAGES * 1000;
+    if (hitPageCap) {
+      return res.status(200).json({
+        bundled: null,
+        highTxVolume: true,
+        pct: '0.00', bundleCount: 0, wallets: 0, jitoConfirmed: false, bundles: [],
+        _meta: { totalSigsScanned: allSigsNewestFirst.length, reason: 'too_many_transactions' },
+      });
+    }
+
     const totalSupply = parseFloat(supplyData?.result?.value?.uiAmount || 0) || 1_000_000_000;
 
     // Take the 100 oldest signatures = the actual launch transactions

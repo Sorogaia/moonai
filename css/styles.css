@@ -1655,6 +1655,10 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
     pointer-events: auto !important; overflow: visible !important;
     height: auto !important;
   }
+  /* collapsed hides the toggle button on desktop, but on mobile it must stay visible */
+  .sidebar.collapsed .sidebar-toggle {
+    display: flex !important;
+  }
   .sidebar.collapsed .sidebar-brand {
     flex: 1 !important; justify-content: flex-start !important;
     padding: 4px 6px !important; gap: 9px !important;

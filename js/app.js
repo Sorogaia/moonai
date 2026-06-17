@@ -100,26 +100,37 @@ function _formatTrenchesSnippet(data) {
   return '\n\nLIVE TRENCHES SNAPSHOT (refreshed every ~60s — use this when discussing what\'s currently hot, trending, or pumping):\n' + lines.join('\n');
 }
 
+let _trenchesFetchTimer = null;
+
 async function fetchTrenchesSnapshot() {
   if (_trenchesCache && Date.now() - _trenchesCache.ts < TRENCHES_TTL_MS) return;
   try {
-    const r = await fetch('/api/trending');
+    const ctrl  = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 14_000);
+    const r = await fetch('/api/trending', { signal: ctrl.signal });
+    clearTimeout(timer);
     if (!r.ok) { _trenchesFeedError(); return; }
     const data = await r.json();
     _trenchesCache   = { ts: Date.now(), data };
     _trenchesSnippet = _formatTrenchesSnippet(data);
     renderTrenchesWelcome();
-  } catch { _trenchesFeedError(); }
+  } catch {
+    _trenchesFeedError();
+  }
 }
 
 // Feed fetch failed with nothing cached → replace the shimmering skeleton
-// with a quiet message instead of letting it shimmer forever. The 60s poll
-// retries and re-renders if the API recovers.
+// with a quiet message and schedule a fast retry (10s) instead of waiting
+// for the full 60s poll interval.
 function _trenchesFeedError() {
   if (_trenchesCache?.data) return; // stale data still on screen — fine
   const body = document.getElementById('trenchesBody');
-  if (!body || !body.querySelector('.tc-skel-wrap')) return;
-  body.innerHTML = '<div style="padding:1.2rem;text-align:center;font-size:12px;color:var(--text-faint);">Live feed unavailable — retrying…</div>';
+  if (body?.querySelector('.tc-skel-wrap')) {
+    body.innerHTML = '<div style="padding:1.2rem;text-align:center;font-size:12px;color:var(--text-faint);">Live feed unavailable — retrying…</div>';
+  }
+  // Fast retry in 10s if no cached data
+  clearTimeout(_trenchesFetchTimer);
+  _trenchesFetchTimer = setTimeout(() => { if (!document.hidden) fetchTrenchesSnapshot(); }, 10_000);
 }
 
 // Pre-fetch on app load + refresh every minute (visible tab only)
@@ -459,8 +470,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('img.logo-img-hide').forEach(img =>
     img.addEventListener('error', function () { this.style.display = 'none'; }));
 
-  // Restore sidebar collapsed state
-  if (localStorage.getItem('sidebarCollapsed') === 'true') {
+  // Restore sidebar collapsed state — desktop only (mobile uses drawer, not collapse)
+  if (!isMobile() && localStorage.getItem('sidebarCollapsed') === 'true') {
     document.getElementById('sidebar')?.classList.add('collapsed');
   }
 
@@ -3566,6 +3577,13 @@ async function fetchBundleDetection(ca, devWallet) {
 
     if (!res.ok || data.error) {
       bodyEl.innerHTML = `<span class="no-data">Bundle data unavailable for this token.</span>`;
+      if (badgeEl) { badgeEl.textContent = 'N/A'; badgeEl.className = 'card-badge'; }
+      return;
+    }
+
+    // Token has too many transactions to paginate back to launch — can't scan
+    if (data.bundled === null && data.highTxVolume) {
+      bodyEl.innerHTML = `<span class="no-data">Bundle scan unavailable — token history too deep to trace launch window.</span>`;
       if (badgeEl) { badgeEl.textContent = 'N/A'; badgeEl.className = 'card-badge'; }
       return;
     }
