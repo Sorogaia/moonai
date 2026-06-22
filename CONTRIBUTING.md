@@ -102,4 +102,4 @@ Open a GitHub Issue with:
 
 ## Contact
 
-GitHub Issues or [@Moonai_webApp](https://x.com/Moonai_webApp) on Twitter
+GitHub Issues or [@moonaitrench](https://x.com/moonaitrench) on Twitter

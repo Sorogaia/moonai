@@ -5,7 +5,7 @@
 Paste any Solana CA or pump.fun link. Get real on-chain data, AI analysis, bundle detection, holder intel, rug/risk scoring, and trading alpha — instantly. Free. No signup. No key required.
 
 **Live → [moonaiapp.xyz](https://moonaiapp.xyz)**  
-**Twitter → [@Moonai_webApp](https://x.com/Moonai_webApp)**
+**Twitter → [@moonaitrench](https://x.com/moonaitrench)**
 
 ---
 
@@ -85,7 +85,7 @@ Every analysis updates the URL hash — share or refresh and land on the same to
 | Advanced Mode — insider detection, sniper tracking | Planned |
 | MoonAi App — mobile, wallet login, push alerts | Planned |
 
-Follow [@Moonai_webApp](https://x.com/Moonai_webApp) for launch updates.
+Follow [@moonaitrench](https://x.com/moonaitrench) for launch updates.
 
 ---
 

@@ -413,7 +413,7 @@ function revealROI() {
 
 function openV2Modal() {
   if (sessionStorage.getItem('moonai_v2_seen')) {
-    showToast('Advanced mode dropping soon — follow @Moonai_webApp 🚀');
+    showToast('Advanced mode dropping soon — follow @moonaitrench 🚀');
     return;
   }
   document.getElementById('v2Modal').classList.add('open');
