@@ -6,7 +6,7 @@
  * keep bots from running up the Anthropic bill.
  */
 const { getIP }          = require('./_validate');
-const { checkRateLimit } = require('./_ratelimit');
+const { checkRateLimit, checkDailyLimit, checkGlobalDaily, checkKillSwitch } = require('./_ratelimit');
 
 const ANTHROPIC_KEY  = process.env.ANTHROPIC_API_KEY;
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://moonaiapp.xyz';
@@ -38,8 +38,17 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST')    return res.status(405).json({ error: 'Method not allowed' });
 
   const ip      = getIP(req);
+  const alive = await checkKillSwitch().catch(() => true);
+  if (!alive) return res.status(503).json({ error: 'Verdict temporarily unavailable.' });
+
   const allowed = await checkRateLimit(ip, { limit: 10, window: 60, prefix: 'verdict' }).catch(() => false);
   if (!allowed) return res.status(429).json({ error: 'Slow down — verdict limit reached.' });
+
+  const dailyOk = await checkDailyLimit(ip, 'verdict').catch(() => true);
+  if (!dailyOk) return res.status(429).json({ error: 'Daily verdict limit reached.' });
+
+  const globalOk = await checkGlobalDaily('verdict').catch(() => true);
+  if (!globalOk) return res.status(429).json({ error: 'Global verdict limit reached for today.' });
 
   const { context } = req.body || {};
 
