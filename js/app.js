@@ -535,6 +535,16 @@ document.addEventListener('click', e => {
     return;
   }
 
+  // Hero CA pill — copy MoonAi contract address
+  const heroCaPill = e.target.closest('.hero-ca-pill[data-copy-ca]');
+  if (heroCaPill) {
+    navigator.clipboard.writeText(heroCaPill.dataset.copyCa).then(() => {
+      heroCaPill.classList.add('copied');
+      setTimeout(() => heroCaPill.classList.remove('copied'), 1500);
+    });
+    return;
+  }
+
   // Expand/collapse holders
   const expandBtn = e.target.closest('.expand-btn[data-expand]');
   if (expandBtn) {

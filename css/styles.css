@@ -604,6 +604,46 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
   font-weight: 400;
 }
 
+/* Hero CA pill — copyable MoonAi contract address */
+.hero-ca-pill {
+  display: inline-flex; align-items: center; gap: 9px;
+  margin-top: 18px; max-width: 100%;
+  padding: 7px 9px 7px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color var(--transition), background var(--transition), box-shadow var(--transition);
+}
+.hero-ca-pill:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(20,241,149,0.07);
+}
+.hero-ca-label {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--accent);
+  flex-shrink: 0;
+}
+.hero-ca-addr {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+  color: var(--text-muted); letter-spacing: 0;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hero-ca-action {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 6px;
+  color: var(--text-faint); flex-shrink: 0;
+  transition: color var(--transition), background var(--transition);
+}
+.hero-ca-pill:hover .hero-ca-action { color: var(--text); background: rgba(255,255,255,0.04); }
+.hero-ca-action svg { width: 14px; height: 14px; }
+.ca-ic-check { display: none; }
+.hero-ca-pill.copied { border-color: var(--accent); }
+.hero-ca-pill.copied .hero-ca-action { color: var(--accent); }
+.hero-ca-pill.copied .ca-ic-copy { display: none; }
+.hero-ca-pill.copied .ca-ic-check { display: inline; }
+
 /* ══════════════════════════════════════
    LIVE TRENCHES CARD (welcome screen)
 ══════════════════════════════════════ */
