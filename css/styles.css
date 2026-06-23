@@ -1338,7 +1338,11 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
 .ps-val   { font-family:var(--font-mono); font-size:12px; font-weight:700; line-height:1.1; }
 .ps-txns  { font-size:9px; font-weight:500; opacity:0.65; }
 .ps-div   { width:1px; background:var(--border); align-self:stretch; margin:0 12px; flex-shrink:0; }
-.ps-timer { margin-left:auto; font-size:9px; font-weight:700; color:var(--accent); letter-spacing:.07em; flex-shrink:0; }
+.ps-right-cluster { margin-left:auto; display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.ps-timer { font-size:9px; font-weight:700; color:var(--accent); letter-spacing:.07em; flex-shrink:0; }
+.ps-gh-link { display:flex; align-items:center; color:var(--text-faint); transition:color .18s; }
+.ps-gh-link:hover { color:var(--text); }
+.ps-gh-icon { width:13px; height:13px; }
 
 /* ══════════════════════════════════════
    STATS GRIDS
