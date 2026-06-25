@@ -267,8 +267,8 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
 }
 .sidebar-brand:hover { background: rgba(255,255,255,0.05); }
 .sidebar-brand-img {
-  width: 26px; height: 26px; object-fit: contain; flex-shrink: 0;
-  filter: drop-shadow(0 0 6px rgba(139,92,246,0.4));
+  width: 30px; height: 30px; object-fit: contain; flex-shrink: 0;
+  filter: drop-shadow(0 0 8px rgba(139,92,246,0.45));
 }
 .sidebar-brand-text {
   font-size: 1rem; font-weight: 700; color: var(--text);
@@ -584,6 +584,19 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
 [data-mode="trencher"] .welcome-eyebrow {
   border-color: rgba(139,92,246,0.18); color: var(--accent);
   background: var(--pill-bg);
+}
+/* Wordmark image in welcome hero — replaces the h1 text */
+.welcome-wordmark {
+  height: clamp(32px, 5vw, 46px);
+  max-width: 320px;
+  width: auto;
+  object-fit: contain;
+  margin-bottom: 0.65rem;
+  filter: drop-shadow(0 0 22px rgba(139,92,246,0.45)) drop-shadow(0 0 55px rgba(139,92,246,0.14));
+  animation: fadeUp 0.4s ease 0.05s both;
+}
+[data-mode="advanced"] .welcome-wordmark {
+  filter: drop-shadow(0 0 18px rgba(245,158,11,0.35)) drop-shadow(0 0 40px rgba(245,158,11,0.1));
 }
 .welcome h1 {
   font-family: var(--font-display);

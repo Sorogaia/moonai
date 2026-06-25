@@ -163,16 +163,16 @@
     pointer-events: none;
   }
   .wordmark {
-    font-family: 'Space Grotesk', sans-serif; font-weight: 700;
-    font-size: clamp(56px, 11vw, 150px); line-height: 1;
-    letter-spacing: -0.02em; margin-bottom: 26px;
+    margin-bottom: 26px;
     opacity: 0; transform: translateY(10px);
     animation: wmIn 1.3s cubic-bezier(0.16,1,0.3,1) 0.4s forwards, wmBreath 4.5s ease-in-out 1.8s infinite;
+    display: flex; align-items: center; justify-content: center;
   }
-  .wordmark .wm-moon { color: var(--term-green);
-    text-shadow: 0 0 32px rgba(139,92,246,0.55), 0 0 80px rgba(139,92,246,0.25); }
-  .wordmark .wm-ai { color: var(--white);
-    text-shadow: 0 0 24px rgba(234,255,245,0.4); }
+  .wordmark img {
+    height: clamp(36px, 8vw, 86px);
+    object-fit: contain;
+    filter: drop-shadow(0 0 28px rgba(139,92,246,0.75)) drop-shadow(0 0 70px rgba(139,92,246,0.28));
+  }
   @keyframes wmIn { to { opacity: 1; transform: translateY(0); } }
   @keyframes wmBreath {
     0%,100% { filter: brightness(1); }
@@ -227,7 +227,9 @@
 <div id="wake-gate">
   <canvas id="swarm-canvas"></canvas>
   <div id="wake-text">
-    <div class="wordmark" id="wordmark" aria-label="Fluxr"><span class="wm-moon">Flux</span><span class="wm-ai">r</span></div>
+    <div class="wordmark" id="wordmark" aria-label="Fluxr">
+      <img src="logo/wordmark.png" alt="Fluxr">
+    </div>
     <div class="wake-status" id="wake-status">● DORMANT</div>
     <div id="greeting-line"><span id="greeting-text"></span><span class="gcursor" id="gcursor">_</span></div>
     <div class="wake-prompt" id="wake-prompt">press <span class="key">[ ENTER ]</span><span class="wcursor">_</span></div>
