@@ -1369,7 +1369,7 @@ function calculateMoonScore(dex, pump, momentumScore) {
 
   const s     = Math.max(0, Math.min(100, Math.round(score)));
   const label = s >= 81 ? '🌙 MOON' : s >= 66 ? '🔥 HOT' : s >= 46 ? '⚡ HEATING' : s >= 26 ? '🌡️ WARMING' : '❄️ COLD';
-  const col   = s >= 81 ? '#14F195' : s >= 66 ? '#ff9f0a' : s >= 46 ? '#ff6b35' : s >= 26 ? '#00d4ff' : '#666';
+  const col   = s >= 81 ? '#8B5CF6' : s >= 66 ? '#ff9f0a' : s >= 46 ? '#ff6b35' : s >= 26 ? '#A78BFA' : '#666';
   return { score: s, label, col, pos, neg };
 }
 
@@ -1531,7 +1531,7 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
       <div class="bond-sub">Migrated from pump.fun</div>`;
   } else if (pump?.bondedPct !== undefined && pump?.bondedPct !== null) {
     const bPct    = parseFloat(pump.bondedPct) || 0;
-    const bCol    = bPct >= 75 ? '#14F195' : bPct >= 40 ? '#ff9f0a' : '#00d4ff';
+    const bCol    = bPct >= 75 ? '#8B5CF6' : bPct >= 40 ? '#ff9f0a' : '#A78BFA';
     const vol1hRaw    = parseFloat(dex?.vol1h) || 0;
     const bondTarget  = 85 * (parseFloat(solPrice) || 150); // 85 SOL to graduate, use live SOL price
     const remainUsd   = ((100 - bPct) / 100) * bondTarget;
@@ -1639,7 +1639,7 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
   };
 
   function getSocialCfg(type, fallbackLabel) {
-    return SOCIAL_CFG[type?.toLowerCase()] || { label: fallbackLabel || ('🔗 ' + type), color: '#14F195', bg: 'rgba(20,241,149,0.07)', border: 'rgba(20,241,149,0.2)' };
+    return SOCIAL_CFG[type?.toLowerCase()] || { label: fallbackLabel || ('🔗 ' + type), color: '#8B5CF6', bg: 'rgba(139,92,246,0.07)', border: 'rgba(139,92,246,0.2)' };
   }
 
   function isDupe(url, label) {
@@ -1704,8 +1704,8 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
     { name: 'Axiom',   url: `https://axiom.trade/t/${ca}`, color: '#7c3aed' },
     { name: 'Photon',  url: `https://photon-sol.tinyastro.io/en/lp/${ca}`, color: '#f59e0b' },
     { name: 'BullX',   url: `https://bullx.io/terminal?chainId=1399811149&address=${ca}`, color: '#ef4444' },
-    { name: 'Trojan',  url: `https://t.me/solana_trojanbot?start=${ca}`, color: '#14F195' },
-    { name: 'GMGN',    url: `https://gmgn.ai/sol/token/${ca}`, color: '#00d4ff' },
+    { name: 'Trojan',  url: `https://t.me/solana_trojanbot?start=${ca}`, color: '#8B5CF6' },
+    { name: 'GMGN',    url: `https://gmgn.ai/sol/token/${ca}`, color: '#A78BFA' },
   ];
   const tradeLinksHtml = tradeLinks.map(t =>
     `<a href="${t.url}" target="_blank" rel="noopener" class="trade-link"
@@ -1872,7 +1872,7 @@ function renderTrencher(ca, dex, pump, solPrice, jup = null) {
         </div>
         <div class="tiq">
           <div class="tiq-val" id="tiq-lp">${
-            isBonded                ? '<span style="color:#14F195;">Migrated ✓</span>'
+            isBonded                ? '<span style="color:#8B5CF6;">Migrated ✓</span>'
           : pump?.bonded === false ? '<span style="color:#ff9f0a;">Bonding</span>'
           : dex?.dex              ? `<span style="color:#ff9f0a;">${escHtml(dex.dex)}</span>`
           : '—'
@@ -2143,7 +2143,7 @@ function updateVerdictBadge() {
   // Determine verdict
   let icon, verdict, col, bg, border;
   if (risk <= 15) {
-    icon = '🟢'; verdict = 'LOOKS CLEAN';           col = '#14F195'; bg = 'rgba(20,241,149,0.07)';  border = 'rgba(20,241,149,0.25)';
+    icon = '🟢'; verdict = 'LOOKS CLEAN';           col = '#8B5CF6'; bg = 'rgba(139,92,246,0.07)';  border = 'rgba(139,92,246,0.25)';
   } else if (risk <= 40) {
     icon = '🟡'; verdict = 'PROCEED WITH CAUTION';  col = '#ff9f0a'; bg = 'rgba(255,159,10,0.07)'; border = 'rgba(255,159,10,0.25)';
   } else {
@@ -2193,7 +2193,7 @@ async function fetchRugcheck(ca) {
     } else if (score >= 30) {
       label = `${score} WARN`;   col = '#ff9f0a'; bg = 'rgba(255,159,10,0.1)';
     } else {
-      label = `${score} GOOD`;   col = '#14F195'; bg = 'rgba(20,241,149,0.1)';
+      label = `${score} GOOD`;   col = '#8B5CF6'; bg = 'rgba(139,92,246,0.1)';
     }
 
     el.style.display  = 'flex';
@@ -2220,7 +2220,7 @@ function updateTokenIntel() {
   // Top 10 holders %
   if (d.top10pct != null) {
     const v = parseFloat(d.top10pct);
-    const col = v > 60 ? '#ff3b30' : v > 40 ? '#ff9f0a' : '#14F195';
+    const col = v > 60 ? '#ff3b30' : v > 40 ? '#ff9f0a' : '#8B5CF6';
     set('tiq-top10', `<span style="color:${col};">${d.top10pct}%</span>`);
   }
 
@@ -2229,30 +2229,30 @@ function updateTokenIntel() {
     set('tiq-dev', `<span style="color:#ff3b30;">Sold</span>`);
   } else if (d.devPct != null) {
     const v = parseFloat(d.devPct);
-    const col = v > 10 ? '#ff3b30' : v > 5 ? '#ff9f0a' : '#14F195';
+    const col = v > 10 ? '#ff3b30' : v > 5 ? '#ff9f0a' : '#8B5CF6';
     set('tiq-dev', `<span style="color:${col};">${d.devPct}%</span>`);
   }
 
   // Bundled %
   if (d.bundlePct != null) {
     const v = parseFloat(d.bundlePct);
-    const col = v >= 20 ? '#ff3b30' : v >= 5 ? '#ff9f0a' : '#14F195';
+    const col = v >= 20 ? '#ff3b30' : v >= 5 ? '#ff9f0a' : '#8B5CF6';
     set('tiq-bundlepct', `<span style="color:${col};">${v > 0 ? v + '%' : '0%'}</span>`);
   }
 
   // Fresh wallets %
   if (d.freshWalletPct != null) {
     const v = parseFloat(d.freshWalletPct);
-    const col = v >= 50 ? '#ff3b30' : v >= 25 ? '#ff9f0a' : '#14F195';
+    const col = v >= 50 ? '#ff3b30' : v >= 25 ? '#ff9f0a' : '#8B5CF6';
     set('tiq-fresh', `<span style="color:${col};">${v.toFixed(0)}%</span>`);
   }
 
   // Mint authority
-  if (d.mintRevoked === true)  set('tiq-mint',   `<span style="color:#14F195;">Revoked</span>`);
+  if (d.mintRevoked === true)  set('tiq-mint',   `<span style="color:#8B5CF6;">Revoked</span>`);
   else if (d.mintRevoked === false) set('tiq-mint', `<span style="color:#ff3b30;">Active</span>`);
 
   // Freeze authority
-  if (d.freezeRevoked === true)  set('tiq-freeze', `<span style="color:#14F195;">Revoked</span>`);
+  if (d.freezeRevoked === true)  set('tiq-freeze', `<span style="color:#8B5CF6;">Revoked</span>`);
   else if (d.freezeRevoked === false) set('tiq-freeze', `<span style="color:#ff3b30;">Active</span>`);
 
   // Real total holder count
@@ -2289,7 +2289,7 @@ function updateRiskStrip() {
 
   // No signals at all (every scan failed) → neutral N/A, not a misleading LOW
   const rugLevel = !rugSigs.length ? 'N/A' : rugScore <= 2 ? 'LOW' : rugScore <= 5 ? 'MED' : 'HIGH';
-  const rugCol   = !rugSigs.length ? '#666' : rugScore <= 2 ? '#14F195' : rugScore <= 5 ? '#ff9f0a' : '#ff3b30';
+  const rugCol   = !rugSigs.length ? '#666' : rugScore <= 2 ? '#8B5CF6' : rugScore <= 5 ? '#ff9f0a' : '#ff3b30';
 
   // ── MARKET RISK ────────────────────────────────────────────
   let mktScore = 0;
@@ -2317,7 +2317,7 @@ function updateRiskStrip() {
   }
 
   const mktLevel = !mktSigs.length ? 'N/A' : mktScore <= 2 ? 'LOW' : mktScore <= 5 ? 'MED' : 'HIGH';
-  const mktCol   = !mktSigs.length ? '#666' : mktScore <= 2 ? '#14F195' : mktScore <= 5 ? '#ff9f0a' : '#ff3b30';
+  const mktCol   = !mktSigs.length ? '#666' : mktScore <= 2 ? '#8B5CF6' : mktScore <= 5 ? '#ff9f0a' : '#ff3b30';
 
   // ── Update DOM ─────────────────────────────────────────────
   const sigHtml = (sigs) => sigs.slice(0, 4).map(s => {
@@ -2714,8 +2714,8 @@ function renderResult(text) {
         INSIDER:   { bg:'rgba(255,184,0,.12)',   text:'var(--amber)',  icon:'🐁' },
         KOL:       { bg:'rgba(192,132,252,.12)', text:'#c084fc',      icon:'📢' },
         SNIPER:    { bg:'rgba(255,59,48,.10)',   text:'var(--danger)', icon:'🎯' },
-        WHALE:     { bg:'rgba(0,212,255,.10)',   text:'var(--cyan)',   icon:'🐋' },
-        COMMUNITY: { bg:'rgba(20,241,149,.07)',  text:'var(--accent)', icon:'👥' },
+        WHALE:     { bg:'rgba(167,139,250,.10)',   text:'var(--cyan)',   icon:'🐋' },
+        COMMUNITY: { bg:'rgba(139,92,246,.07)',  text:'var(--accent)', icon:'👥' },
       };
       distroLines.slice(0,10).forEach(line => {
         const pipeIdx= line.lastIndexOf('|');
@@ -2787,7 +2787,7 @@ function renderResult(text) {
         const held   = parts[2] || '—';
         const status = parts[3] || '—';
         const isIn   = /\bIN\b/.test(status) && !/\bOUT\b/.test(status);
-        const sBg    = isIn ? 'rgba(20,241,149,.1)'  : 'rgba(255,59,48,.1)';
+        const sBg    = isIn ? 'rgba(139,92,246,.1)'  : 'rgba(255,59,48,.1)';
         const sColor = isIn ? 'var(--accent)'         : 'var(--danger)';
         html += `<div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:7px;padding:8px 10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
@@ -3213,7 +3213,7 @@ async function fetchTokenInfo(ca, devWallet, dex, pump) {
         const short = info.mintAuthority.slice(0,4) + '…' + info.mintAuthority.slice(-4);
         let tag;
         if (info.mintRevoked) {
-          tag = `<span style="background:rgba(20,241,149,.1);color:#14F195;border:1px solid rgba(20,241,149,.25);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">REVOKED</span>`;
+          tag = `<span style="background:rgba(139,92,246,.1);color:#8B5CF6;border:1px solid rgba(139,92,246,.25);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">REVOKED</span>`;
         } else if (info.devSold) {
           tag = `<span style="background:rgba(255,59,48,.15);color:#ff3b30;border:1px solid rgba(255,59,48,.3);border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">SOLD</span>`;
         } else if (info.devPct != null) {
@@ -3227,7 +3227,7 @@ async function fetchTokenInfo(ca, devWallet, dex, pump) {
         // Also trigger dev history for this creator address
         fetchDevHistory(info.mintAuthority);
       } else if (info.mintRevoked) {
-        devEl.innerHTML = `<span style="color:#14F195;font-size:11px;">Mint revoked — no authority</span>`;
+        devEl.innerHTML = `<span style="color:#8B5CF6;font-size:11px;">Mint revoked — no authority</span>`;
       }
     }
 
@@ -3323,9 +3323,9 @@ function renderSafetyScore({ score, flags, good }, info) {
   if (!bodyEl) return;
 
   const verdict  = score >= 75 ? 'SAFE'    : score >= 55 ? 'CAUTION' : score >= 35 ? 'WARNING' : 'DANGER';
-  const scoreCol = score >= 75 ? '#14F195' : score >= 55 ? '#ff9f0a' : score >= 35 ? '#FF6B35' : '#ff3b30';
-  const scoreBg  = score >= 75 ? 'rgba(20,241,149,0.06)'  : score >= 55 ? 'rgba(255,159,10,0.06)'  : score >= 35 ? 'rgba(255,107,53,0.06)'  : 'rgba(255,59,48,0.06)';
-  const scoreBd  = score >= 75 ? 'rgba(20,241,149,0.2)'   : score >= 55 ? 'rgba(255,159,10,0.2)'   : score >= 35 ? 'rgba(255,107,53,0.2)'   : 'rgba(255,59,48,0.2)';
+  const scoreCol = score >= 75 ? '#8B5CF6' : score >= 55 ? '#ff9f0a' : score >= 35 ? '#FF6B35' : '#ff3b30';
+  const scoreBg  = score >= 75 ? 'rgba(139,92,246,0.06)'  : score >= 55 ? 'rgba(255,159,10,0.06)'  : score >= 35 ? 'rgba(255,107,53,0.06)'  : 'rgba(255,59,48,0.06)';
+  const scoreBd  = score >= 75 ? 'rgba(139,92,246,0.2)'   : score >= 55 ? 'rgba(255,159,10,0.2)'   : score >= 35 ? 'rgba(255,107,53,0.2)'   : 'rgba(255,59,48,0.2)';
 
   const flagRows = flags.map(f =>
     `<div class="sig-row">
@@ -3390,7 +3390,7 @@ function buildBundlePie(bundles, totalPct, cleanPct, meta) {
 
   const segs = [
     ...bundles.map((b, i) => ({ pct: parseFloat(b.pct) || 0, col: COLS[Math.min(i, COLS.length - 1)], bi: i, active: true })),
-    { pct: cleanPct, col: 'rgba(20,241,149,0.35)', bi: -1, active: false },
+    { pct: cleanPct, col: 'rgba(139,92,246,0.35)', bi: -1, active: false },
   ].filter(s => s.pct > 0.1);
 
   // Background ring
@@ -3413,22 +3413,22 @@ function buildBundlePie(bundles, totalPct, cleanPct, meta) {
   const metaParts = [];
   if (meta?.bundleCount) metaParts.push(`${meta.bundleCount} bundle${meta.bundleCount !== 1 ? 's' : ''}`);
   if (meta?.wallets)     metaParts.push(`${meta.wallets} wallets`);
-  if (meta?.jitoConfirmed != null) metaParts.push(`Jito: <span style="color:${meta.jitoConfirmed ? '#ff3b30' : '#14F195'};font-weight:700;">${meta.jitoConfirmed ? 'YES' : 'NO'}</span>`);
+  if (meta?.jitoConfirmed != null) metaParts.push(`Jito: <span style="color:${meta.jitoConfirmed ? '#ff3b30' : '#8B5CF6'};font-weight:700;">${meta.jitoConfirmed ? 'YES' : 'NO'}</span>`);
   const metaHtml = metaParts.length ? `<div class="bpie-meta">${metaParts.join(' · ')}</div>` : '';
 
   // Bundle rows — one per bundle + clean row at bottom
   const rowsHtml = [
     ...bundles.map((b, i) => {
       const still    = b.stillHoldingPct;
-      const stillCol = still != null ? (still >= 70 ? '#ff3b30' : still >= 30 ? '#ff9f0a' : '#14F195') : null;
+      const stillCol = still != null ? (still >= 70 ? '#ff3b30' : still >= 30 ? '#ff9f0a' : '#8B5CF6') : null;
       let statusHtml = '';
       if (still != null) {
         if (b.accumulatedMore) {
           statusHtml = `<span class="bdl-status" style="background:rgba(255,59,48,.12);color:#ff3b30;">+more</span>`;
         } else if (still === 0) {
-          statusHtml = `<span class="bdl-status" style="background:rgba(20,241,149,.1);color:#14F195;">✓ dumped</span>`;
+          statusHtml = `<span class="bdl-status" style="background:rgba(139,92,246,.1);color:#8B5CF6;">✓ dumped</span>`;
         } else {
-          const bg = still >= 70 ? 'rgba(255,59,48,.12)' : still >= 30 ? 'rgba(255,159,10,.12)' : 'rgba(20,241,149,.1)';
+          const bg = still >= 70 ? 'rgba(255,59,48,.12)' : still >= 30 ? 'rgba(255,159,10,.12)' : 'rgba(139,92,246,.1)';
           statusHtml = `<span class="bdl-status" style="background:${bg};color:${stillCol};">${still}% held</span>`;
         }
       }
@@ -3440,9 +3440,9 @@ function buildBundlePie(bundles, totalPct, cleanPct, meta) {
       </div>`;
     }),
     `<div class="bdl-row">
-      <span class="bdl-dot" style="background:rgba(20,241,149,0.5);"></span>
+      <span class="bdl-dot" style="background:rgba(139,92,246,0.5);"></span>
       <span class="bdl-label" style="color:var(--text-faint);">Clean supply</span>
-      <span class="bdl-pct" style="color:#14F195;">${cleanPct.toFixed(1)}%</span>
+      <span class="bdl-pct" style="color:#8B5CF6;">${cleanPct.toFixed(1)}%</span>
     </div>`,
   ].join('');
 
@@ -3467,7 +3467,7 @@ function showBundleTip(bidx, mouseX, mouseY) {
   const b = _lastBundles[bidx];
   if (!b) { tip.style.display = 'none'; return; }
 
-  const stillCol = (b.stillHoldingPct ?? 0) >= 70 ? '#ff3b30' : (b.stillHoldingPct ?? 0) >= 30 ? '#ff9f0a' : '#14F195';
+  const stillCol = (b.stillHoldingPct ?? 0) >= 70 ? '#ff3b30' : (b.stillHoldingPct ?? 0) >= 30 ? '#ff9f0a' : '#8B5CF6';
   const jitoTag  = b.jitoConfirmed ? '<span class="bpie-tip-jito">JITO</span>' : '';
   const stillLine = b.stillHoldingPct != null
     ? `<div style="color:${stillCol};font-size:11px;margin-top:5px;">
@@ -3543,9 +3543,9 @@ async function fetchBundleDetection(ca, devWallet) {
 
     const pct    = parseFloat(data.pct) || 0;
     const risk   = pct >= 20 ? 'HIGH' : pct >= 5 ? 'MEDIUM' : 'LOW';
-    const riskCol = pct >= 20 ? '#ff3b30' : pct >= 5 ? '#ff9f0a' : '#14F195';
-    const riskBg  = pct >= 20 ? 'rgba(255,59,48,0.08)' : pct >= 5 ? 'rgba(255,159,10,0.08)' : 'rgba(20,241,149,0.08)';
-    const riskBd  = pct >= 20 ? 'rgba(255,59,48,0.25)' : pct >= 5 ? 'rgba(255,159,10,0.25)' : 'rgba(20,241,149,0.25)';
+    const riskCol = pct >= 20 ? '#ff3b30' : pct >= 5 ? '#ff9f0a' : '#8B5CF6';
+    const riskBg  = pct >= 20 ? 'rgba(255,59,48,0.08)' : pct >= 5 ? 'rgba(255,159,10,0.08)' : 'rgba(139,92,246,0.08)';
+    const riskBd  = pct >= 20 ? 'rgba(255,59,48,0.25)' : pct >= 5 ? 'rgba(255,159,10,0.25)' : 'rgba(139,92,246,0.25)';
 
     if (!data.bundled) {
       const devOk = !data.devBundled;
@@ -3559,17 +3559,17 @@ async function fetchBundleDetection(ca, devWallet) {
         </div>
 
         <div class="bundle-stats" style="margin-top:10px;">
-          <div class="bstat" style="background:rgba(20,241,149,0.06);border:1px solid rgba(20,241,149,0.22);">
+          <div class="bstat" style="background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.22);">
             <div class="bstat-lbl">Bundles</div>
-            <div class="bstat-val" style="color:#14F195;">0</div>
+            <div class="bstat-val" style="color:#8B5CF6;">0</div>
           </div>
-          <div class="bstat" style="background:rgba(20,241,149,0.06);border:1px solid rgba(20,241,149,0.22);">
+          <div class="bstat" style="background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.22);">
             <div class="bstat-lbl">Bundled %</div>
-            <div class="bstat-val" style="color:#14F195;">0%</div>
+            <div class="bstat-val" style="color:#8B5CF6;">0%</div>
           </div>
           <div class="bstat" style="background:var(--bg-surface);border:1px solid var(--border2);">
             <div class="bstat-lbl">Jito</div>
-            <div class="bstat-val" style="color:#14F195;">None</div>
+            <div class="bstat-val" style="color:#8B5CF6;">None</div>
           </div>
           <div class="bstat" style="background:var(--bg-surface);border:1px solid var(--border2);">
             <div class="bstat-lbl">Wallets</div>
@@ -3579,22 +3579,22 @@ async function fetchBundleDetection(ca, devWallet) {
 
         <div class="bundle-checklist">
           <div class="bcl-row">
-            <span class="bcl-dot" style="color:#14F195;">●</span>
+            <span class="bcl-dot" style="color:#8B5CF6;">●</span>
             <span class="bcl-lbl">No Jito bundles detected</span>
             <span class="bcl-badge bcl-pass">PASS</span>
           </div>
           <div class="bcl-row">
-            <span class="bcl-dot" style="color:#14F195;">●</span>
+            <span class="bcl-dot" style="color:#8B5CF6;">●</span>
             <span class="bcl-lbl">No same-funder wallets</span>
             <span class="bcl-badge bcl-pass">PASS</span>
           </div>
           <div class="bcl-row">
-            <span class="bcl-dot" style="color:#14F195;">●</span>
+            <span class="bcl-dot" style="color:#8B5CF6;">●</span>
             <span class="bcl-lbl">No same-slot sniping</span>
             <span class="bcl-badge bcl-pass">PASS</span>
           </div>
           <div class="bcl-row">
-            <span class="bcl-dot" style="color:${devOk ? '#14F195' : '#ff3b30'};">●</span>
+            <span class="bcl-dot" style="color:${devOk ? '#8B5CF6' : '#ff3b30'};">●</span>
             <span class="bcl-lbl">Dev wallet not bundled</span>
             <span class="bcl-badge ${devOk ? 'bcl-pass' : 'bcl-fail'}">${devOk ? 'PASS' : 'FAIL'}</span>
           </div>
@@ -3619,9 +3619,9 @@ async function fetchBundleDetection(ca, devWallet) {
     const stillCol = stillHolding == null ? 'var(--text-faint)'
                    : stillHolding >= 70 ? '#ff3b30'
                    : stillHolding >= 30 ? '#ff9f0a'
-                   : '#14F195';
+                   : '#8B5CF6';
     const dumpedCol = stillHolding == null ? 'var(--text-faint)'
-                    : stillHolding <= 30 ? '#14F195'
+                    : stillHolding <= 30 ? '#8B5CF6'
                     : stillHolding <= 70 ? '#ff9f0a'
                     : '#ff3b30';
 
@@ -3986,7 +3986,7 @@ async function fetchDexPaid(ca) {
 
     if (data.paid) {
       const label = data.type === 'takeover' ? '✓ Takeover' : data.type === 'boosted' ? '✓ Boosted' : '✓ Paid';
-      el.innerHTML = `<span style="color:#14F195;font-weight:800;">${label}</span>`;
+      el.innerHTML = `<span style="color:#8B5CF6;font-weight:800;">${label}</span>`;
     } else {
       el.innerHTML = `<span style="color:var(--text-faint);font-weight:700;">✕ Unpaid</span>`;
     }
@@ -4311,8 +4311,8 @@ function computeSendItScore() {
   const final = Math.max(0, Math.min(100, Math.round(score)));
 
   let verdict, emoji, color, borderColor;
-  if      (final >= 78) { verdict = 'WAGMI';      emoji = '🚀'; color = '#14F195'; borderColor = 'rgba(20,241,149,0.55)'; }
-  else if (final >= 62) { verdict = 'SEND IT';    emoji = '🔥'; color = '#14F195'; borderColor = 'rgba(20,241,149,0.4)'; }
+  if      (final >= 78) { verdict = 'WAGMI';      emoji = '🚀'; color = '#8B5CF6'; borderColor = 'rgba(139,92,246,0.55)'; }
+  else if (final >= 62) { verdict = 'SEND IT';    emoji = '🔥'; color = '#8B5CF6'; borderColor = 'rgba(139,92,246,0.4)'; }
   else if (final >= 44) { verdict = 'DEGEN PLAY'; emoji = '👀'; color = '#FF9F0A'; borderColor = 'rgba(255,159,10,0.45)'; }
   else if (final >= 26) { verdict = 'HIGH RISK';  emoji = '🚩'; color = '#FF3B30'; borderColor = 'rgba(255,59,48,0.45)'; }
   else                  { verdict = 'NGMI';        emoji = '☠️'; color = '#FF3B30'; borderColor = 'rgba(255,59,48,0.6)'; }

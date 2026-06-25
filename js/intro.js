@@ -1355,7 +1355,7 @@ function swarmLoop(ts) {
     sctx2.lineTo(p.x, p.y);
     sctx2.strokeStyle = p.lead
       ? `rgba(180,255,220,${baseA})`
-      : `rgba(0,255,156,${baseA})`;
+      : `rgba(139,92,246,${baseA})`;
     sctx2.lineWidth = p.lead ? 1.5 : 1;
     sctx2.stroke();
 
