@@ -257,7 +257,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
   gap: 0; flex-shrink: 0; height: 60px;
 }
 
-/* brand — logo + "MoonAi" text (left side) */
+/* brand — logo + "Fluxr" text (left side) */
 .sidebar-brand {
   display: flex; align-items: center; gap: 9px;
   flex: 1; overflow: hidden; cursor: pointer;
@@ -604,7 +604,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
   font-weight: 400;
 }
 
-/* Hero CA pill — copyable MoonAi contract address */
+/* Hero CA pill — copyable Fluxr contract address */
 .hero-ca-pill {
   display: inline-flex; align-items: center; gap: 9px;
   margin-top: 18px; max-width: 100%;
@@ -809,7 +809,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
 .welcome-disclaimer a { color: var(--text-faint); text-decoration: underline; }
 .welcome-disclaimer a:hover { color: var(--text-muted); }
 
-/* Recommendation bubbles — tap to ask MoonAi without a CA.
+/* Recommendation bubbles — tap to ask Fluxr without a CA.
    Uses the shared chip look (see --chip-* tokens) so it matches the
    suggestion pills, degen pills, and wallet button exactly. */
 .rec-bubbles {

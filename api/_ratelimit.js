@@ -1,5 +1,5 @@
 /**
- * Shared rate limiting for MoonAi API endpoints.
+ * Shared rate limiting for Fluxr API endpoints.
  *
  * Three layers (all backed by Upstash Redis):
  *  1. checkRateLimit    — per-minute sliding window (existing, all endpoints)
@@ -19,7 +19,7 @@ const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 // (no redeploy) so caps can be raised instantly under launch-day load.
 const DAILY_PER_IP     = parseInt(process.env.DAILY_PER_IP_CAP)  || 100;    // max AI requests per IP per day
 const DAILY_GLOBAL     = parseInt(process.env.DAILY_GLOBAL_CAP)  || 10000;  // max AI requests across ALL users per day (~$30-50 worst case)
-const KILL_SWITCH_KEY  = 'moonai:kill';
+const KILL_SWITCH_KEY  = 'fluxr:kill';
 
 // In-memory fallback store: key → { count, resetAt }
 const _memStore = new Map();
@@ -32,7 +32,7 @@ setInterval(() => {
 }, MEM_CLEANUP_INTERVAL).unref?.();
 
 function memRateLimit(ip, prefix, limit, window) {
-  const key = `moonai:${prefix}:${ip}`;
+  const key = `fluxr:${prefix}:${ip}`;
   const now = Date.now();
   const entry = _memStore.get(key);
   if (!entry || now >= entry.resetAt) {
@@ -68,7 +68,7 @@ async function redisPost(body) {
 async function checkRateLimit(ip, { limit = 60, window = 60, prefix = 'api' } = {}) {
   if (UPSTASH_URL && UPSTASH_TOKEN) {
     try {
-      const key  = `moonai:${prefix}:${ip}`;
+      const key  = `fluxr:${prefix}:${ip}`;
       const data = await redisPost([['INCR', key], ['EXPIRE', key, window]]);
       return (data?.[0]?.result ?? 0) <= limit;
     } catch { /* fall through */ }
@@ -82,7 +82,7 @@ async function checkRateLimit(ip, { limit = 60, window = 60, prefix = 'api' } = 
  * @returns {Promise<boolean>} true = allowed
  */
 async function checkDailyLimit(ip, prefix = 'chat') {
-  const key = `moonai:daily:${prefix}:${ip}:${utcDate()}`;
+  const key = `fluxr:daily:${prefix}:${ip}:${utcDate()}`;
 
   if (UPSTASH_URL && UPSTASH_TOKEN) {
     try {
@@ -101,7 +101,7 @@ async function checkDailyLimit(ip, prefix = 'chat') {
  */
 async function checkGlobalDaily(prefix = 'chat') {
   if (!UPSTASH_URL || !UPSTASH_TOKEN) return true; // fail open
-  const key = `moonai:daily:global:${prefix}:${utcDate()}`;
+  const key = `fluxr:daily:global:${prefix}:${utcDate()}`;
   try {
     const data = await redisPost([['INCR', key], ['EXPIRE', key, 86400]]);
     return (data?.[0]?.result ?? 0) <= DAILY_GLOBAL;
@@ -111,7 +111,7 @@ async function checkGlobalDaily(prefix = 'chat') {
 }
 
 /**
- * Kill switch — set key "moonai:kill" to "1" in Upstash to block all AI calls.
+ * Kill switch — set key "fluxr:kill" to "1" in Upstash to block all AI calls.
  * Delete the key or set it to "0" to re-enable.
  * Fails OPEN if Redis unavailable (avoids accidental lockout).
  * @returns {Promise<boolean>} true = kill switch is OFF (allow), false = kill switch is ON (block)

@@ -5,15 +5,15 @@
 ## [2.6.0] — 2026-06-17
 
 ### Changed
-- **Free for everyone, unlimited** — removed the wallet-connect + 300-$MOONAI holder gate entirely. No wallet, no signup, no token to hold. AI chat is now unlimited (the old 3-message free cap is gone) and the **Full AI Risk Verdict** is open to all.
+- **Free for everyone, unlimited** — removed the wallet-connect + 300-$FLUXR holder gate entirely. No wallet, no signup, no token to hold. AI chat is now unlimited (the old 3-message free cap is gone) and the **Full AI Risk Verdict** is open to all.
 
 ### Fixed
-- **AI chat could lock up permanently** — non-holders were capped at 3 messages and the only unlock path (holding 300 $MOONAI) could never trigger because the token mint was never configured, so the chat input stayed disabled forever. Removing the gate restores chat for everyone.
+- **AI chat could lock up permanently** — non-holders were capped at 3 messages and the only unlock path (holding 300 $FLUXR) could never trigger because the token mint was never configured, so the chat input stayed disabled forever. Removing the gate restores chat for everyone.
 
 ### Removed
 - `api/_gate.js` and `api/token-gate.js` (HMAC holder-pass + Phantom ownership verification).
 - Wallet-connect button, chat message counter, chat-gate banner, and all holder-gate UI/CSS.
-- `MOONAI_MINT`, `MOONAI_GATE_MIN`, `GATE_SECRET` env vars (no longer used).
+- `FLUXR_MINT`, `FLUXR_GATE_MIN`, `GATE_SECRET` env vars (no longer used).
 
 ### Security
 - `/api/verdict` no longer requires a holder pass; it stays protected by the per-minute rate limit so the Anthropic spend can't be abused.

@@ -1,4 +1,4 @@
-# MoonAi Roadmap
+# Fluxr Roadmap
 
 ## V1 — Live ✅
 
@@ -26,7 +26,7 @@
 - [x] AI Chat — full token context seeded, topic guard
 - [x] Security hardening — rate limiting, input validation, sanitized errors, security headers
 - [x] No API key required
-- [x] moonaiapp.xyz
+- [x] fluxrapp.xyz
 
 ## V2 — Coming 🔧
 
@@ -36,6 +36,6 @@
 - [ ] Live Buy/Sell Feed — real-time transaction ticker
 - [ ] First 100 Buyers breakdown
 - [ ] Subscription model
-- [ ] MoonAi App
+- [ ] Fluxr App
 - [ ] Telegram Bot
 - [ ] Discord Bot

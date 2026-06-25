@@ -1,10 +1,10 @@
-# MoonAi — Contributor Guide
+# Fluxr — Contributor Guide
 
 ## What This Is
 A real-time Solana & pump.fun token analyzer. Paste any CA or pump.fun link
 and get live on-chain data, AI narrative, bundle detection, holder intel,
 rug/risk detection, and trading tools — instantly. Free. No signup.
-Live at https://moonaiapp.xyz
+Live at https://fluxrapp.xyz
 
 ---
 
@@ -20,14 +20,14 @@ Live at https://moonaiapp.xyz
 | `vercel.json` | Deployment config, security headers, function timeouts |
 | `.env.example` | Documents required secrets — never commit real values |
 
-> **Do not edit `moonai.html`** — legacy reference, excluded from repo.
+> **Do not edit `fluxr.html`** — legacy reference, excluded from repo.
 
 ---
 
 ## Running Locally
 ```bash
-git clone https://github.com/Sorogaia/moonai.git
-cd moonai
+git clone https://github.com/Sorogaia/fluxr.git
+cd fluxr
 npx live-server .          # frontend only
 npx vercel dev             # full stack with APIs (needs .env.local)
 ```
@@ -105,7 +105,7 @@ Accumulates all async scan results. Every fetch function writes to it.
 ## Security Notes
 - All API keys in Vercel env vars only — never in source
 - Rate limiting: Redis → in-memory fallback (never silently open)
-- CORS: restricted to `ALLOWED_ORIGIN` env var (default: moonaiapp.xyz)
+- CORS: restricted to `ALLOWED_ORIGIN` env var (default: fluxrapp.xyz)
 - IP: `x-vercel-forwarded-for` (Vercel-set, not spoofable)
 - Prompt injection regex in `chat.js` applied to both system context and user messages
 - Symbol/address validation via regex in `_validate.js`
@@ -115,4 +115,4 @@ Accumulates all async scan results. Every fetch function writes to it.
 ---
 
 ## Twitter
-[@moonaitrench](https://x.com/moonaitrench)
+[@fluxrtrench](https://x.com/fluxrtrench)

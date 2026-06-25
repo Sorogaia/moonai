@@ -1,11 +1,11 @@
-# 🌙 MoonAi
+# 🌙 Fluxr
 
 > Solana token intelligence. Built for degens.
 
 Paste any Solana CA or pump.fun link. Get real on-chain data, AI analysis, bundle detection, holder intel, rug/risk scoring, and trading alpha — instantly. Free. No signup. No key required.
 
-**Live → [moonaiapp.xyz](https://moonaiapp.xyz)**  
-**Twitter → [@moonaitrench](https://x.com/moonaitrench)**
+**Live → [fluxrapp.xyz](https://fluxrapp.xyz)**  
+**Twitter → [@fluxrtrench](https://x.com/fluxrtrench)**
 
 ---
 
@@ -83,9 +83,9 @@ Every analysis updates the URL hash — share or refresh and land on the same to
 | Telegram Bot | In development |
 | Discord Bot | In development |
 | Advanced Mode — insider detection, sniper tracking | Planned |
-| MoonAi App — mobile, wallet login, push alerts | Planned |
+| Fluxr App — mobile, wallet login, push alerts | Planned |
 
-Follow [@moonaitrench](https://x.com/moonaitrench) for launch updates.
+Follow [@fluxrtrench](https://x.com/fluxrtrench) for launch updates.
 
 ---
 
@@ -98,8 +98,8 @@ Follow [@moonaitrench](https://x.com/moonaitrench) for launch updates.
 
 ### Local Development
 ```bash
-git clone https://github.com/Sorogaia/moonai.git
-cd moonai
+git clone https://github.com/Sorogaia/fluxr.git
+cd fluxr
 cp .env.example .env.local   # fill in your keys
 npx vercel dev               # full stack with APIs
 # or: npx live-server .      # frontend only (no API features)
@@ -114,7 +114,7 @@ See `.env.example` for the full list. Set in Vercel dashboard for production —
 | `HELIUS_API_KEY` | ✅ | Solana RPC + enhanced tx data |
 | `UPSTASH_REDIS_REST_URL` | ✅ | Distributed rate limiting |
 | `UPSTASH_REDIS_REST_TOKEN` | ✅ | Rate limiting auth |
-| `ALLOWED_ORIGIN` | ✅ | CORS allowed origin (default: https://moonaiapp.xyz) |
+| `ALLOWED_ORIGIN` | ✅ | CORS allowed origin (default: https://fluxrapp.xyz) |
 | `TURNSTILE_SECRET_KEY` | ✅ | Cloudflare bot verification (server-side) |
 | `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` | optional | Anomaly alerts to your phone when upstream APIs misbehave |
 

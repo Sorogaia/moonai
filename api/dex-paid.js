@@ -1,5 +1,5 @@
 /**
- * MoonAi — DEX Paid proxy
+ * Fluxr — DEX Paid proxy
  *
  * Detects whether a token has paid DexScreener for an enhanced profile, ads,
  * or community takeover. Uses two complementary signals because the orders
@@ -18,7 +18,7 @@
 const { isValidCA, getIP } = require('./_validate');
 const { checkRateLimit }   = require('./_ratelimit');
 
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://moonaiapp.xyz';
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://fluxrapp.xyz';
 
 // Status values that mean "this order has been paid and accepted/live"
 // (DexScreener has historically used approved/processing; we include

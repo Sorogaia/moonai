@@ -1,5 +1,5 @@
 {
-  "name": "moonai",
+  "name": "fluxr",
   "version": "1.8.0",
   "description": "Real-time Solana & pump.fun token analyzer powered by AI",
   "scripts": {
@@ -7,7 +7,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Sorogaia/moonai.git"
+    "url": "https://github.com/Sorogaia/fluxr.git"
   },
   "keywords": [
     "solana",
@@ -21,5 +21,5 @@
   ],
   "author": "Sorogaia",
   "license": "MIT",
-  "homepage": "https://moonaiapp.xyz"
+  "homepage": "https://fluxrapp.xyz"
 }

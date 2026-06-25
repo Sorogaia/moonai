@@ -34,7 +34,7 @@ export default function middleware(request) {
   return new Response('Authentication required.', {
     status: 401,
     headers: {
-      'WWW-Authenticate': 'Basic realm="MoonAi — restricted access", charset="UTF-8"',
+      'WWW-Authenticate': 'Basic realm="Fluxr — restricted access", charset="UTF-8"',
       'Content-Type': 'text/plain',
       'Cache-Control': 'no-store',
     },

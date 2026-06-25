@@ -1,10 +1,10 @@
 # Setup Guide
 
-## Using MoonAi
+## Using Fluxr
 
 No API key needed. No signup. No install.
 
-1. Go to [moonaiapp.xyz](https://moonaiapp.xyz)
+1. Go to [fluxrapp.xyz](https://fluxrapp.xyz)
 2. Paste any Solana CA or pump.fun link
 3. Done
 
@@ -13,8 +13,8 @@ No API key needed. No signup. No install.
 ## Running Locally
 
 ```bash
-git clone https://github.com/Sorogaia/moonai.git
-cd moonai
+git clone https://github.com/Sorogaia/fluxr.git
+cd fluxr
 npx live-server .
 ```
 
@@ -24,7 +24,7 @@ npx live-server .
 
 ## Self-Hosting
 
-MoonAi runs on Vercel. Contact the team for deployment details.
+Fluxr runs on Vercel. Contact the team for deployment details.
 
 ---
 

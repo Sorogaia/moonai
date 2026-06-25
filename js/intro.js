@@ -1,8 +1,8 @@
 // Skip intro for returning visitors unless they hit Replay
-if (localStorage.getItem('moonai_intro_seen') && !sessionStorage.getItem('moonai_intro_replay')) {
+if (localStorage.getItem('fluxr_intro_seen') && !sessionStorage.getItem('fluxr_intro_replay')) {
   window.location.replace('./app.html');
 }
-sessionStorage.removeItem('moonai_intro_replay');
+sessionStorage.removeItem('fluxr_intro_replay');
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const term = document.getElementById('terminal');
@@ -433,7 +433,7 @@ function softSwell(dur) {
   sub.connect(sg); sg.connect(actx.destination); sub.start(t); sub.stop(t+dur+0.15);
 }
 
-/* ── THE MOONAI SONIC SIGNATURE — a 3-note motif, "the MoonAI sound" ──
+/* ── THE FLUXR SONIC SIGNATURE — a 3-note motif, "the Fluxr sound" ──
    In A major (resolve key). Bright bell-like. Plays as the wordmark lands. */
 function sonicSignature(delay) {
   if (TONE.ready && soundOn) { return toneSignature(delay); }
@@ -811,9 +811,9 @@ let tickerInterval = null;
 
 /* ═══════════════ BOOT SCRIPT ═══════════════ */
 const SCRIPT = [
-  { type:'type', html:`<span class="prompt">moonai@solana</span><span class="dim">:~$</span> <span class="white">./boot --mainnet</span>`, speed:22, after:240 },
+  { type:'type', html:`<span class="prompt">fluxr@solana</span><span class="dim">:~$</span> <span class="white">./boot --mainnet</span>`, speed:22, after:240 },
   { type:'blank' },
-  { type:'instant', html:`<span class="dim">MoonAI Engine</span> <span class="cyanc">v1.0.0</span> <span class="dim">— Solana token intelligence</span>`, after:160 },
+  { type:'instant', html:`<span class="dim">Fluxr Engine</span> <span class="cyanc">v1.0.0</span> <span class="dim">— Solana token intelligence</span>`, after:160 },
   { type:'instant', html:`<span class="dim">────────────────────────────────────────────</span>`, after:120 },
   { type:'type', html:`<span class="ok">[ OK ]</span> connecting to Solana mainnet`, speed:9, after:120, trail:'CONNECTED', sfx:'ok' },
   { type:'type', html:`<span class="ok">[ OK ]</span> loading pump.fun feed`, speed:9, after:110, trail:'LIVE', sfx:'ok', showTicker:true },
@@ -823,7 +823,7 @@ const SCRIPT = [
   { type:'instant', html:`       <span class="errc">⚠ $GHOSTX</span>  <span class="dim">liquidity pulled · flagged · holders warned</span>`, after:200, sfx:'err' },
   { type:'type', html:`<span class="ok">[ OK ]</span> securing community channel`, speed:9, after:120, trail:'SAFE', sfx:'ok' },
   { type:'blank' },
-  { type:'type', html:`<span class="prompt">moonai@solana</span><span class="dim">:~$</span> <span class="white">decrypt --identity</span>`, speed:24, after:300 },
+  { type:'type', html:`<span class="prompt">fluxr@solana</span><span class="dim">:~$</span> <span class="white">decrypt --identity</span>`, speed:24, after:300 },
   { type:'decrypt' }
 ];
 
@@ -894,7 +894,7 @@ function runScript(idx){
 /* ═══════════════════════════════════════════
    THE DECRYPTION RESOLVE — the new hero moment
    Boot text scrambles, cascades, and the screen
-   reorganizes into an ASCII MOONAI which then
+   reorganizes into an ASCII FLUXR which then
    "compiles" into the clean logo.
    ═══════════════════════════════════════════ */
 const ASCII_ART = String.raw`
@@ -1010,7 +1010,7 @@ function compileToLogo() {
 /* ═══════════════ FINAL UI ═══════════════ */
 function buildLogo() {
   const base = document.querySelector('#logo .base'); base.innerHTML='';
-  [...'MoonAI'].forEach((c,i)=>{ const s=document.createElement('span'); s.className='lch'+(i<4?' moon':''); s.textContent=c; base.appendChild(s); });
+  [...'Fluxr'].forEach((c,i)=>{ const s=document.createElement('span'); s.className='lch'+(i<4?' moon':''); s.textContent=c; base.appendChild(s); });
   return [...base.querySelectorAll('.lch')];
 }
 
@@ -1078,7 +1078,7 @@ function enterClick(){
   const flash=document.getElementById('flash');
   flash.style.transition='opacity 80ms ease'; flash.style.opacity='0.7';
   glitchPulse(2); bootHit();
-  localStorage.setItem('moonai_intro_seen','1');
+  localStorage.setItem('fluxr_intro_seen','1');
   T(()=>{ window.location.href='./app.html'; }, 420);
 }
 
@@ -1115,7 +1115,7 @@ const FORM_DONE  = 1.5;                        // greeting rolls in once the fie
 
 if (reduceMotion) {
   // skip the ceremony for reduced motion — go straight to app
-  localStorage.setItem('moonai_intro_seen','1');
+  localStorage.setItem('fluxr_intro_seen','1');
   window.location.replace('./app.html');
 } else {
   startSwarm();
@@ -1145,7 +1145,7 @@ function greetingForTime() {
   // returns array of segments (text + optional accent flag)
   return [
     {t: part + '. '},
-    {t: 'MoonAI', accent: true},
+    {t: 'Fluxr', accent: true},
     {t: ' is ready when you are.'}
   ];
 }
@@ -1488,6 +1488,6 @@ document.getElementById('sound').addEventListener('click', toggleSound);
 document.getElementById('enter').addEventListener('click', enterClick);
 document.getElementById('skip').addEventListener('click', skipBoot);
 document.getElementById('replay').addEventListener('click', () => {
-  sessionStorage.setItem('moonai_intro_replay', '1');
+  sessionStorage.setItem('fluxr_intro_replay', '1');
   location.reload();
 });

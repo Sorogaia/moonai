@@ -1,6 +1,6 @@
 # API Reference
 
-MoonAi uses secured backend proxies — no API keys are ever exposed to the browser.
+Fluxr uses secured backend proxies — no API keys are ever exposed to the browser.
 All endpoints enforce: CORS to `ALLOWED_ORIGIN`, per-IP rate limiting, and
 strict input validation.
 

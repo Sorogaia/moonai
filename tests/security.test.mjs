@@ -1,5 +1,5 @@
 /**
- * MoonAi — Security test suite
+ * Fluxr — Security test suite
  * Tests: image URL validation, prompt injection, rate limiting, kill switch, daily caps,
  *        anomaly detection, auto-suspend, schema validation
  * Run: node --test tests/security.test.mjs
@@ -18,11 +18,11 @@ const root    = path.resolve(fileURLToPath(import.meta.url), '../../');
 process.env.ANTHROPIC_API_KEY        = 'sk-ant-test-key';
 process.env.UPSTASH_REDIS_REST_URL   = 'https://fake.upstash.io';
 process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token';
-process.env.ALLOWED_ORIGIN           = 'https://moonaiapp.xyz';
+process.env.ALLOWED_ORIGIN           = 'https://fluxrapp.xyz';
 
 // Default fetch mock — Redis allows, kill switch off, Anthropic responds
 global.fetch = async (url) => {
-  if (url.includes('/get/moonai:kill'))
+  if (url.includes('/get/fluxr:kill'))
     return { ok: true, json: async () => ({ result: null }) };
   if (url.includes('/pipeline'))
     return { ok: true, json: async () => [{ result: 1 }, { result: 1 }] };
@@ -252,7 +252,7 @@ describe('Chat handler — api/chat.js', () => {
     handler = require(path.join(root, 'api/chat.js'));
     // Restore default mock
     global.fetch = async (url) => {
-      if (url.includes('/get/moonai:kill'))  return { ok: true, json: async () => ({ result: null }) };
+      if (url.includes('/get/fluxr:kill'))  return { ok: true, json: async () => ({ result: null }) };
       if (url.includes('/pipeline'))         return { ok: true, json: async () => [{ result: 1 }, { result: 1 }] };
       if (url.includes('api.anthropic.com')) return { ok: true, status: 200, json: async () => ({ content: [{ type: 'text', text: 'BONK analysis here.' }] }) };
       return { ok: false, status: 500, json: async () => ({}) };
@@ -314,7 +314,7 @@ describe('Chat handler — api/chat.js', () => {
 
   test('kill switch ON returns 503', async () => {
     global.fetch = async (url) => {
-      if (url.includes('/get/moonai:kill')) return { ok: true, json: async () => ({ result: '1' }) };
+      if (url.includes('/get/fluxr:kill')) return { ok: true, json: async () => ({ result: '1' }) };
       return { ok: true, json: async () => [{ result: 1 }, { result: 1 }] };
     };
     const res = mockRes();
@@ -324,7 +324,7 @@ describe('Chat handler — api/chat.js', () => {
 
   test('per-minute rate limit exceeded returns 429', async () => {
     global.fetch = async (url) => {
-      if (url.includes('/get/moonai:kill')) return { ok: true, json: async () => ({ result: null }) };
+      if (url.includes('/get/fluxr:kill')) return { ok: true, json: async () => ({ result: null }) };
       if (url.includes('/pipeline'))        return { ok: true, json: async () => [{ result: 999 }, { result: 1 }] }; // over limit
       return { ok: true, json: async () => ({}) };
     };
@@ -336,7 +336,7 @@ describe('Chat handler — api/chat.js', () => {
   test('daily IP limit exceeded returns 429', async () => {
     let callCount = 0;
     global.fetch = async (url) => {
-      if (url.includes('/get/moonai:kill')) return { ok: true, json: async () => ({ result: null }) };
+      if (url.includes('/get/fluxr:kill')) return { ok: true, json: async () => ({ result: null }) };
       if (url.includes('/pipeline')) {
         callCount++;
         // First pipeline = per-minute (allow), second = daily IP (block)
@@ -353,7 +353,7 @@ describe('Chat handler — api/chat.js', () => {
   test('global daily cap exceeded returns 503', async () => {
     let callCount = 0;
     global.fetch = async (url) => {
-      if (url.includes('/get/moonai:kill')) return { ok: true, json: async () => ({ result: null }) };
+      if (url.includes('/get/fluxr:kill')) return { ok: true, json: async () => ({ result: null }) };
       if (url.includes('/pipeline')) {
         callCount++;
         // First = per-minute (allow), second = daily IP (allow), third = global (block)
@@ -383,7 +383,7 @@ describe('Anomaly detection — _anomaly.js', () => {
 
   test('isSuspended returns false when Redis key is null', async () => {
     global.fetch = async (url) => {
-      if (url.includes('/get/moonai:suspend:'))
+      if (url.includes('/get/fluxr:suspend:'))
         return { ok: true, json: async () => ({ result: null }) };
       return { ok: true, json: async () => ({}) };
     };
@@ -393,7 +393,7 @@ describe('Anomaly detection — _anomaly.js', () => {
 
   test('isSuspended returns true when Redis key is "1"', async () => {
     global.fetch = async (url) => {
-      if (url.includes('/get/moonai:suspend:'))
+      if (url.includes('/get/fluxr:suspend:'))
         return { ok: true, json: async () => ({ result: '1' }) };
       return { ok: true, json: async () => ({}) };
     };
@@ -493,7 +493,7 @@ describe('Auto-suspend respected by API handlers', () => {
 
   test('holders.js returns 503 when helius is suspended', async () => {
     global.fetch = async (url) => {
-      if (url.includes('/get/moonai:suspend:helius'))
+      if (url.includes('/get/fluxr:suspend:helius'))
         return { ok: true, json: async () => ({ result: '1' }) };
       return { ok: true, json: async () => ({}) };
     };
@@ -506,7 +506,7 @@ describe('Auto-suspend respected by API handlers', () => {
 
   test('vamps.js returns empty vamps when dexscreener is suspended', async () => {
     global.fetch = async (url) => {
-      if (url.includes('/get/moonai:suspend:dexscreener'))
+      if (url.includes('/get/fluxr:suspend:dexscreener'))
         return { ok: true, json: async () => ({ result: '1' }) };
       if (url.includes('/pipeline'))
         return { ok: true, json: async () => [{ result: 1 }, { result: 1 }] };
@@ -521,9 +521,9 @@ describe('Auto-suspend respected by API handlers', () => {
 
   test('dev-history.js returns empty tokens when pumpfun is suspended', async () => {
     global.fetch = async (url) => {
-      if (url.includes('/get/moonai:suspend:pumpfun'))
+      if (url.includes('/get/fluxr:suspend:pumpfun'))
         return { ok: true, json: async () => ({ result: '1' }) };
-      if (url.includes('/get/moonai:suspend:dexscreener'))
+      if (url.includes('/get/fluxr:suspend:dexscreener'))
         return { ok: true, json: async () => ({ result: null }) };
       if (url.includes('/pipeline'))
         return { ok: true, json: async () => [{ result: 1 }, { result: 1 }] };

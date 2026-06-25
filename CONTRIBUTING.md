@@ -1,4 +1,4 @@
-# Contributing to MoonAi
+# Contributing to Fluxr
 
 Thanks for your interest in contributing.
 
@@ -9,8 +9,8 @@ Thanks for your interest in contributing.
 1. Fork the repository
 2. Clone your fork:
    ```bash
-   git clone https://github.com/Sorogaia/moonai.git
-   cd moonai
+   git clone https://github.com/Sorogaia/fluxr.git
+   cd fluxr
    ```
 3. Install nothing — no build tools required
 4. Run locally:
@@ -28,7 +28,7 @@ Thanks for your interest in contributing.
 ## Project Structure
 
 ```
-moonai/
+fluxr/
 ├── index.html          # HTML shell only — structure, modals, welcome
 ├── css/styles.css      # All styles — edit here, never inline in JS
 ├── js/app.js           # All frontend logic
@@ -102,4 +102,4 @@ Open a GitHub Issue with:
 
 ## Contact
 
-GitHub Issues or [@moonaitrench](https://x.com/moonaitrench) on Twitter
+GitHub Issues or [@fluxrtrench](https://x.com/fluxrtrench) on Twitter

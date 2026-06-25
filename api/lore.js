@@ -1,5 +1,5 @@
 /**
- * MoonAi — Token narrative (lore) generator
+ * Fluxr — Token narrative (lore) generator
  *
  * Dedicated lightweight endpoint for the lore bubble that fires on every
  * token analysis. Skips Turnstile (which was adding 2-7s of wait time
@@ -17,7 +17,7 @@ const { checkRateLimit, checkDailyLimit, checkKillSwitch } = require('./_ratelim
 const { getIP } = require('./_validate');
 
 const ANTHROPIC_KEY   = process.env.ANTHROPIC_API_KEY;
-const ALLOWED_ORIGIN  = process.env.ALLOWED_ORIGIN || 'https://moonaiapp.xyz';
+const ALLOWED_ORIGIN  = process.env.ALLOWED_ORIGIN || 'https://fluxrapp.xyz';
 const MAX_NAME_LEN    = 100;
 const MAX_SYMBOL_LEN  = 20;
 const MAX_DESC_LEN    = 200;

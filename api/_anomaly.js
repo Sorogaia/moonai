@@ -1,5 +1,5 @@
 /**
- * MoonAi — Anomaly detection + auto-suspend for third-party APIs.
+ * Fluxr — Anomaly detection + auto-suspend for third-party APIs.
  *
  * Flow:
  *  1. check()         — validates a field; calls recordAnomaly() on failure
@@ -51,7 +51,7 @@ async function sendTelegramAlert(source, field, received, count) {
   if (!TG_TOKEN || !TG_CHAT_ID) return;
   const preview = JSON.stringify(received ?? null).slice(0, 150);
   const text =
-    `⚠️ <b>MoonAi — API Anomaly Detected</b>\n\n` +
+    `⚠️ <b>Fluxr — API Anomaly Detected</b>\n\n` +
     `<b>Source:</b> <code>${source}</code>\n` +
     `<b>Field:</b> <code>${field}</code>\n` +
     `<b>Bad value:</b> <code>${preview}</code>\n` +
@@ -59,7 +59,7 @@ async function sendTelegramAlert(source, field, received, count) {
     `🔴 <b>Auto-suspended for 10 minutes.</b>\n` +
     `Site continues operating without <code>${source}</code> data.\n` +
     `Auto-recovers at: ${new Date(Date.now() + SUSPEND_DURATION * 1000).toUTCString()}\n\n` +
-    `If urgent, kill all AI calls: Upstash → set <code>moonai:kill</code> = <code>1</code>`;
+    `If urgent, kill all AI calls: Upstash → set <code>fluxr:kill</code> = <code>1</code>`;
 
   await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
     method: 'POST',
@@ -80,7 +80,7 @@ async function sendTelegramAlert(source, field, received, count) {
  */
 async function isSuspended(source) {
   try {
-    const val = await redisGet(`moonai:suspend:${source}`);
+    const val = await redisGet(`fluxr:suspend:${source}`);
     return val === '1';
   } catch {
     return false;
@@ -97,8 +97,8 @@ async function isSuspended(source) {
  */
 async function recordAnomaly(source, field, received) {
   try {
-    const countKey   = `moonai:anomaly:${source}`;
-    const suspendKey = `moonai:suspend:${source}`;
+    const countKey   = `fluxr:anomaly:${source}`;
+    const suspendKey = `fluxr:suspend:${source}`;
 
     const data = await redisPipeline([
       ['INCR',   countKey],
@@ -117,11 +117,11 @@ async function recordAnomaly(source, field, received) {
         ['EXPIRE', suspendKey, SUSPEND_DURATION],
       ]);
       // Visible in Vercel logs — Functions → Logs
-      console.error(`[MOONAI SUSPEND] source=${source} field=${field} failures=${count} value=${JSON.stringify(received ?? null).slice(0, 200)} auto-suspended for ${SUSPEND_DURATION}s`);
+      console.error(`[FLUXR SUSPEND] source=${source} field=${field} failures=${count} value=${JSON.stringify(received ?? null).slice(0, 200)} auto-suspended for ${SUSPEND_DURATION}s`);
       await sendTelegramAlert(source, field, received, count);
     } else if (!alreadySuspended) {
       // Log each individual anomaly for visibility in Vercel logs
-      console.warn(`[MOONAI ANOMALY] source=${source} field=${field} failures=${count}/${ANOMALY_THRESHOLD} value=${JSON.stringify(received ?? null).slice(0, 200)}`);
+      console.warn(`[FLUXR ANOMALY] source=${source} field=${field} failures=${count}/${ANOMALY_THRESHOLD} value=${JSON.stringify(received ?? null).slice(0, 200)}`);
     }
   } catch {
     // Never propagate — anomaly tracking is best-effort

@@ -1,5 +1,5 @@
 /**
- * MoonAi — Trenches snapshot
+ * Fluxr — Trenches snapshot
  *
  * Aggregates a compact live view of what's moving on Solana right now.
  *
@@ -18,11 +18,11 @@
 const { getIP }          = require('./_validate');
 const { checkRateLimit } = require('./_ratelimit');
 
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://moonaiapp.xyz';
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://fluxrapp.xyz';
 const CACHE_TTL_MS   = 60_000;
 let _cache = null;
 
-const UA = 'Mozilla/5.0 (compatible; MoonAi/1.0; +https://moonaiapp.xyz)';
+const UA = 'Mozilla/5.0 (compatible; Fluxr/1.0; +https://fluxrapp.xyz)';
 const FETCH_TIMEOUT_MS = 8_000;
 const GT = 'https://api.geckoterminal.com/api/v2/networks/solana';
 

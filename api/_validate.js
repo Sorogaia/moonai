@@ -1,5 +1,5 @@
 /**
- * Shared input validation for MoonAi API endpoints.
+ * Shared input validation for Fluxr API endpoints.
  * Underscore prefix = not exposed as a Vercel route.
  */
 

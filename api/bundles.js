@@ -108,7 +108,7 @@ async function getFundingWallet(walletAddress, beforeSlot) {
   } catch { return null; }
 }
 
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://moonaiapp.xyz';
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://fluxrapp.xyz';
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);

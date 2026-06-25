@@ -1,5 +1,5 @@
 /**
- * MoonAi — Full AI Risk Verdict (free for everyone)
+ * Fluxr — Full AI Risk Verdict (free for everyone)
  *
  * Runs a deeper, structured risk analysis than the free chat. Open to all —
  * no wallet, no token holding. Per-minute rate limit is the only guard, to
@@ -9,13 +9,13 @@ const { getIP }          = require('./_validate');
 const { checkRateLimit, checkDailyLimit, checkGlobalDaily, checkKillSwitch } = require('./_ratelimit');
 
 const ANTHROPIC_KEY  = process.env.ANTHROPIC_API_KEY;
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://moonaiapp.xyz';
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://fluxrapp.xyz';
 const MODEL          = 'claude-sonnet-4-6';
 const MAX_CTX        = 4000;
 
 const INJECTION_RE = /ignore\s+(previous|all|above|prior|your)\s+(instructions?|rules?|prompt|context)|you\s+are\s+(now|actually|no longer)|dan\s+mode|jailbreak|forget\s+(all|everything|your|prior|previous)|new\s+instructions?|system\s+override|disregard\s+(prior|previous|all)/gi;
 
-const SYSTEM = `You are MoonAi's senior on-chain risk analyst producing a premium "Full Risk Verdict". Be sharp, structured, and brutally honest — degen voice is fine but the value here is rigor, not jokes.
+const SYSTEM = `You are Fluxr's senior on-chain risk analyst producing a premium "Full Risk Verdict". Be sharp, structured, and brutally honest — degen voice is fine but the value here is rigor, not jokes.
 
 Use ONLY the token data provided. Never invent holder counts, bundle %s, or dev history that isn't given; if a datapoint is missing, say so and reason around it.
 

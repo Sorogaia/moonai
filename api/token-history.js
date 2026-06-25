@@ -21,7 +21,7 @@ const HELIUS_KEY = process.env.HELIUS_API_KEY;
  *   - Also fetch DAY candles for the oldest pool, so tokens older than
  *     ~41 days still have full historical coverage for ATH
  */
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://moonaiapp.xyz';
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://fluxrapp.xyz';
 
 async function fetchOhlcv(poolAddr, timeframe = 'hour') {
   try {

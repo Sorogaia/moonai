@@ -2,7 +2,7 @@ const { isValidCA, isValidSymbol, getIP, safeImageUrl } = require('./_validate')
 const { checkRateLimit }        = require('./_ratelimit');
 const { isSuspended, check }    = require('./_anomaly');
 
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://moonaiapp.xyz';
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://fluxrapp.xyz';
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
