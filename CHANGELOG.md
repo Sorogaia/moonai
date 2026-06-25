@@ -2,6 +2,48 @@
 
 ---
 
+## [3.0.0] — 2026-06-25
+
+### Rebrand — MoonAi → Fluxr
+- Full project renamed: display text, AI personas, API comments, Redis key prefixes (`moonai:` → `fluxr:`), localStorage keys, Turnstile callbacks, package name, meta/OG tags, GitHub URL, Twitter handle references.
+- `moonai-intro.html` renamed to `fluxr-intro.html`.
+- Local folder renamed `MOONAI` → `FLUXR`. GitHub repo rename pending.
+
+### Design — Electric Violet palette
+- Replaced Solana green (`#14F195`) with electric violet (`#8B5CF6 / rgba(139,92,246)`) as the primary accent across all CSS, inline JS styles, and HTML.
+- Secondary cyan (`#00d4ff`) became light violet `#A78BFA`.
+- Trencher mode backgrounds gain a subtle violet undertone (`#05030a`, `#0d0b14`, `#110e1a`).
+- Intro terminal theme: green-on-black → violet-on-black (bg, grid, cursor, glows, ASCII, enter button).
+- Send button text fixed to white (was unreadable black-on-violet).
+
+### UI Polish — rounded, glowing, modern
+- Radius scale bumped: `8→12` (sm) · `14→18` (md) · `18→24` (lg) — rounder feel everywhere.
+- Cards: persistent violet shadow at rest, stronger lift + glow on hover (`translateY(-2px)`).
+- Input wrap: violet ring + ambient glow on `focus-within`, transition restored.
+- Header: frosted glass `backdrop-filter` + violet bottom border.
+- Bottom bar: violet-tinted bg, stronger blur, violet border.
+- Send button: violet glow at rest, pops harder on hover.
+- Welcome logo: doubled glow radius.
+- Token image: violet ring + ambient glow.
+- Lore bubble: violet glow/tint (replaced white glow).
+- Toast: violet border + ambient glow.
+- Glass cards (trenches, modal, loading, price strip, sendit): violet-tinted bg.
+- Token intel cells, ROI items, bstat, dev-hist-stat: all rounder.
+- Beta gate: full violet theme.
+
+### Logos
+- New branded icon (`logo/icon.png`) — circular XR emblem with lightning bolt and candlestick chart, cyan-to-violet gradient, RGBA transparent.
+- New wordmark (`logo/wordmark.png`) — `FLUXR` gradient text with stylised X, RGBA transparent.
+- `logo.png` (root) replaced with the new icon (auto-updates favicon, sidebar, OG image, beta gate).
+- Welcome hero: icon enlarged (92px), wordmark image replaces `<h1>` text.
+- Intro screens (`index.html`, `fluxr-intro.html`): wordmark div renders the image with breathing violet glow animation.
+- Sidebar brand icon enlarged to 30px.
+
+### Removed
+- **Basic Auth gate** (`middleware.js`) — site is now fully public. Anyone with the link can access it. Removed `SITE_PASSWORD` env var.
+
+---
+
 ## [2.6.0] — 2026-06-17
 
 ### Changed

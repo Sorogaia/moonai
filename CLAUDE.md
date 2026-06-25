@@ -11,16 +11,18 @@ Live at https://fluxrapp.xyz
 ## Source of Truth Files
 | File | Purpose |
 |---|---|
-| `index.html` | HTML shell — structure, V2 modal, welcome screen |
+| `app.html` | Main app shell — sidebar, welcome screen, bottom bar, modals |
+| `index.html` | Intro / boot animation screen (redirects to app.html) |
 | `css/styles.css` | All styles — never write inline styles, always edit here |
 | `js/app.js` | All frontend logic — fetching, rendering, AI chat, live updates |
+| `js/intro.js` | Intro screen animation logic |
+| `logo/icon.png` | Brand icon — circular XR emblem (RGBA, use anywhere small) |
+| `logo/wordmark.png` | Brand wordmark — FLUXR gradient text (RGBA, use in hero/headers) |
 | `api/*.js` | Vercel serverless functions — backend proxies |
 | `api/_validate.js` | Shared input validation + IP extraction (not a public route) |
 | `api/_ratelimit.js` | Redis + in-memory fallback rate limiting (not a public route) |
 | `vercel.json` | Deployment config, security headers, function timeouts |
 | `.env.example` | Documents required secrets — never commit real values |
-
-> **Do not edit `fluxr.html`** — legacy reference, excluded from repo.
 
 ---
 

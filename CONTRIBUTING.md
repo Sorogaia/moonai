@@ -46,8 +46,8 @@ fluxr/
 │   ├── fresh-wallets.js # Fresh wallet detection (Helius)
 │   ├── vamps.js         # Copycat token scanner (DexScreener)
 │   ├── dev-history.js   # Dev wallet history (pump.fun)
-│   ├── dex-paid.js      # DexScreener "paid profile" detection (orders + info signals)
-│   └── beta-gate.js     # Optional beta access gate (HMAC-tokenised 48h sessions)
+│   └── dex-paid.js      # DexScreener "paid profile" detection (orders + info signals)
+├── logo/               # Brand assets (icon.png, wordmark.png)
 ├── vercel.json         # Deployment config + security headers
 └── .env.example        # Required env vars (no real values)
 ```

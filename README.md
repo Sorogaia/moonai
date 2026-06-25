@@ -125,7 +125,7 @@ See `.env.example` for the full list. Set in Vercel dashboard for production —
 | Layer | Tech |
 |---|---|
 | Frontend | HTML · CSS · Vanilla JS (zero deps) |
-| Font | Plus Jakarta Sans + JetBrains Mono (addresses) — Google Fonts |
+| Font | DM Sans (UI) + DM Mono (addresses) — Google Fonts |
 | AI | Anthropic Claude (Sonnet 4.5 chat, Haiku 4.5 narrative) — streamed via SSE |
 | Market data | DexScreener API · GeckoTerminal OHLCV |
 | Token metadata | pump.fun API · Jupiter Token API |
