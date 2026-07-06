@@ -2,6 +2,15 @@
 
 ---
 
+## [Unreleased] — 2026-07-06
+
+### Welcome hero simplification
+- Removed the CA copy-pill from the welcome hero (`app.html`).
+- Replaced the top circular icon logo above "Live Solana intelligence" with the `wordmark.png` logo, enlarged to 120px for visibility.
+- Removed the now-duplicate wordmark image that previously sat below the eyebrow text.
+
+---
+
 ## [3.0.0] — 2026-06-25
 
 ### Rebrand — MoonAi → Fluxr
